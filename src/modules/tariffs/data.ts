@@ -47,23 +47,21 @@ function calcSpread(importRates: TariffRate[], exportRates: TariffRate[]): numbe
 // Core Tariffs
 // ============================================================
 
+// IOF uses a single-rate model where import = export at all times.
+// Rates are ENWL/Manchester region approximations and change quarterly.
 const octopusIof: TariffWithMeta = {
   id: 'octopus-iof',
   supplier: 'Octopus Energy',
   name: 'Intelligent Octopus Flux',
   type: 'flux',
-  description: 'Primary revenue tariff for battery arbitrage. Kraken platform controls charge/discharge scheduling for optimal returns. Requires MCS-certified installation and Octopus account.',
+  description: 'Kraken-controlled tariff where import and export rates are equal at all times. Kraken schedules charge/discharge to maximise spread between off-peak and peak windows. Rates are regional (shown: ENWL/Manchester) and change quarterly.',
   importRates: [
-    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 7.44, season: 'all' },
-    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 24.50, season: 'all' },
-    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 36.86, season: 'all' },
-    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 24.50, season: 'all' },
+    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 21.71, season: 'all' },
+    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 28.94, season: 'all' },
   ],
   exportRates: [
-    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 4.10, season: 'all' },
-    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 14.20, season: 'all' },
-    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 23.76, season: 'all' },
-    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 14.20, season: 'all' },
+    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 21.71, season: 'all' },
+    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 28.94, season: 'all' },
   ],
   standingChargePencePerDay: 46.36,
   validFrom: new Date('2025-01-01'),
@@ -75,9 +73,9 @@ const octopusIof: TariffWithMeta = {
     'Solar PV system recommended',
   ],
   arbitrageSpreadPence: 0,
-  bestForBattery: true,
+  bestForBattery: false,
   krakenControlled: true,
-  notes: 'Kraken optimises charge/discharge windows automatically. Peak export 16:00-19:00 is the primary revenue window.',
+  notes: 'On IOF, import = export at all times. Kraken optimises scheduling. Revenue comes from the spread between off-peak (~21.71p) and peak (~28.94p). Rates shown are ENWL/Manchester region approximations and change quarterly.',
 };
 octopusIof.arbitrageSpreadPence = calcSpread(octopusIof.importRates, octopusIof.exportRates);
 
@@ -107,27 +105,29 @@ const octopusFlux: TariffWithMeta = {
     'Octopus Energy account',
   ],
   arbitrageSpreadPence: 0,
-  bestForBattery: true,
+  bestForBattery: false,
   krakenControlled: false,
   notes: 'Same time windows as IOF but without intelligent optimisation. Slightly lower export rates.',
 };
 octopusFlux.arbitrageSpreadPence = calcSpread(octopusFlux.importRates, octopusFlux.exportRates);
 
+// RECOMMENDED tariff for battery arbitrage — variable half-hourly pricing
 const octopusAgile: TariffWithMeta = {
   id: 'octopus-agile',
   supplier: 'Octopus Energy',
   name: 'Octopus Agile',
   type: 'agile',
-  description: 'Half-hourly variable pricing tied to wholesale market. Rates published day-ahead at 16:00. Can go negative (plunge pricing). Requires smart meter.',
+  description: 'Half-hourly variable pricing tied to wholesale market via Agile Outgoing export. Best tariff for battery arbitrage due to wide spreads. Rates published day-ahead at 16:00. Can go negative (plunge pricing). Requires smart meter.',
   importRates: [
-    { periodStart: '00:00', periodEnd: '04:00', ratePencePerKwh: 10.50, season: 'all' },
+    { periodStart: '00:00', periodEnd: '04:00', ratePencePerKwh: 7.50, season: 'all' },
     { periodStart: '04:00', periodEnd: '07:00', ratePencePerKwh: 15.20, season: 'all' },
     { periodStart: '07:00', periodEnd: '16:00', ratePencePerKwh: 22.80, season: 'all' },
     { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 38.50, season: 'all' },
     { periodStart: '19:00', periodEnd: '00:00', ratePencePerKwh: 25.40, season: 'all' },
   ],
   exportRates: [
-    { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 15.00, season: 'all' },
+    // Agile Outgoing: tracks wholesale, avg 9-12p. Was 15p, cut to 12p on 1 March 2026.
+    { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 12.00, season: 'all' },
   ],
   standingChargePencePerDay: 42.63,
   validFrom: new Date('2025-01-01'),
@@ -136,11 +136,11 @@ const octopusAgile: TariffWithMeta = {
     'Octopus Energy account',
   ],
   arbitrageSpreadPence: 0,
-  bestForBattery: false,
+  bestForBattery: true,
   krakenControlled: false,
-  apiEndpoint: 'https://api.octopus.energy/v1/products/AGILE-FLEX-22-11-25/',
+  apiEndpoint: 'https://api.octopus.energy/v1/products/AGILE-24-10-01/',
   historicalAvgSpread: 18.5,
-  notes: 'Rates shown are historical averages. Actual rates vary half-hourly. Plunge pricing events (~15/year) can yield negative import rates. Best with automated scheduling.',
+  notes: 'RECOMMENDED for battery arbitrage. Average overnight import: 5-10p, daytime: 15-30p, peak: 25-50p+. Agile Outgoing export tracks wholesale, avg 9-12p (was 15p, cut to 12p on 1 March 2026). Plunge pricing events (~15/year) can yield negative import rates. Best with automated scheduling.',
 };
 octopusAgile.arbitrageSpreadPence = calcSpread(octopusAgile.importRates, octopusAgile.exportRates);
 
@@ -155,7 +155,8 @@ const octopusIntelligentGo: TariffWithMeta = {
     { periodStart: '05:30', periodEnd: '23:30', ratePencePerKwh: 27.35, season: 'all' },
   ],
   exportRates: [
-    { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 15.00, season: 'all' },
+    // Octopus Outgoing dropped to 12p on 1 March 2026 (was 15p)
+    { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 12.00, season: 'all' },
   ],
   standingChargePencePerDay: 42.63,
   validFrom: new Date('2025-01-01'),
@@ -167,7 +168,7 @@ const octopusIntelligentGo: TariffWithMeta = {
   arbitrageSpreadPence: 0,
   bestForBattery: false,
   krakenControlled: true,
-  notes: 'Primarily for EV owners but battery can charge during cheap window. Export rate is flat SEG rate.',
+  notes: 'Primarily for EV owners but battery can charge during cheap window. Export via Octopus Outgoing at 12p (cut from 15p on 1 March 2026).',
 };
 octopusIntelligentGo.arbitrageSpreadPence = calcSpread(octopusIntelligentGo.importRates, octopusIntelligentGo.exportRates);
 
@@ -176,16 +177,19 @@ const octopusCosy: TariffWithMeta = {
   supplier: 'Octopus Energy',
   name: 'Octopus Cosy',
   type: 'time-of-use',
-  description: 'Heat pump tariff with two cheap windows (morning and afternoon) designed for heat pump operation. Stacking potential with battery and heat pump.',
+  description: 'Heat pump tariff with three cheap windows (morning, afternoon, evening) totalling 8 hours. Stacking potential with battery and heat pump.',
   importRates: [
     { periodStart: '04:00', periodEnd: '07:00', ratePencePerKwh: 10.00, season: 'all' },
     { periodStart: '07:00', periodEnd: '13:00', ratePencePerKwh: 25.62, season: 'all' },
     { periodStart: '13:00', periodEnd: '16:00', ratePencePerKwh: 10.00, season: 'all' },
     { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 36.16, season: 'all' },
-    { periodStart: '19:00', periodEnd: '04:00', ratePencePerKwh: 25.62, season: 'all' },
+    { periodStart: '19:00', periodEnd: '22:00', ratePencePerKwh: 25.62, season: 'all' },
+    { periodStart: '22:00', periodEnd: '00:00', ratePencePerKwh: 10.00, season: 'all' },
+    { periodStart: '00:00', periodEnd: '04:00', ratePencePerKwh: 25.62, season: 'all' },
   ],
   exportRates: [
-    { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 15.00, season: 'all' },
+    // Octopus Outgoing dropped to 12p on 1 March 2026 (was 15p)
+    { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 12.00, season: 'all' },
   ],
   standingChargePencePerDay: 42.63,
   validFrom: new Date('2025-01-01'),
@@ -197,19 +201,19 @@ const octopusCosy: TariffWithMeta = {
   arbitrageSpreadPence: 0,
   bestForBattery: false,
   krakenControlled: false,
-  notes: 'Two cheap windows at 04:00-07:00 and 13:00-16:00. Stacking: charge battery in cheap windows, discharge at peak 16:00-19:00. Good synergy with heat pump + battery.',
+  notes: 'Three cheap windows: 04:00-07:00, 13:00-16:00, and 22:00-00:00 (8 hours total). Stacking: charge battery in cheap windows, discharge at peak 16:00-19:00. Good synergy with heat pump + battery.',
 };
 octopusCosy.arbitrageSpreadPence = calcSpread(octopusCosy.importRates, octopusCosy.exportRates);
 
 const eonSmartFlex: TariffWithMeta = {
   id: 'eon-smart-flex',
   supplier: 'E.ON Next',
-  name: 'E.ON Next Smart Flex',
+  name: 'E.ON Next Drive Smart',
   type: 'time-of-use',
   description: 'E.ON time-of-use tariff for battery and EV owners. Cheap overnight rate with daytime standard rate.',
   importRates: [
-    { periodStart: '00:00', periodEnd: '07:00', ratePencePerKwh: 9.50, season: 'all' },
-    { periodStart: '07:00', periodEnd: '00:00', ratePencePerKwh: 28.62, season: 'all' },
+    { periodStart: '00:00', periodEnd: '06:00', ratePencePerKwh: 8.00, season: 'all' },
+    { periodStart: '06:00', periodEnd: '00:00', ratePencePerKwh: 28.62, season: 'all' },
   ],
   exportRates: [
     { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 12.00, season: 'all' },
@@ -224,18 +228,18 @@ const eonSmartFlex: TariffWithMeta = {
   arbitrageSpreadPence: 0,
   bestForBattery: false,
   krakenControlled: false,
-  notes: '7-hour cheap window. Lower export rate than Octopus makes it less attractive for pure arbitrage.',
+  notes: '6-hour cheap window 00:00-06:00 at 8p. Lower export rate than Octopus makes it less attractive for pure arbitrage.',
 };
 eonSmartFlex.arbitrageSpreadPence = calcSpread(eonSmartFlex.importRates, eonSmartFlex.exportRates);
 
 const britishGasElectricDrivers: TariffWithMeta = {
   id: 'bg-electric-drivers',
   supplier: 'British Gas',
-  name: 'British Gas Electric Drivers',
+  name: 'British Gas EV Power',
   type: 'time-of-use',
   description: 'EV-focused tariff with cheap overnight rate. Battery can charge during off-peak window.',
   importRates: [
-    { periodStart: '00:00', periodEnd: '05:00', ratePencePerKwh: 8.50, season: 'all' },
+    { periodStart: '00:00', periodEnd: '05:00', ratePencePerKwh: 9.00, season: 'all' },
     { periodStart: '05:00', periodEnd: '00:00', ratePencePerKwh: 29.85, season: 'all' },
   ],
   exportRates: [
@@ -291,7 +295,8 @@ const segRates: TariffWithMeta = {
     { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 24.50, season: 'all' },
   ],
   exportRates: [
-    { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 15.00, season: 'all' },
+    // Best available SEG rate as of March 2026
+    { periodStart: '00:00', periodEnd: '24:00', ratePencePerKwh: 15.10, season: 'all' },
   ],
   standingChargePencePerDay: 46.36,
   validFrom: new Date('2023-01-01'),
@@ -303,7 +308,7 @@ const segRates: TariffWithMeta = {
   arbitrageSpreadPence: 0,
   bestForBattery: false,
   krakenControlled: false,
-  notes: 'Octopus: 15.0p, E.ON: 12.0p, British Gas: 5.5p, OVO: 7.5p, EDF: 4.1p. Octopus offers highest SEG rate.',
+  notes: 'Octopus Outgoing: 12p (cut from 15p on 1 March 2026), E.ON Export Exclusive: 13p, British Gas Export & Earn Plus: 15.1p, EDF Export 12m: 15p, OVO: 7.5p. British Gas offers highest fixed SEG rate.',
 };
 segRates.arbitrageSpreadPence = calcSpread(segRates.importRates, segRates.exportRates);
 
@@ -389,12 +394,12 @@ export const GRID_SERVICES: GridService[] = [
     name: 'Capacity Market',
     provider: 'National Grid ESO',
     type: 'capacity',
-    description: 'Annual auction for reliable capacity. Small batteries access via aggregators. Minimum portfolio ~1MW. Revenue is de-rated capacity payment. 4-year contracts available.',
-    ratePerKwPerYear: 30,
+    description: 'Annual auction for reliable capacity. Small batteries access via aggregators. Minimum portfolio ~1MW. Revenue is de-rated capacity payment. 4-year contracts available. T-1 cleared at £5/kW/year.',
+    ratePerKwPerYear: 5,
     eligibility: ['Minimum 1MW aggregated portfolio', 'Via licensed aggregator', 'Operational metering'],
     minPortfolioSize: 100,
     aggregatorRequired: true,
-    historicalEarningsPerHomePerYear: 120,
+    historicalEarningsPerHomePerYear: 20,
     status: 'active',
   },
   {
@@ -493,11 +498,11 @@ export const TARIFF_ALERTS: TariffAlert[] = [
     id: 'alert-4',
     date: '2025-03-05',
     tariffId: 'eon-smart-flex',
-    tariffName: 'E.ON Smart Flex',
+    tariffName: 'E.ON Next Drive Smart',
     type: 'rate-change',
     severity: 'warning',
-    title: 'E.ON overnight rate increased from 8.5p to 9.5p',
-    description: 'E.ON has increased overnight import rate, reducing the arbitrage spread by 1p/kWh. Impact: ~£35/year reduction per home.',
+    title: 'E.ON overnight rate updated to 8p (00:00-06:00)',
+    description: 'E.ON Next Drive Smart off-peak rate is 8p for the 00:00-06:00 window.',
   },
   {
     id: 'alert-5',
@@ -547,7 +552,7 @@ export const PORTFOLIO_SWEEP_DATA: PropertyTariffSweep[] = [
     propertyId: 'home-002',
     address: '7 Oak Close, Preston PR1 7BG',
     currentTariffId: 'eon-smart-flex',
-    currentTariffName: 'E.ON Smart Flex',
+    currentTariffName: 'E.ON Next Drive Smart',
     recommendedTariffId: 'octopus-iof',
     recommendedTariffName: 'Intelligent Octopus Flux',
     currentAnnualRevenue: { best: 1450, likely: 1180, worst: 920 },
@@ -573,7 +578,7 @@ export const PORTFOLIO_SWEEP_DATA: PropertyTariffSweep[] = [
     propertyId: 'home-004',
     address: '5 Birch Lane, Morecambe LA4 5RJ',
     currentTariffId: 'bg-electric-drivers',
-    currentTariffName: 'British Gas Electric Drivers',
+    currentTariffName: 'British Gas EV Power',
     recommendedTariffId: 'octopus-iof',
     recommendedTariffName: 'Intelligent Octopus Flux',
     currentAnnualRevenue: { best: 980, likely: 780, worst: 580 },
