@@ -21,8 +21,8 @@ export const BEST_CASE_DEFAULTS: ScenarioAssumptions = {
   energyInflationPercent: 8,
   batteryDegradationPercent: 1.5,
   iofSpreadChangePercent: 15,
-  savingSessionsPerYear: 40,
-  savingSessionRatePencePerKwh: 500, // 500p = £5.00/kWh
+  savingSessionsPerYear: 20,
+  savingSessionRatePencePerKwh: 300, // 300p = £3.00/kWh — realistic upper bound
   flexibilityRevenuePerHomePerYear: 2000,
   hardwareCostChangePercent: -20,
   installCostChangePercent: -10,
@@ -39,8 +39,8 @@ export const LIKELY_CASE_DEFAULTS: ScenarioAssumptions = {
   energyInflationPercent: 5,
   batteryDegradationPercent: 2,
   iofSpreadChangePercent: 0,
-  savingSessionsPerYear: 25,
-  savingSessionRatePencePerKwh: 350, // 350p = £3.50/kWh
+  savingSessionsPerYear: 12,
+  savingSessionRatePencePerKwh: 225, // 225p = £2.25/kWh — current realistic rate
   flexibilityRevenuePerHomePerYear: 500,
   hardwareCostChangePercent: 0,
   installCostChangePercent: 0,
@@ -57,8 +57,8 @@ export const WORST_CASE_DEFAULTS: ScenarioAssumptions = {
   energyInflationPercent: 2,
   batteryDegradationPercent: 3,
   iofSpreadChangePercent: -20,
-  savingSessionsPerYear: 10,
-  savingSessionRatePencePerKwh: 200, // 200p = £2.00/kWh
+  savingSessionsPerYear: 5,
+  savingSessionRatePencePerKwh: 150, // 150p = £1.50/kWh — reduced programme
   flexibilityRevenuePerHomePerYear: 0,
   hardwareCostChangePercent: 10,
   installCostChangePercent: 15,
@@ -163,10 +163,17 @@ export function calculateScenario(
     const annualArbitrageRevenue = (dailyArbitrageRevenue * 365) / 100;
 
     // Saving Sessions revenue
+    // Sessions reward baseline reduction, not full battery discharge.
+    // Realistic discharge per session: ~30-60kWh for large systems, capped at 1.5hr * discharge rate.
+    // For smaller systems, capped at effective capacity.
+    const maxSessionDischargeKwh = Math.min(
+      effectiveCapacity,
+      system.maxDischargeRateKw * 1.5, // 1.5 hour typical session length
+    );
     const savingSessionRevenue =
       (assumptions.savingSessionsPerYear *
         assumptions.savingSessionRatePencePerKwh *
-        effectiveCapacity) / 100; // pence to pounds
+        maxSessionDischargeKwh) / 100; // pence to pounds
 
     // Flexibility market revenue
     const flexRevenue = assumptions.flexibilityRevenuePerHomePerYear;
@@ -186,9 +193,13 @@ export function calculateScenario(
     // Costs
     const homeownerPayment = 100 * 12; // £100/month fixed
     const maintenance = system.annualMaintenanceCost * (1 + assumptions.maintenanceCostChangePercent / 100);
-    const insurance = 500; // £500/year estimated
+    // Insurance scales with system size: ~0.8% of hardware value, min £150, max £1,500
+    const insuranceBase = Math.max(150, Math.min(1500, system.installCost * 0.008));
+    const insurance = Math.round(insuranceBase);
+    // G99, MCS, monitoring amortised over 10 years (~£3,000 one-off = £300/yr)
+    const complianceAndMonitoring = 300;
 
-    const netRevenue = grossRevenue - homeownerPayment - maintenance - insurance;
+    const netRevenue = grossRevenue - homeownerPayment - maintenance - insurance - complianceAndMonitoring;
     cumulativeRevenue += netRevenue;
 
     const roi = totalCapex > 0 ? ((cumulativeRevenue / totalCapex) * 100) : 0;
