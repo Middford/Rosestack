@@ -15,6 +15,7 @@ import {
   Users,
   Building2,
   AlertTriangle,
+  Boxes,
 } from 'lucide-react';
 
 const navItems = [
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/portfolio', label: 'Portfolio', icon: Building2 },
   { href: '/risk', label: 'Risk & Opps', icon: AlertTriangle },
+  { href: '/product-design', label: 'Product Design', icon: Boxes },
 ];
 
 export function Sidebar() {
