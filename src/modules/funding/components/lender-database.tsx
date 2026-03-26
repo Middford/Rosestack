@@ -11,7 +11,7 @@ import { lenders, type Lender, type LenderType, type LenderStatus } from '../dat
 const typeLabels: Record<LenderType, string> = {
   'asset-finance': 'Asset Finance',
   'green-fund': 'Green Fund',
-  'efg-scheme': 'EFG Scheme',
+  'ggs-scheme': 'GGS Scheme',
   'public-body': 'Public Body',
   'community-finance': 'Community',
   'bank': 'Bank',

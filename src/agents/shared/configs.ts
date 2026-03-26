@@ -86,12 +86,12 @@ Provide actionable insights, not just news. For each item, explain the strategic
     name: 'Finance Modeller',
     module: 'finance',
     trigger: 'monthly',
-    description: 'Researches lending rates, EFG scheme updates, energy price forecasts, battery cost trends',
+    description: 'Researches lending rates, GGS scheme updates, energy price forecasts, battery cost trends',
     systemPrompt: `You are a financial research agent for RoseStack Energy, providing data to update financial models.
 
 Your role is to research and report on:
 - UK asset finance lending rates for energy infrastructure
-- Enterprise Finance Guarantee (EFG) scheme: current terms, limits, eligible lenders
+- Growth Guarantee Scheme (GGS): current terms, limits, eligible lenders
 - Energy price forecasts: Cornwall Insight, BEIS/DESNZ projections
 - Battery cost trend data: BloombergNEF, IHS Markit, BNEF
 - Interest rate outlook: Bank of England base rate, swap rates
@@ -106,13 +106,13 @@ Provide specific numbers: rates, percentages, price indices. Include date of dat
     name: 'Funding Advisor',
     module: 'funding',
     trigger: 'monthly',
-    description: 'Monitors green finance products, EFG changes, interest rates, comparable deals',
+    description: 'Monitors green finance products, GGS changes, interest rates, comparable deals',
     systemPrompt: `You are a funding and investment research agent for RoseStack Energy.
 
 Your role is to research and report on:
 - UK lenders who finance energy infrastructure and battery storage
 - Green energy funds and their investment criteria
-- EFG scheme updates and eligible lenders
+- Growth Guarantee Scheme (GGS) updates and eligible lenders
 - British Business Bank programmes
 - Community energy finance platforms (Abundance, Ethex)
 - Crowdfunding regulations and platforms (Crowdcube, Seedrs)
@@ -181,7 +181,7 @@ RISKS to monitor:
 - Regulatory changes (VAT, planning, fire safety, FCA)
 - Technology risks (degradation reports, manufacturer issues, cybersecurity)
 - Competitive moves (new entrants, Octopus self-deployment)
-- Financial risks (interest rate movements, EFG changes)
+- Financial risks (interest rate movements, GGS changes)
 
 OPPORTUNITIES to monitor:
 - Battery cost reductions (LFP prices, sodium-ion progress)

@@ -28,7 +28,7 @@ import {
 export type LenderType =
   | 'asset-finance'
   | 'green-fund'
-  | 'efg-scheme'
+  | 'ggs-scheme'
   | 'public-body'
   | 'community-finance'
   | 'bank'
@@ -245,7 +245,7 @@ export const lenders: Lender[] = [
   {
     id: 'lender-004',
     name: 'British Business Bank — Growth Guarantee Scheme (GGS)',
-    type: 'efg-scheme',
+    type: 'ggs-scheme',
     description: 'Growth Guarantee Scheme provides 70% government guarantee to lenders for SMEs lacking security. Up to £2M per business group, term loans up to 6 years. Runs until 31 March 2026 (may be extended).',
     minFunding: 1000,
     maxFunding: 2000000,
@@ -260,7 +260,7 @@ export const lenders: Lender[] = [
     contactEmail: 'enquiries@british-business-bank.co.uk',
     website: 'https://www.british-business-bank.co.uk',
     status: 'researching',
-    notes: 'Applied through accredited lenders (NatWest, Lloyds, HSBC etc). Replaced the Enterprise Finance Guarantee (EFG) scheme which closed in 2020. Strong option for first tranche.',
+    notes: 'Applied through accredited lenders (NatWest, Lloyds, HSBC etc). GGS succeeded EFG → CBILS → RLS. Strong option for first tranche.',
   },
   {
     id: 'lender-005',

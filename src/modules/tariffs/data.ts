@@ -47,24 +47,29 @@ function calcSpread(importRates: TariffRate[], exportRates: TariffRate[]): numbe
 // Core Tariffs
 // ============================================================
 
-// IOF uses a single-rate model where import = export at all times.
-// Rates are ENWL/Manchester region approximations and change quarterly.
+// IOF (INTELLI-FLUX-IMPORT-23-07-14) — Region D (ENWL), March 2026.
+// Import rates confirmed via Octopus API: 2-period structure (off-peak/peak).
+// Export product returned 404 from the public API — Kraken manages IOF export internally.
 const octopusIof: TariffWithMeta = {
   id: 'octopus-iof',
   supplier: 'Octopus Energy',
   name: 'Intelligent Octopus Flux',
   type: 'flux',
-  description: 'Kraken-controlled tariff where import and export rates are equal at all times. Kraken schedules charge/discharge to maximise spread between off-peak and peak windows. Rates are regional (shown: ENWL/Manchester) and change quarterly.',
+  description: 'Kraken-controlled tariff with 2-period import pricing (off-peak/peak). Kraken schedules charge/discharge to maximise spread. Import rates confirmed via Octopus API for Region D (ENWL), March 2026. IOF export rates are managed by Kraken and not published via the public API — the export rates shown are estimates based on the Flux export structure.',
   importRates: [
-    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 21.71, season: 'all' },
-    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 28.94, season: 'all' },
+    { periodStart: '19:00', periodEnd: '16:00', ratePencePerKwh: 24.27, season: 'all' },
+    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 32.36, season: 'all' },
   ],
   exportRates: [
-    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 21.71, season: 'all' },
-    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 28.94, season: 'all' },
+    // IOF export rates are managed by Kraken and not published via the public API.
+    // The rates shown are estimates based on the Flux export structure.
+    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 5.12, season: 'all' },
+    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 10.54, season: 'all' },
+    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 30.68, season: 'all' },
+    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 10.54, season: 'all' },
   ],
   standingChargePencePerDay: 46.36,
-  validFrom: new Date('2025-01-01'),
+  validFrom: new Date('2026-03-01'),
   eligibilityRequirements: [
     'MCS-certified battery installation',
     'Minimum 4.6kWh battery capacity',
@@ -75,30 +80,32 @@ const octopusIof: TariffWithMeta = {
   arbitrageSpreadPence: 0,
   bestForBattery: false,
   krakenControlled: true,
-  notes: 'On IOF, import = export at all times. Kraken optimises scheduling. Revenue comes from the spread between off-peak (~21.71p) and peak (~28.94p). Rates shown are ENWL/Manchester region approximations and change quarterly.',
+  notes: 'Import rates from Octopus API (INTELLI-FLUX-IMPORT-23-07-14, Region D): off-peak 24.27p (19:00-16:00), peak 32.36p (16:00-19:00). IOF export rates are managed by Kraken and not published via the public API. The export rates shown are estimates based on the Flux export structure. Revenue comes from the spread between off-peak import and peak export. Kraken optimises scheduling automatically.',
 };
 octopusIof.arbitrageSpreadPence = calcSpread(octopusIof.importRates, octopusIof.exportRates);
 
+// Standard Flux (FLUX-IMPORT-23-02-14 / FLUX-EXPORT-23-02-14) — Region D (ENWL), March 2026.
+// Import and export rates confirmed via Octopus API. 4-period structure.
 const octopusFlux: TariffWithMeta = {
   id: 'octopus-flux',
   supplier: 'Octopus Energy',
   name: 'Octopus Flux',
   type: 'flux',
-  description: 'Standard Flux tariff without Kraken intelligent optimisation. Manual scheduling of charge/discharge. Three time-of-use periods.',
+  description: 'Standard Flux tariff without Kraken intelligent optimisation. Manual scheduling of charge/discharge. Four time-of-use periods with different import and export rates. Rates confirmed via Octopus API for Region D (ENWL), March 2026.',
   importRates: [
-    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 7.44, season: 'all' },
-    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 24.50, season: 'all' },
-    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 36.86, season: 'all' },
-    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 24.50, season: 'all' },
+    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 17.90, season: 'all' },
+    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 29.83, season: 'all' },
+    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 41.77, season: 'all' },
+    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 29.83, season: 'all' },
   ],
   exportRates: [
-    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 3.96, season: 'all' },
-    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 13.44, season: 'all' },
-    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 22.36, season: 'all' },
-    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 13.44, season: 'all' },
+    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 5.12, season: 'all' },
+    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 10.54, season: 'all' },
+    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 30.68, season: 'all' },
+    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 10.54, season: 'all' },
   ],
   standingChargePencePerDay: 46.36,
-  validFrom: new Date('2025-01-01'),
+  validFrom: new Date('2026-03-01'),
   eligibilityRequirements: [
     'Solar PV system required',
     'Smart meter installed',
@@ -107,7 +114,8 @@ const octopusFlux: TariffWithMeta = {
   arbitrageSpreadPence: 0,
   bestForBattery: false,
   krakenControlled: false,
-  notes: 'Same time windows as IOF but without intelligent optimisation. Slightly lower export rates.',
+  apiEndpoint: 'https://api.octopus.energy/v1/products/FLUX-IMPORT-23-02-14/',
+  notes: 'Rates from Octopus API (Region D, March 2026). Import: off-peak 17.90p (02:00-05:00), day 29.83p (05:00-16:00/19:00-02:00), peak 41.77p (16:00-19:00). Export: off-peak 5.12p, day 10.54p, peak 30.68p. Arbitrage strategy: charge at 17.90p off-peak, discharge at peak when export is 30.68p.',
 };
 octopusFlux.arbitrageSpreadPence = calcSpread(octopusFlux.importRates, octopusFlux.exportRates);
 
@@ -338,14 +346,47 @@ export const GRID_SERVICES: GridService[] = [
     name: 'Saving Sessions',
     provider: 'Octopus Energy',
     type: 'demand-response',
-    description: 'Incentivised demand reduction events during peak grid stress. Earn up to 800p/kWh for reducing consumption. Typically 1-2 hour sessions. 2023/24 season had ~25 sessions.',
-    ratePencePerKwh: 350,
-    sessionsPerYear: 25,
-    avgSessionDurationHours: 1.5,
+    // IMPORTANT MECHANICS:
+    // - Saving Sessions IS Octopus's delivery of the National Grid DFS programme.
+    //   DFS and Saving Sessions are the SAME events — do not double-count.
+    // - Baseline: calculated from the customer's typical consumption during the
+    //   same half-hour slots on the previous 10 similar days.
+    // - Reduction = baseline - actual meter reading. If exporting, actual is
+    //   negative, so reduction = baseline + |export|.
+    // - Payment is in Octopoints (1 point = 1p off bill), ON TOP of normal
+    //   tariff export payments. No double-counting with arbitrage revenue.
+    // - A battery home can export during session, earning both the normal export
+    //   rate AND the SS reward. These genuinely stack.
+    // - However, the reduction is measured at the household meter. Large battery
+    //   capacity beyond what the inverter can discharge in the session window
+    //   provides no additional benefit. The inverter rate is the bottleneck.
+    // - Typical UK home baseline during a 1hr peak session: ~1kWh consumption.
+    //   With a 10kW inverter discharging, reduction = 1 + 10 = 11kWh per session.
+    // - Sessions announced ~24h in advance. Protocol: pre-charge to 100% SOC,
+    //   discharge at max rate during session, resume normal cycling after.
+    //
+    // SESSION HISTORY:
+    // - 2022/23 season: 25 sessions, avg ~400p/kWh, typical home earned ~£30-100
+    // - 2023/24 season: ~12 sessions, avg ~250p/kWh, typical home earned ~£20-60
+    // - 2024/25 season: ~10 sessions, avg ~200p/kWh, typical home earned ~£15-50
+    // - Trend: fewer sessions, lower rates as grid stress reduces
+    //
+    // FOR BATTERY HOMES (with 10kW inverter, 1hr session):
+    // - Gross per session: 11kWh * 200p/kWh = 2,200p = £22
+    // - Pre-charge cost: 10kWh * 18p/kWh / 0.92 efficiency = 196p = ~£2
+    // - Net per session: ~£20
+    // - 10 sessions/year: ~£200/year (likely case)
+    // - This is ADDITIONAL to normal arbitrage revenue for those periods.
+    description: 'Octopus delivery of the National Grid DFS programme. Rewards measured reduction against household baseline during peak grid stress. Battery export during sessions counts as reduction. Payment (Octopoints) is ON TOP of normal tariff export — no double-counting. Inverter discharge rate is the bottleneck, not battery capacity. Sessions announced ~24h in advance.',
+    ratePencePerKwh: 200, // average across 2024/25 season — was ~400p in 2022/23, trending down
+    sessionsPerYear: 10, // 2024/25 had ~10 sessions — down from 25 in 2022/23
+    avgSessionDurationHours: 1.0, // typical 1 hour (range 0.5-2hr)
     eligibility: ['Octopus Energy customer', 'Smart meter installed'],
     minBatteryKwh: 0,
     aggregatorRequired: false,
-    historicalEarningsPerHomePerYear: 150,
+    // Realistic battery home earnings: 10 sessions * ~£20 net = ~£200/year
+    // Non-battery home: 10 sessions * ~£2 (1kWh reduction) = ~£20/year
+    historicalEarningsPerHomePerYear: 200, // battery home with 10kW inverter
     status: 'seasonal',
   },
   {
@@ -353,14 +394,21 @@ export const GRID_SERVICES: GridService[] = [
     name: 'Demand Flexibility Service (DFS)',
     provider: 'National Grid ESO',
     type: 'demand-response',
-    description: 'National Grid programme paying consumers to reduce demand during system stress events. Delivered via energy suppliers. Rates typically 300-500p/kWh.',
-    ratePencePerKwh: 400,
-    sessionsPerYear: 12,
-    avgSessionDurationHours: 2,
+    // IMPORTANT: DFS is the upstream programme. Saving Sessions IS the delivery
+    // mechanism for Octopus customers. They are the SAME events.
+    // This entry exists for reference/completeness but revenue should NOT be
+    // added on top of Saving Sessions — that would be double-counting.
+    // If RoseStack switches to a non-Octopus supplier, DFS participation
+    // would be via that supplier's own DFS scheme instead of Saving Sessions.
+    description: 'National Grid ESO programme — the upstream mechanism behind Saving Sessions. Delivered via energy suppliers (Octopus = Saving Sessions, others have equivalent schemes). DO NOT add DFS revenue on top of Saving Sessions — they are the same events. Listed here for reference only.',
+    ratePencePerKwh: 200, // aligned with current Saving Sessions average
+    sessionsPerYear: 10, // same events as Saving Sessions
+    avgSessionDurationHours: 1.0,
     eligibility: ['Via energy supplier', 'Smart meter installed'],
     minBatteryKwh: 0,
     aggregatorRequired: false,
-    historicalEarningsPerHomePerYear: 96,
+    // DO NOT add this to Saving Sessions — same revenue stream
+    historicalEarningsPerHomePerYear: 0, // zero because it is captured via Saving Sessions
     status: 'seasonal',
   },
   {
@@ -430,22 +478,27 @@ export interface HistoricalRate {
   savingSessionRate: number;
 }
 
+// NOTE: savingSessionRate is the average reward rate in p/kWh of measured reduction
+// for sessions that occurred that month. 0 means no sessions (summer = no DFS season).
+// Saving Sessions season runs roughly Oct-Mar each year (winter peak demand).
+// Rates have trended DOWN as the programme matures:
+// - 2022/23 avg ~400p/kWh, 2023/24 avg ~250p/kWh, 2024/25 avg ~200p/kWh.
 export const HISTORICAL_RATES: HistoricalRate[] = [
-  { month: 'Jan 2024', agileAvgImport: 18.2, agileAvgExport: 14.5, fluxPeakExport: 21.8, iofPeakExport: 22.9, savingSessionRate: 400 },
-  { month: 'Feb 2024', agileAvgImport: 17.8, agileAvgExport: 14.2, fluxPeakExport: 21.5, iofPeakExport: 22.5, savingSessionRate: 380 },
-  { month: 'Mar 2024', agileAvgImport: 16.5, agileAvgExport: 13.8, fluxPeakExport: 21.2, iofPeakExport: 22.2, savingSessionRate: 350 },
+  { month: 'Jan 2024', agileAvgImport: 18.2, agileAvgExport: 14.5, fluxPeakExport: 21.8, iofPeakExport: 22.9, savingSessionRate: 280 },
+  { month: 'Feb 2024', agileAvgImport: 17.8, agileAvgExport: 14.2, fluxPeakExport: 21.5, iofPeakExport: 22.5, savingSessionRate: 250 },
+  { month: 'Mar 2024', agileAvgImport: 16.5, agileAvgExport: 13.8, fluxPeakExport: 21.2, iofPeakExport: 22.2, savingSessionRate: 220 },
   { month: 'Apr 2024', agileAvgImport: 15.2, agileAvgExport: 13.0, fluxPeakExport: 20.8, iofPeakExport: 21.8, savingSessionRate: 0 },
   { month: 'May 2024', agileAvgImport: 14.8, agileAvgExport: 12.5, fluxPeakExport: 20.5, iofPeakExport: 21.5, savingSessionRate: 0 },
   { month: 'Jun 2024', agileAvgImport: 13.5, agileAvgExport: 11.8, fluxPeakExport: 20.2, iofPeakExport: 21.2, savingSessionRate: 0 },
   { month: 'Jul 2024', agileAvgImport: 14.2, agileAvgExport: 12.0, fluxPeakExport: 20.5, iofPeakExport: 21.5, savingSessionRate: 0 },
   { month: 'Aug 2024', agileAvgImport: 15.5, agileAvgExport: 12.8, fluxPeakExport: 20.8, iofPeakExport: 21.8, savingSessionRate: 0 },
   { month: 'Sep 2024', agileAvgImport: 16.8, agileAvgExport: 13.5, fluxPeakExport: 21.2, iofPeakExport: 22.2, savingSessionRate: 0 },
-  { month: 'Oct 2024', agileAvgImport: 19.5, agileAvgExport: 15.2, fluxPeakExport: 21.8, iofPeakExport: 22.8, savingSessionRate: 320 },
-  { month: 'Nov 2024', agileAvgImport: 22.8, agileAvgExport: 16.5, fluxPeakExport: 22.2, iofPeakExport: 23.2, savingSessionRate: 380 },
-  { month: 'Dec 2024', agileAvgImport: 24.5, agileAvgExport: 17.8, fluxPeakExport: 22.5, iofPeakExport: 23.5, savingSessionRate: 450 },
-  { month: 'Jan 2025', agileAvgImport: 23.8, agileAvgExport: 17.2, fluxPeakExport: 22.3, iofPeakExport: 23.5, savingSessionRate: 420 },
-  { month: 'Feb 2025', agileAvgImport: 22.5, agileAvgExport: 16.8, fluxPeakExport: 22.2, iofPeakExport: 23.4, savingSessionRate: 380 },
-  { month: 'Mar 2025', agileAvgImport: 20.2, agileAvgExport: 15.5, fluxPeakExport: 22.0, iofPeakExport: 23.2, savingSessionRate: 350 },
+  { month: 'Oct 2024', agileAvgImport: 19.5, agileAvgExport: 15.2, fluxPeakExport: 21.8, iofPeakExport: 22.8, savingSessionRate: 220 },
+  { month: 'Nov 2024', agileAvgImport: 22.8, agileAvgExport: 16.5, fluxPeakExport: 22.2, iofPeakExport: 23.2, savingSessionRate: 200 },
+  { month: 'Dec 2024', agileAvgImport: 24.5, agileAvgExport: 17.8, fluxPeakExport: 22.5, iofPeakExport: 23.5, savingSessionRate: 250 },
+  { month: 'Jan 2025', agileAvgImport: 23.8, agileAvgExport: 17.2, fluxPeakExport: 22.3, iofPeakExport: 23.5, savingSessionRate: 200 },
+  { month: 'Feb 2025', agileAvgImport: 22.5, agileAvgExport: 16.8, fluxPeakExport: 22.2, iofPeakExport: 23.4, savingSessionRate: 180 },
+  { month: 'Mar 2025', agileAvgImport: 20.2, agileAvgExport: 15.5, fluxPeakExport: 22.0, iofPeakExport: 23.2, savingSessionRate: 190 },
 ];
 
 // ============================================================

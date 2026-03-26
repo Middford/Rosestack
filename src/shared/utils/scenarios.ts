@@ -21,8 +21,11 @@ export const BEST_CASE_DEFAULTS: ScenarioAssumptions = {
   energyInflationPercent: 8,
   batteryDegradationPercent: 1.5,
   iofSpreadChangePercent: 15,
-  savingSessionsPerYear: 20,
-  savingSessionRatePencePerKwh: 300, // 300p = £3.00/kWh — realistic upper bound
+  savingSessionsPerYear: 15,
+  // Saving Sessions rate in p/kWh of measured REDUCTION (baseline + export).
+  // 2022/23 season averaged ~400p; 2023/24 ~250p; trend is downward.
+  // Best case: programme expands, more sessions, rates stay healthy.
+  savingSessionRatePencePerKwh: 350, // 350p = £3.50/kWh — high but seen in early seasons
   flexibilityRevenuePerHomePerYear: 2000,
   hardwareCostChangePercent: -20,
   installCostChangePercent: -10,
@@ -39,8 +42,12 @@ export const LIKELY_CASE_DEFAULTS: ScenarioAssumptions = {
   energyInflationPercent: 5,
   batteryDegradationPercent: 2,
   iofSpreadChangePercent: 0,
-  savingSessionsPerYear: 12,
-  savingSessionRatePencePerKwh: 225, // 225p = £2.25/kWh — current realistic rate
+  // Saving Sessions: 2023/24 had ~12 sessions, 2024/25 had ~10.
+  // Likely case assumes programme continues at similar scale.
+  savingSessionsPerYear: 10,
+  // Average rates have trended down: 2022/23 ~400p, 2023/24 ~250p, 2024/25 ~200p.
+  // Likely case uses a conservative current average.
+  savingSessionRatePencePerKwh: 200, // 200p = £2.00/kWh — conservative average
   flexibilityRevenuePerHomePerYear: 500,
   hardwareCostChangePercent: 0,
   installCostChangePercent: 0,
@@ -57,8 +64,10 @@ export const WORST_CASE_DEFAULTS: ScenarioAssumptions = {
   energyInflationPercent: 2,
   batteryDegradationPercent: 3,
   iofSpreadChangePercent: -20,
-  savingSessionsPerYear: 5,
-  savingSessionRatePencePerKwh: 150, // 150p = £1.50/kWh — reduced programme
+  // Worst case: programme scales back significantly or is discontinued.
+  // Grid stress events may reduce as more renewables/storage come online.
+  savingSessionsPerYear: 4,
+  savingSessionRatePencePerKwh: 100, // 100p = £1.00/kWh — minimal programme
   flexibilityRevenuePerHomePerYear: 0,
   hardwareCostChangePercent: 10,
   installCostChangePercent: 15,
@@ -162,18 +171,77 @@ export function calculateScenario(
     // Annual arbitrage revenue (convert pence to pounds)
     const annualArbitrageRevenue = (dailyArbitrageRevenue * 365) / 100;
 
-    // Saving Sessions revenue
-    // Sessions reward baseline reduction, not full battery discharge.
-    // Realistic discharge per session: ~30-60kWh for large systems, capped at 1.5hr * discharge rate.
-    // For smaller systems, capped at effective capacity.
-    const maxSessionDischargeKwh = Math.min(
-      effectiveCapacity,
-      system.maxDischargeRateKw * 1.5, // 1.5 hour typical session length
+    // ================================================================
+    // Saving Sessions Revenue — CAREFUL: understand the mechanics
+    // ================================================================
+    //
+    // HOW SAVING SESSIONS WORK:
+    // 1. Octopus calculates a "baseline" for each half-hour slot from
+    //    the customer's typical consumption on the previous 10 similar days.
+    // 2. During the session, the smart meter measures actual consumption.
+    // 3. "Reduction" = baseline - actual. If actual is negative (exporting),
+    //    reduction = baseline + |export|.
+    // 4. The Saving Session reward (in Octopoints, 1 point = 1p) is paid
+    //    ON TOP of normal tariff payments. There is NO double-counting:
+    //    - You still receive your normal export rate (e.g., Flux 30.68p peak)
+    //    - You ALSO receive the SS reward for the measured reduction
+    //    - These genuinely stack. The SS reward is incremental revenue.
+    //
+    // DFS vs SAVING SESSIONS:
+    // - DFS is the National Grid ESO programme. Saving Sessions is Octopus's
+    //   consumer-facing delivery of DFS. They are the SAME events — you do
+    //   NOT earn from both separately. Do not add DFS revenue on top of SS.
+    //
+    // WHY LARGE BATTERIES DON'T EARN PROPORTIONALLY MORE:
+    // - The reduction is measured at the HOUSEHOLD meter, not the battery.
+    // - Baseline is based on what this ONE home normally consumes (~0.5-1.5kWh
+    //   in a 1-hour session window for a typical UK home).
+    // - With a battery, you can export during the session, so reduction =
+    //   baseline_consumption + export_kWh. This IS better than a non-battery
+    //   home, but it is capped by:
+    //   a) Inverter max discharge rate * session duration
+    //   b) Available battery SOC (assuming pre-charged to 100%)
+    // - A 100kWh battery with a 10kW inverter in a 1hr session can export
+    //   10kWh. Reduction = ~1kWh baseline + 10kWh export = 11kWh.
+    //   But a 200kWh battery with the SAME 10kW inverter gets the SAME 11kWh
+    //   because the inverter is the bottleneck, not the battery capacity.
+    //
+    // OPERATIONAL PROTOCOL (factors into revenue):
+    // - Sessions announced ~24h in advance via Octopus app/API
+    // - T-6h: Charge batteries to 100% SOC, pause normal discharge cycling
+    // - T-0: Discharge at max inverter rate for full session duration
+    // - T+session: Resume normal arbitrage cycling
+    // - Pre-charging costs: ~one charge cycle at off-peak import rate
+    //
+    // FORMULA:
+    // Revenue per session = (baseline_reduction_kWh + export_kWh) * rate_p/kWh
+    // Where export_kWh = min(inverter_max_kW * session_hours, effective_capacity)
+    // And baseline_reduction_kWh = typical household consumption during session
+    //
+    const SESSION_DURATION_HOURS = 1.0; // typical session is 1 hour (range 0.5-2hr)
+    const HOUSEHOLD_BASELINE_KWH = 1.0; // typical UK home consumption during 1hr peak period
+
+    // Battery export during session is limited by inverter rate, not battery size
+    const maxExportDuringSessionKwh = Math.min(
+      system.maxDischargeRateKw * SESSION_DURATION_HOURS,
+      effectiveCapacity, // can't export more than available capacity
     );
+
+    // Total measured reduction = what the home normally consumed + what we exported
+    const reductionPerSessionKwh = HOUSEHOLD_BASELINE_KWH + maxExportDuringSessionKwh;
+
+    // SS revenue is ADDITIONAL to normal arbitrage — no deduction needed.
+    // However, we must account for the cost of the extra charge cycle
+    // used to pre-charge to 100% SOC before the session.
+    const cheapestImportForSession = Math.min(...tariff.importRates.map(r => r.ratePencePerKwh));
+    const preChargeCostPencePerSession = maxExportDuringSessionKwh * cheapestImportForSession / system.roundTripEfficiency;
+
+    const grossSsRevenuePerSessionPence =
+      reductionPerSessionKwh * assumptions.savingSessionRatePencePerKwh;
+    const netSsRevenuePerSessionPence = grossSsRevenuePerSessionPence - preChargeCostPencePerSession;
+
     const savingSessionRevenue =
-      (assumptions.savingSessionsPerYear *
-        assumptions.savingSessionRatePencePerKwh *
-        maxSessionDischargeKwh) / 100; // pence to pounds
+      (assumptions.savingSessionsPerYear * Math.max(0, netSsRevenuePerSessionPence)) / 100; // pence to pounds
 
     // Flexibility market revenue
     const flexRevenue = assumptions.flexibilityRevenuePerHomePerYear;

@@ -50,10 +50,37 @@ export function calculateRevenueBreakdown(
   const monthlyArbitrageGbp = dailyArbitrageGbp * 30.44;
   const annualArbitrageGbp = dailyArbitrageGbp * 365;
 
-  // Saving Sessions: based on sessions per year and battery capacity
+  // ================================================================
+  // Saving Sessions Revenue — CORRECTED FORMULA
+  // ================================================================
+  // The reduction is measured at the household meter, NOT the battery.
+  // Export during session is limited by the INVERTER discharge rate, not battery capacity.
+  // A 100kWh battery with a 10kW inverter gets the same SS revenue as a 200kWh battery
+  // with the same inverter — the inverter is the bottleneck.
+  //
+  // Reduction per session = household baseline (~1kWh) + inverter export (kW * hours)
+  // SS revenue is ON TOP of normal arbitrage export payments — no double-counting.
+  // DFS and Saving Sessions are the SAME events — do NOT add both.
   const savingSessions = GRID_SERVICES.find(s => s.id === 'saving-sessions')!;
+  const sessionDurationHours = savingSessions.avgSessionDurationHours ?? 1.0;
+  const householdBaselineKwh = 1.0; // typical UK home consumption during 1hr peak session
+
+  // Battery export capped by inverter rate, not battery capacity
+  const maxExportPerSessionKwh = Math.min(
+    system.maxDischargeRateKw * sessionDurationHours,
+    system.totalCapacityKwh * system.roundTripEfficiency, // can't export more than usable capacity
+  );
+  const reductionPerSessionKwh = householdBaselineKwh + maxExportPerSessionKwh;
+
+  // Deduct pre-charge cost for the energy used in the session
+  const cheapestImport = Math.min(...tariff.importRates.map(r => r.ratePencePerKwh));
+  const preChargeCostPence = maxExportPerSessionKwh * cheapestImport / system.roundTripEfficiency;
+
+  const grossSsPence = reductionPerSessionKwh * (savingSessions.ratePencePerKwh ?? 0);
+  const netSsPerSessionPence = grossSsPence - preChargeCostPence;
+
   const annualSavingSessionsGbp = includeGridServices
-    ? ((savingSessions.ratePencePerKwh ?? 0) * system.totalCapacityKwh * (savingSessions.sessionsPerYear ?? 0)) / 100
+    ? ((savingSessions.sessionsPerYear ?? 0) * Math.max(0, netSsPerSessionPence)) / 100
     : 0;
 
   // Flexibility revenue (ENWL + Piclo combined estimate)
@@ -64,11 +91,11 @@ export function calculateRevenueBreakdown(
     ? (system.solarPvKwp * 900 * 0.5 * 15) / 100 // 50% exported at 15p
     : 0;
 
-  // Additional grid services (DFS, Balancing Mechanism)
-  const dfs = GRID_SERVICES.find(s => s.id === 'dfs')!;
-  const annualGridServicesGbp = includeGridServices
-    ? ((dfs.ratePencePerKwh ?? 0) * system.totalCapacityKwh * (dfs.sessionsPerYear ?? 0) * (dfs.avgSessionDurationHours ?? 1)) / 100
-    : 0;
+  // DFS revenue is NOT added here — DFS and Saving Sessions are the SAME events.
+  // Adding both would be double-counting. See data.ts DFS entry for documentation.
+  // Other grid services (Balancing Mechanism, Capacity Market) are via aggregator
+  // and included in the flexibility estimate above when applicable.
+  const annualGridServicesGbp = 0; // DFS already captured via Saving Sessions
 
   const totalAnnualGbp = annualArbitrageGbp + annualSavingSessionsGbp + annualFlexibilityGbp + annualSegGbp + annualGridServicesGbp;
 

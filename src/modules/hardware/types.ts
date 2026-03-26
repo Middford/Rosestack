@@ -27,6 +27,7 @@ export interface BatterySpec {
   iofCompatible: boolean;
   compatibleInverters: string[];
   imageUrl?: string;
+  notes?: string;
 }
 
 export interface InverterSpec {

@@ -59,6 +59,7 @@ export const batteries: BatterySpec[] = [
     mcsCertified: true,
     iofCompatible: true,
     compatibleInverters: ['inv-tesla-gateway'],
+    notes: 'Charge rate limited to 5kW in current firmware; 8kW planned. UK continuous discharge is 11.04kW AC.',
   },
   {
     id: 'bat-byd-hvs',
@@ -149,7 +150,7 @@ export const batteries: BatterySpec[] = [
     warrantyYears: 10,
     wholesalePriceGbp: 4000,
     mcsCertified: true,
-    iofCompatible: true,
+    iofCompatible: false,
     compatibleInverters: ['inv-huawei'],
   },
   {
@@ -419,8 +420,8 @@ export const inverters: InverterSpec[] = [
     hybrid: true,
     threePhase: true,
     g99Compliant: true,
-    iofCompatible: true,
-    octopusApiIntegration: true,
+    iofCompatible: false,
+    octopusApiIntegration: false,
     homeAssistantCompatible: true,
     priceGbp: 2600,
     warrantyYears: 10,

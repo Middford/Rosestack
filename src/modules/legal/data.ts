@@ -75,25 +75,25 @@ export const complianceRequirements: ComplianceRequirement[] = [
   {
     id: 'comp-6',
     category: 'electrical-regs',
-    name: 'BS 7671 Wiring Regulations Compliance',
+    name: 'BS 7671 Wiring Regulations (incl. Amendment 4, Chapter 57)',
     description:
-      'All battery storage installations must comply with BS 7671 (IET Wiring Regulations 18th Edition). Relevant sections cover energy storage system installation, earthing, and protection.',
-    status: 'pending',
+      'All battery storage installations must comply with BS 7671 (IET Wiring Regulations 18th Edition). Amendment 4 publishes 15 April 2026 and introduces new Chapter 57 dedicated to battery energy storage — covering thermal runaway protection, isolation requirements, location restrictions, ventilation, and documentation. This is the most significant regulatory change for domestic BESS in 2026.',
+    status: 'action-needed',
     owner: 'Dave Middleton',
     criticality: 'critical',
-    notes: 'Installer must be qualified to BS 7671. Certification required for each installation.',
+    notes: 'Amendment 4 publishes 15 April 2026. Chapter 57 adds specific BESS requirements: thermal runaway containment, isolation switching, location restrictions (distance from habitable rooms), ventilation specs, and mandatory documentation. Review requirements immediately on publication. All installers must be trained on new chapter before Phase 1 installations.',
   },
   // Fire Safety
   {
     id: 'comp-7',
     category: 'fire-safety',
-    name: 'Battery Storage Fire Safety Standards',
+    name: 'PAS 63100:2024 & Battery Fire Safety Standards',
     description:
-      'Comply with fire safety standards for lithium battery storage including IEC 62619, UL 9540A testing, and local fire authority requirements for residential installations.',
+      'PAS 63100:2024 is the MANDATORY UK domestic BESS fire safety standard (effective March 2024). All residential battery installations must comply. Supplementary standards include IEC 62619 and UL 9540A. PAS 63100 covers fire containment, thermal runaway mitigation, ventilation, and separation distances. This is the standard installers, local authorities, and fire services enforce.',
     status: 'action-needed',
     owner: 'Dave Middleton',
     criticality: 'critical',
-    notes: 'Need to confirm fire safety requirements with Lancashire Fire & Rescue. Consider battery placement and ventilation requirements.',
+    notes: 'PAS 63100:2024 is mandatory for all domestic BESS. Confirm compliance with Lancashire Fire & Rescue. Ensure all installations meet fire containment and ventilation requirements per PAS 63100. Now referenced in BS 7671 Amendment 4 Chapter 57.',
   },
   // Planning Permission
   {
@@ -729,10 +729,10 @@ export const regulatoryEvents: RegulatoryEvent[] = [
   },
   {
     id: 'evt-7',
-    title: 'BS 7671 Amendment Review',
+    title: 'BS 7671 Amendment 4 — Chapter 57 Review (URGENT)',
     type: 'review',
-    date: '2026-09-01',
-    description: 'Review any amendments to BS 7671 affecting battery storage installation requirements.',
+    date: '2026-04-15',
+    description: 'BS 7671 Amendment 4 publishes 15 April 2026 with new Chapter 57 on battery storage. Review all requirements for thermal runaway, isolation, location restrictions, ventilation, and documentation. Update installation procedures before any Phase 1 deployments.',
     owner: 'Dave Middleton',
     completed: false,
     linkedRequirementId: 'comp-6',
