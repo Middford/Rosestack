@@ -155,9 +155,13 @@ function generateCashFlowData() {
     const capexThisYear = newHomes * 25000;
 
     // Revenue scales with total homes deployed, per scenario
-    const bestRevPerHome = 7500 * Math.pow(1 + BEST_CASE_DEFAULTS.energyInflationPercent / 100, y - 1);
-    const likelyRevPerHome = 6500 * Math.pow(1 + LIKELY_CASE_DEFAULTS.energyInflationPercent / 100, y - 1);
-    const worstRevPerHome = 4800 * Math.pow(1 + WORST_CASE_DEFAULTS.energyInflationPercent / 100, y - 1);
+    // Annual net revenue per home. Source: corrected Flux model, March 2026.
+    // Best: Garage King (192kWh/96kW) likely = £15,538/yr.
+    // Likely: Garden Standard (160kWh/40kW) = £11,562/yr.
+    // Worst: Single-Phase Starter (54kWh/11.5kW) = £3,209/yr.
+    const bestRevPerHome = 15538 * Math.pow(1 + BEST_CASE_DEFAULTS.energyInflationPercent / 100, y - 1);
+    const likelyRevPerHome = 11562 * Math.pow(1 + LIKELY_CASE_DEFAULTS.energyInflationPercent / 100, y - 1);
+    const worstRevPerHome = 3209 * Math.pow(1 + WORST_CASE_DEFAULTS.energyInflationPercent / 100, y - 1);
 
     // Costs per home: homeowner payment + maintenance + insurance
     const costsPerHome = 1200 + 400 + 300 + 300; // homeowner, maintenance, insurance, compliance
@@ -186,9 +190,9 @@ function generateDscrData() {
     const debtServicePerHome = 2000; // simplified annual debt per home
     const annualDebt = homes * debtServicePerHome;
 
-    const bestRev = homes * 7500 * Math.pow(1.08, y - 1);
-    const likelyRev = homes * 6500 * Math.pow(1.05, y - 1);
-    const worstRev = homes * 4800 * Math.pow(1.02, y - 1);
+    const bestRev = homes * 15538 * Math.pow(1.08, y - 1);
+    const likelyRev = homes * 11562 * Math.pow(1.05, y - 1);
+    const worstRev = homes * 3209 * Math.pow(1.02, y - 1);
     const costs = homes * 2200;
 
     data.push({
@@ -215,9 +219,9 @@ function generateRevenuePerHomeData() {
 
       data.push({
         month: monthLabel,
-        best: Math.round(625 * yearFactor * scaleFactor * 1.15),
-        likely: Math.round(542 * yearFactor * scaleFactor),
-        worst: Math.round(400 * yearFactor * scaleFactor * 0.9),
+        best: Math.round(1295 * yearFactor * scaleFactor),
+        likely: Math.round(963 * yearFactor * scaleFactor),
+        worst: Math.round(267 * yearFactor * scaleFactor),
       });
     }
   }
@@ -226,7 +230,9 @@ function generateRevenuePerHomeData() {
 
 function generateGrossMarginData() {
   // Per-home annual breakdown for best/likely/worst
-  const baseRevenue = { best: 7500, likely: 6500, worst: 4800 };
+  // Annual gross revenue per home (net + ~£2,200-£2,700 costs).
+  // Reference: Garden Standard (160kWh/40kW) on Flux, corrected March 2026.
+  const baseRevenue = { best: 18000, likely: 14250, worst: 5400 };
   const homeownerPayment = 1200;
   const maintenance = { best: 340, likely: 400, worst: 500 };
   const insurance = 300;
@@ -356,7 +362,7 @@ export default function DashboardPage() {
   const avgAge = 1.5;
   const assetsHardware = totalHomesDeployed * hardwareValuePerHome * (1 - depreciationRate * avgAge);
   const assetsCash = 85000;
-  const assetsReceivables = totalHomesDeployed * 542 * 2; // 2 months of likely revenue
+  const assetsReceivables = totalHomesDeployed * 963 * 2; // 2 months of likely revenue (Garden Standard Flux)
 
   const liabilitiesDebt = totalHomesDeployed * 18000;
   const liabilitiesHomeowner = totalHomesDeployed * 100 * 12 * 8; // 8 year ESA obligation
@@ -388,20 +394,21 @@ export default function DashboardPage() {
     const homesW = Math.min(100, Math.round(3 + (year - 1) * 5));
     return {
       year: `Y${year}`,
-      best: homesB * 7500,
-      likely: homesL * 6500,
-      worst: homesW * 4800,
+      best: homesB * 15538,
+      likely: homesL * 11562,
+      worst: homesW * 3209,
       homes: homesL,
     };
   });
 
   // --- Revenue Breakdown Donut (existing, kept) ---
   const revenueStreams = [
-    { name: 'Agile Arbitrage', value: 65, color: COLORS.cyan },
-    { name: 'Saving Sessions', value: 8, color: COLORS.violet },
-    { name: 'ENWL Flexibility', value: 12, color: COLORS.emerald },
-    { name: 'SEG Export', value: 5, color: COLORS.amber },
-    { name: 'Solar Self-Use', value: 10, color: COLORS.orange },
+    // Revenue breakdown for Garden Standard (160kWh/40kW) on Flux, corrected March 2026.
+    // Arbitrage dominates; SS contribution modest due to inverter bottleneck.
+    { name: 'Flux Arbitrage', value: 85, color: COLORS.cyan },
+    { name: 'Saving Sessions', value: 5, color: COLORS.violet },
+    { name: 'ENWL Flexibility', value: 4, color: COLORS.emerald },
+    { name: 'Grid Services', value: 6, color: COLORS.amber },
   ];
 
   // --- Tariff Spread Comparison (existing, kept) ---
@@ -473,9 +480,9 @@ export default function DashboardPage() {
 
         <StatCard
           label="Monthly Revenue / Home"
-          bestValue={formatGbp(833)}
-          likelyValue={formatGbp(625)}
-          worstValue={formatGbp(400)}
+          bestValue={formatGbp(1295)}
+          likelyValue={formatGbp(963)}
+          worstValue={formatGbp(267)}
         />
 
         <div className="rounded-[var(--radius-lg)] border border-border bg-bg-secondary p-4">
