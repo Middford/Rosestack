@@ -87,13 +87,13 @@ export const complianceRequirements: ComplianceRequirement[] = [
   {
     id: 'comp-7',
     category: 'fire-safety',
-    name: 'PAS 63100:2024 & Battery Fire Safety Standards',
+    name: 'PAS 63100:2024 — Battery Fire Safety Standard',
     description:
-      'PAS 63100:2024 is the MANDATORY UK domestic BESS fire safety standard (effective March 2024). All residential battery installations must comply. Supplementary standards include IEC 62619 and UL 9540A. PAS 63100 covers fire containment, thermal runaway mitigation, ventilation, and separation distances. This is the standard installers, local authorities, and fire services enforce.',
+      'PAS 63100:2024 is the UK BSI specification for fire protection of BESS in dwellings (published March 2024). CONFIRMED: this standard exists and is the correct reference — PAS 8811 does NOT exist. PAS 63100 is not legally mandatory in statute but is effectively mandatory via insurance requirements and installer certification (MCS). Referenced in BS 7671 Amendment 4 Chapter 57. CRITICAL CAPACITY LIMITS: max 40 kWh for typical dwelling installations; max 80 kWh for external/detached garages or fire-rated garages. RoseStack\'s 100-200 kWh systems EXCEED these domestic limits — installations must be in purpose-built external units, not inside the main dwelling. Discuss with insurers and Lancashire Fire & Rescue before deployment.',
     status: 'action-needed',
     owner: 'Dave Middleton',
     criticality: 'critical',
-    notes: 'PAS 63100:2024 is mandatory for all domestic BESS. Confirm compliance with Lancashire Fire & Rescue. Ensure all installations meet fire containment and ventilation requirements per PAS 63100. Now referenced in BS 7671 Amendment 4 Chapter 57.',
+    notes: 'PAS 63100:2024 confirmed exists (BSI, March 2024). Standard covers: fire containment, thermal runaway mitigation, ventilation (2x150cm2 openings), separation distances (1m from habitable room windows), smoke+heat detection. CRITICAL for RoseStack: the 80 kWh limit for external garages means our 160-192 kWh Garden Standard and Garage King stacks technically exceed the domestic guidance. This must be addressed via: (1) purpose-built containerised enclosures with enhanced fire protection, (2) liaison with Lancashire Fire & Rescue and insurer, (3) potentially a site-specific fire risk assessment. NOW referenced in BS 7671 Amendment 4 Chapter 57.',
   },
   // Planning Permission
   {

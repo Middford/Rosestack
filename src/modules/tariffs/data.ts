@@ -445,9 +445,9 @@ export const GRID_SERVICES: GridService[] = [
   {
     id: 'capacity-market',
     name: 'Capacity Market',
-    provider: 'National Grid ESO',
+    provider: 'NESO (National Energy System Operator)',
     type: 'capacity',
-    description: 'Annual auction for reliable capacity. Small batteries access via aggregators. Minimum portfolio ~1MW. Revenue is de-rated capacity payment. 4-year contracts available. T-1 cleared at £5/kW/year.',
+    description: 'Auction mechanism for reliable GB capacity. Two types: T-1 (1-year-ahead, lower payment) and T-4 (4-year-ahead, higher payment, better for planning). LATEST RESULTS (March 2026): T-1 for 2026/27 cleared at £5/kW/year (historically low — surplus capacity drove price down from £20/kW in 2025). T-4 for 2029/30 cleared at £27.10/kW/year; T-4 for 2028/29 cleared at £60/kW/year. Small batteries access via aggregators (minimum ~1MW portfolio). Revenue is de-rated by Capacity De-rating Factor (CDF) applied to battery duration.',
     ratePerKwPerYear: 5,
     eligibility: ['Minimum 1MW aggregated portfolio', 'Via licensed aggregator', 'Operational metering'],
     minPortfolioSize: 100,
@@ -522,6 +522,26 @@ export interface TariffAlert {
 }
 
 export const TARIFF_ALERTS: TariffAlert[] = [
+  {
+    id: 'alert-6',
+    date: '2026-03-26',
+    tariffId: 'octopus-iof',
+    tariffName: 'Intelligent Octopus Flux',
+    type: 'regulatory',
+    severity: 'warning',
+    title: 'IOF: equal import/export rates confirmed — signups paused',
+    description: 'Confirmed: IOF uses equal import/export rates (24.27p off-peak, 32.36p peak both ways). For standalone BESS without solar, this gives an 8.09p spread vs Flux\'s 12.78p — Flux is better for arbitrage-only deployments. IOF signups are currently paused by Octopus. Revenue models updated with correct equal-rate structure.',
+  },
+  {
+    id: 'alert-7',
+    date: '2026-03-26',
+    tariffId: 'all',
+    tariffName: 'All Tariffs',
+    type: 'regulatory',
+    severity: 'info',
+    title: 'Ofgem Q2 2026 price cap: electricity 24.67p/kWh (down from 27.69p)',
+    description: 'Ofgem set Q2 2026 (Apr–Jun) electricity price cap at 24.67p/kWh — down 3.02p (11%) from Q1\'s 27.69p. Annual equivalent £1,641 for typical household (down from £1,758). Standing charge 57.21p/day. This affects the baseline for SEG comparisons and customer bill context. Gas: 5.74p/kWh (down from 5.93p).',
+  },
   {
     id: 'alert-1',
     date: '2025-03-20',
