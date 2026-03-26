@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(npx --yes puppeteer --version)",
+      "Bash(npm list:*)",
+      "Bash(node:*)",
+      "Bash(npm install:*)",
+      "WebFetch(domain:epc.opendatacommunities.org)",
+      "WebFetch(domain:api.octopus.energy)",
+      "WebFetch(domain:api.postcodes.io)",
+      "WebFetch(domain:mysmartenergy.uk)",
+      "Bash(npx next:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
