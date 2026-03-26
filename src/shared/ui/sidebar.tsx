@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { UserButton } from '@clerk/nextjs';
 import { cn } from './utils';
 import {
   LayoutDashboard,
@@ -77,8 +78,15 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-border px-6 py-4">
-        <p className="text-[10px] text-text-tertiary">v0.1.0 — Phase 1</p>
+      <div className="border-t border-border px-4 py-4">
+        <div className="flex items-center gap-3">
+          <UserButton
+            appearance={{
+              variables: { colorPrimary: '#B91C4D' },
+            }}
+          />
+          <p className="text-[10px] text-text-tertiary">v0.1.0 — Phase 1</p>
+        </div>
       </div>
     </aside>
   );
