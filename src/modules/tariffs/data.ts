@@ -49,38 +49,43 @@ function calcSpread(importRates: TariffRate[], exportRates: TariffRate[]): numbe
 
 // IOF (INTELLI-FLUX-IMPORT-23-07-14) — Region D (ENWL), March 2026.
 // Import rates confirmed via Octopus API: 2-period structure (off-peak/peak).
-// Export product returned 404 from the public API — Kraken manages IOF export internally.
+// Export product returned 404 from the public API, but multiple independent sources
+// confirm IOF uses EQUAL import/export rates — same rate at each time period.
+// This is the key differentiator: you are paid what you pay, at every hour of the day.
+// NOTE: IOF signups were paused by Octopus as of early 2026. Verify availability.
 const octopusIof: TariffWithMeta = {
   id: 'octopus-iof',
   supplier: 'Octopus Energy',
   name: 'Intelligent Octopus Flux',
   type: 'flux',
-  description: 'Kraken-controlled tariff with 2-period import pricing (off-peak/peak). Kraken schedules charge/discharge to maximise spread. Import rates confirmed via Octopus API for Region D (ENWL), March 2026. IOF export rates are managed by Kraken and not published via the public API — the export rates shown are estimates based on the Flux export structure.',
+  description: 'Kraken-controlled tariff with equal import/export rates — confirmed 2-period structure. Off-peak (19:00–16:00): 24.27p in/out. Peak (16:00–19:00): 32.36p in/out. Import rates confirmed via Octopus API (INTELLI-FLUX-IMPORT-23-07-14, Region D, March 2026). Export product returned 404 but equal-rate structure is confirmed by multiple sources. Designed for solar+battery homes. Kraken optimises charging/discharging automatically. IMPORTANT: IOF signups currently paused — check availability before planning around this tariff. For standalone BESS (no solar), Flux or Agile provide better arbitrage due to lower off-peak import costs.',
   importRates: [
     { periodStart: '19:00', periodEnd: '16:00', ratePencePerKwh: 24.27, season: 'all' },
     { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 32.36, season: 'all' },
   ],
   exportRates: [
-    // IOF export rates are managed by Kraken and not published via the public API.
-    // The rates shown are estimates based on the Flux export structure.
-    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 5.12, season: 'all' },
-    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 10.54, season: 'all' },
-    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 30.68, season: 'all' },
-    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 10.54, season: 'all' },
+    // IOF confirmed equal import/export rates — you are paid the same rate you pay.
+    // Off-peak (19:00–16:00): export at 24.27p (vs Flux off-peak export of only 5.12p).
+    // Peak (16:00–19:00): export at 32.36p (vs Flux peak export of 30.68p — similar).
+    // For solar+battery: IOF is superior — daytime solar export at 24.27p vs Flux 10.54p.
+    // For standalone BESS (no solar): IOF import at 24.27p vs Flux at 17.90p — worse spread.
+    { periodStart: '19:00', periodEnd: '16:00', ratePencePerKwh: 24.27, season: 'all' },
+    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 32.36, season: 'all' },
   ],
   standingChargePencePerDay: 46.36,
   validFrom: new Date('2026-03-01'),
   eligibilityRequirements: [
     'MCS-certified battery installation',
-    'Minimum 4.6kWh battery capacity',
-    'Octopus Energy account',
-    'Smart meter installed',
-    'Solar PV system recommended',
+    'Solar PV system required (IOF designed for solar+battery homes)',
+    'Compatible battery: GivEnergy, Enphase, SolarEdge, or Tesla',
+    'Octopus Energy account (import and export tariff)',
+    'Smart meter (half-hourly readings)',
+    'Check: IOF signups may be paused — verify with Octopus before applying',
   ],
   arbitrageSpreadPence: 0,
   bestForBattery: false,
   krakenControlled: true,
-  notes: 'Import rates from Octopus API (INTELLI-FLUX-IMPORT-23-07-14, Region D): off-peak 24.27p (19:00-16:00), peak 32.36p (16:00-19:00). IOF export rates are managed by Kraken and not published via the public API. The export rates shown are estimates based on the Flux export structure. Revenue comes from the spread between off-peak import and peak export. Kraken optimises scheduling automatically.',
+  notes: 'IOF confirmed equal import/export rates: off-peak 24.27p (19:00–16:00), peak 32.36p (16:00–19:00). Resolved: import=export parity confirmed by Octopus documentation and third-party sources. For standalone BESS without solar: arbitrage spread is only 8.09p (32.36 - 24.27) vs Flux spread of 12.78p (30.68 - 17.90) — Flux is better for pure arbitrage. For solar+battery: IOF is significantly better because daytime solar exports earn 24.27p (vs Flux 10.54p). IOF signups paused as of early 2026 — not a current onboarding route. Modelled here for comparison and for future availability.',
 };
 octopusIof.arbitrageSpreadPence = calcSpread(octopusIof.importRates, octopusIof.exportRates);
 
@@ -440,9 +445,9 @@ export const GRID_SERVICES: GridService[] = [
   {
     id: 'capacity-market',
     name: 'Capacity Market',
-    provider: 'National Grid ESO',
+    provider: 'NESO (National Energy System Operator)',
     type: 'capacity',
-    description: 'Annual auction for reliable capacity. Small batteries access via aggregators. Minimum portfolio ~1MW. Revenue is de-rated capacity payment. 4-year contracts available. T-1 cleared at £5/kW/year.',
+    description: 'Auction mechanism for reliable GB capacity. Two types: T-1 (1-year-ahead, lower payment) and T-4 (4-year-ahead, higher payment, better for planning). LATEST RESULTS (March 2026): T-1 for 2026/27 cleared at £5/kW/year (historically low — surplus capacity drove price down from £20/kW in 2025). T-4 for 2029/30 cleared at £27.10/kW/year; T-4 for 2028/29 cleared at £60/kW/year. Small batteries access via aggregators (minimum ~1MW portfolio). Revenue is de-rated by Capacity De-rating Factor (CDF) applied to battery duration.',
     ratePerKwPerYear: 5,
     eligibility: ['Minimum 1MW aggregated portfolio', 'Via licensed aggregator', 'Operational metering'],
     minPortfolioSize: 100,
@@ -517,6 +522,26 @@ export interface TariffAlert {
 }
 
 export const TARIFF_ALERTS: TariffAlert[] = [
+  {
+    id: 'alert-6',
+    date: '2026-03-26',
+    tariffId: 'octopus-iof',
+    tariffName: 'Intelligent Octopus Flux',
+    type: 'regulatory',
+    severity: 'warning',
+    title: 'IOF: equal import/export rates confirmed — signups paused',
+    description: 'Confirmed: IOF uses equal import/export rates (24.27p off-peak, 32.36p peak both ways). For standalone BESS without solar, this gives an 8.09p spread vs Flux\'s 12.78p — Flux is better for arbitrage-only deployments. IOF signups are currently paused by Octopus. Revenue models updated with correct equal-rate structure.',
+  },
+  {
+    id: 'alert-7',
+    date: '2026-03-26',
+    tariffId: 'all',
+    tariffName: 'All Tariffs',
+    type: 'regulatory',
+    severity: 'info',
+    title: 'Ofgem Q2 2026 price cap: electricity 24.67p/kWh (down from 27.69p)',
+    description: 'Ofgem set Q2 2026 (Apr–Jun) electricity price cap at 24.67p/kWh — down 3.02p (11%) from Q1\'s 27.69p. Annual equivalent £1,641 for typical household (down from £1,758). Standing charge 57.21p/day. This affects the baseline for SEG comparisons and customer bill context. Gas: 5.74p/kWh (down from 5.93p).',
+  },
   {
     id: 'alert-1',
     date: '2025-03-20',

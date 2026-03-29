@@ -39,14 +39,14 @@ The main dashboard aggregates KPIs from every module into a single view:
 
 **Hero Stats (top row, 5 cards):**
 - **Homes Deployed:** 2 of 100 target (with progress indicator)
-- **Monthly Revenue / Home:** Three-scenario display -- Best: £833, Likely: £625, Worst: £400
+- **Monthly Revenue / Home:** Three-scenario display -- Best: £1,295, Likely: £963, Worst: £267
 - **Best Tariff Spread:** 14.9p/kWh (Agile peak spread)
 - **Pipeline:** 16 total (3 contracted, 2 live)
 - **Net R&O Position:** £3,510,600 (net risk vs opportunity value)
 
 **Charts:**
 - **Portfolio Revenue Projection (10yr):** Area chart with three colour-coded scenario curves (green/blue/amber) showing revenue growth from Year 1 to Year 10
-- **Revenue Streams (Donut):** Agile Arbitrage 65%, ENWL Flexibility 12%, Solar Self-Use 10%, Saving Sessions 8%, SEG Export 5%
+- **Revenue Streams (Donut):** Flux Arbitrage 85%, Grid Services 6%, Saving Sessions 5%, ENWL Flexibility 4% (Garden Standard reference stack, no solar)
 - **Tariff Arbitrage Spreads:** Horizontal bar chart comparing top 6 tariff spreads
 - **Sales Pipeline:** Funnel showing leads at each stage (New through to Live)
 - **Risk & Opportunity Snapshot:** Colour-coded risk/opportunity counts by severity
@@ -112,7 +112,7 @@ The financial engine of the platform. Per-home and portfolio-level projections a
 2. **Portfolio Model** -- Aggregate across multiple homes with 10-year portfolio P&L
 3. **Sensitivity Analysis** -- Tornado charts showing which variables move IRR/NPV the most
 4. **Scenarios** -- Side-by-side comparison: Payback Period, IRR, NPV, Annual Net Revenue, DSCR with traffic-light covenant compliance
-5. **Break-Even** -- Calculates payback months (e.g., "14--26 months, likely: 18 months")
+5. **Break-Even** -- Calculates payback months (e.g., Garden Standard on Flux: likely 92 months; Garage King: 68 months)
 6. **Assumptions** -- Editable assumption sets per scenario
 7. **Investor Summary** -- Formatted report with executive summary, key metrics, covenant compliance, and charts ready for lenders
 8. **Tracker** -- Actual vs projected revenue with variance analysis
@@ -335,14 +335,23 @@ RoseStack generates revenue from 5 streams:
 
 | Stream | Share | Description |
 |--------|-------|-------------|
-| **Agile Arbitrage** | 65% | Buy cheap overnight, sell at peak via Octopus tariffs |
-| **ENWL Flexibility** | 12% | Grid balancing services via Piclo Flex and ENWL tenders |
-| **Solar Self-Use** | 10% | Homes with solar panels use stored solar energy |
+| **Flux Arbitrage** | 85% | Buy cheap overnight (17.90p), sell at peak (30.68p) via Octopus Flux |
+| **Grid Services** | 6% | Saving Sessions, ENWL flexibility, Capacity Market via aggregators |
+| **ENWL Flexibility** | 4% | Local network flexibility tenders via Piclo Flex |
 | **Saving Sessions** | 8% | National Grid ESO demand response events |
 | **SEG Export** | 5% | Smart Export Guarantee payments for exported energy |
 
-**Likely case monthly revenue per home:** £625
-**Likely case payback period:** 18 months
+**Corrected revenue figures (Flux tariff, March 2026):**
+
+| Stack | Monthly Net (Likely) | Annual Net (Likely) | Payback |
+|-------|---------------------|---------------------|---------|
+| Garden Standard (160kWh/40kW) | £963 | £11,562 | 92 months |
+| Garage King (192kWh/96kW) | £1,295 | £15,538 | 68 months |
+| Full Package (192kWh + 6kWp solar) | £1,334 | £16,002 | 71 months |
+| Quiet Neighbour (80kWh/20kW) | £433 | £5,191 | 108 months |
+| Single-Phase Starter (54kWh/11.5kW) | £267 | £3,209 | 129 months |
+
+*Note: Old figures (£625/month, 18-month payback) were incorrect and have been removed.*
 
 ---
 
@@ -387,4 +396,4 @@ All screenshots are in `docs/screenshots/`. Two versions of each page:
 - The Grid Intelligence map (screenshot 05) is particularly compelling for visual presentations -- it shows real ENWL substations and prospecting data across East Lancashire.
 - The Risk & Opportunities module (screenshot 11) demonstrates sophisticated risk management -- the heat maps and net position waterfall are investor-grade.
 - The Product Design module shows the Year 5 ambition (own-brand sodium-ion battery) which is a strong strategic narrative.
-- Key financial headline: **£625/month likely revenue per home, 18-month payback, targeting 100 homes over 8 years.**
+- Key financial headline: **£963/month likely revenue per home (Garden Standard on Flux), 92-month payback, targeting 100 homes over 8 years.** Premium stack (Garage King): £1,295/month, 68-month payback.

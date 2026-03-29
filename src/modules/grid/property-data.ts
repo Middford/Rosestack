@@ -1,9 +1,20 @@
 // ============================================================
 // Seeded Property Data — East Lancashire BB postcodes
-// Simulates EPC register + Ordnance Survey data for prospecting
+// Real EPC data is in epc-seed.ts (390 properties from the EPC API, March 2026).
+// This file provides the TargetProperty interface used by the grid UI and scoring.
+// The generated properties below are kept as fallback/scaffold.
+// Use EPC_TARGET_PROPERTIES from epc-seed.ts for prospecting and map displays.
 // ============================================================
 
 import type { PropertyType } from '@/shared/types';
+
+export {
+  EPC_TARGET_PROPERTIES,
+  getEpcPropertiesByPostcode,
+  getEpcPropertiesBySubstation,
+  getTopEpcProspects,
+} from './epc-seed';
+export type { EpcTargetProperty } from './epc-seed';
 
 export interface TargetProperty {
   id: string;
@@ -158,7 +169,35 @@ function generateProperties(): TargetProperty[] {
   return properties;
 }
 
-export const targetProperties = generateProperties();
+// Real EPC data replaces the generated properties.
+// Adapts EpcTargetProperty → TargetProperty so all existing consumers work unchanged.
+import { EPC_TARGET_PROPERTIES } from './epc-seed';
+import type { EpcTargetProperty } from './epc-seed';
+
+function adaptEpcToTargetProperty(epc: EpcTargetProperty): TargetProperty {
+  return {
+    id: epc.id,
+    address: epc.address,
+    postcode: epc.postcode,
+    latitude: epc.latitude,
+    longitude: epc.longitude,
+    propertyType: epc.propertyType,
+    bedrooms: epc.bedrooms,
+    builtYear: epc.builtYear,
+    epcRating: epc.epcRating,
+    epcScore: epc.epcSapScore,
+    currentHeating: epc.currentHeating,
+    gardenAccess: epc.gardenAccess,
+    threePhaseConfirmed: epc.threePhaseConfirmed,
+    threePhaseScore: epc.threePhaseScore,
+    nearestSubstationId: epc.nearestSubstationId,
+    distanceToSubstationKm: epc.distanceToSubstationKm,
+    affluenceIndex: epc.affluenceIndex,
+    clusterCount: 0, // No existing clusters yet — updated as fleet grows
+  };
+}
+
+export const targetProperties: TargetProperty[] = EPC_TARGET_PROPERTIES.map(adaptEpcToTargetProperty);
 
 export function getPropertiesByPostcode(prefix: string): TargetProperty[] {
   const upper = prefix.toUpperCase().trim();
