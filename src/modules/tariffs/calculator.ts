@@ -4,11 +4,13 @@
 // ============================================================
 
 import type { BatterySystem, Tariff } from '@/shared/types';
+import type { RevenueByStream } from '@/shared/utils/cost-metrics-types';
 import {
   calculateAllScenarios,
   summariseScenarios,
   calculateDailyArbitrageSpreadPence,
 } from '@/shared/utils/scenarios';
+import { getEffectiveExportKw } from '@/shared/utils/dno-limits';
 import type { TariffWithMeta, GridService } from './data';
 import { GRID_SERVICES } from './data';
 
@@ -65,9 +67,10 @@ export function calculateRevenueBreakdown(
   const sessionDurationHours = savingSessions.avgSessionDurationHours ?? 1.0;
   const householdBaselineKwh = 1.0; // typical UK home consumption during 1hr peak session
 
-  // Battery export capped by inverter rate, not battery capacity
+  // Battery export capped by inverter rate AND DNO export limit, not battery capacity
+  const effectiveExportKw = getEffectiveExportKw(system);
   const maxExportPerSessionKwh = Math.min(
-    system.maxDischargeRateKw * sessionDurationHours,
+    effectiveExportKw * sessionDurationHours,
     system.totalCapacityKwh * system.roundTripEfficiency, // can't export more than usable capacity
   );
   const reductionPerSessionKwh = householdBaselineKwh + maxExportPerSessionKwh;
@@ -158,6 +161,25 @@ export function calculateFullProjection(system: BatterySystem, tariff: Tariff) {
   const projection = calculateAllScenarios(system, tariff);
   const summary = summariseScenarios(projection, system);
   return { projection, summary };
+}
+
+/**
+ * Extract per-stream annual revenue in GBP from a full RevenueBreakdown,
+ * shaped for `calculateMonthlyPayback`.
+ */
+export function getRevenueByStream(
+  system: BatterySystem,
+  tariff: Tariff,
+  cyclesPerDay: number,
+): RevenueByStream {
+  const bd = calculateRevenueBreakdown(system, tariff, cyclesPerDay);
+  return {
+    arbitrage: bd.annualArbitrageGbp,
+    solar: 0, // solar savings calculated separately in scenario engine
+    savingSessions: bd.annualSavingSessionsGbp,
+    flexibility: bd.annualFlexibilityGbp,
+    seg: bd.annualSegGbp,
+  };
 }
 
 function round2(n: number): number {

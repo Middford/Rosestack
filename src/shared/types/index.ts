@@ -52,6 +52,9 @@ export interface BatterySystem {
   maxChargeRateKw: number;
   maxDischargeRateKw: number;
   roundTripEfficiency: number;
+  dnoExportLimitKw?: number;
+  g99Required?: boolean;
+  g99ApprovedCapacityKw?: number;
 }
 
 // --- Tariff ---

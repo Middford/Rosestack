@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Badge, SimpleStatCard, StatCard, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/shared/ui';
 import { ScenarioChart, TrafficLight } from '@/shared/ui';
 import { formatGbp, formatPaybackRange, getDscrStatus } from '@/shared/utils/scenarios';
+import { calculateFiveCostMetrics, calculateMonthlyPayback, calculateExportSensitivity } from '@/shared/utils/cost-metrics';
 import type { PortfolioProperty } from '../types';
 import type { HomeStatus } from '@/shared/types';
+import { CostMetricCards } from './cost-metric-cards';
+import { ExportSensitivityChart } from './export-sensitivity-chart';
+import { MonthlyWaterfallChart } from './monthly-waterfall-chart';
+import { PaybackProgressBar } from './payback-progress-bar';
 
 interface PropertyDetailProps {
   property: PortfolioProperty;
@@ -301,8 +306,70 @@ function SystemPerformanceTab({ property: p }: { property: PortfolioProperty }) 
 
 // --- Tab: Financial ---
 function FinancialTab({ property: p }: { property: PortfolioProperty }) {
+  // Compute cost metrics from property data
+  const costMetrics = useMemo(() => calculateFiveCostMetrics({
+    batteryModuleCostGbp: p.system.installCost - 10500, // Estimate: total hardware minus inverter+gateway+ancillary
+    inverterCostGbp: 9000,    // TODO: derive from hardware catalogue lookup
+    gatewayCostGbp: 1500,
+    ancillaryCostGbp: p.ancillaryCosts,
+    labourCostGbp: p.installationCost,
+    commissioningCostGbp: p.mcsCertificationCost,
+    g99CostGbp: p.g99ApplicationCost,
+    dnoCostGbp: 0,
+    grossCapacityKwh: p.system.totalCapacityKwh,
+    roundTripEfficiency: p.system.roundTripEfficiency,
+    year1DegradationPercent: p.system.degradationRatePercent,
+    annualOpexGbp: (p.system.annualMaintenanceCost || 400) + 500 + 300, // maintenance + insurance + compliance
+    inflationPercent: 3,
+    projectionYears: 10,
+    cyclesPerDay: 2,
+    degradationRatePercent: p.system.degradationRatePercent,
+  }), [p]);
+
+  // Monthly payback with seasonal weighting
+  const monthlyPayback = useMemo(() => {
+    const annualNetRevenue = p.summary.likely.annualNetRevenue;
+    // Estimate revenue split from typical proportions
+    const arbShare = 0.60, ssShare = 0.20, flexShare = 0.10, solarShare = 0.05, segShare = 0.05;
+    return calculateMonthlyPayback({
+      annualRevenueByStream: {
+        arbitrage: annualNetRevenue * arbShare,
+        savingSessions: annualNetRevenue * ssShare,
+        flexibility: annualNetRevenue * flexShare,
+        solar: annualNetRevenue * solarShare,
+        seg: annualNetRevenue * segShare,
+      },
+      annualCostsGbp: 1200 + (p.system.annualMaintenanceCost || 400) + 500 + 300,
+      installedCostGbp: p.totalCapitalCost,
+      degradationRatePercent: p.system.degradationRatePercent,
+    });
+  }, [p]);
+
+  // Export sensitivity analysis
+  const exportSensitivity = useMemo(() => {
+    const annualNetRevenue = p.summary.likely.annualNetRevenue;
+    const arbShare = 0.60, ssShare = 0.20, flexShare = 0.10, solarShare = 0.05, segShare = 0.05;
+    return calculateExportSensitivity({
+      baseRevenueByStream: {
+        arbitrage: annualNetRevenue * arbShare,
+        savingSessions: annualNetRevenue * ssShare,
+        flexibility: annualNetRevenue * flexShare,
+        solar: annualNetRevenue * solarShare,
+        seg: annualNetRevenue * segShare,
+      },
+      baseExportKw: p.system.maxDischargeRateKw,
+      annualCostsGbp: 1200 + (p.system.annualMaintenanceCost || 400) + 500 + 300,
+      installedCostGbp: p.totalCapitalCost,
+      maxInverterKw: p.system.maxDischargeRateKw,
+      degradationRatePercent: p.system.degradationRatePercent,
+    });
+  }, [p]);
+
   return (
     <div className="space-y-6">
+      {/* Cost Metrics Cards */}
+      <CostMetricCards metrics={costMetrics} />
+
       <Card>
         <CardHeader><CardTitle>Capital Cost Breakdown</CardTitle></CardHeader>
         <CardContent className="px-6 pb-6">
@@ -374,13 +441,14 @@ function FinancialTab({ property: p }: { property: PortfolioProperty }) {
         </Card>
       </div>
 
-      <Card className="border-info border opacity-70">
-        <CardContent className="p-6 text-center">
-          <p className="text-sm text-text-secondary">
-            Sensitivity sliders and tariff comparison scenarios will be available in a future update.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Export Sensitivity Chart */}
+      <ExportSensitivityChart
+        result={exportSensitivity}
+        currentExportKw={p.system.dnoExportLimitKw}
+      />
+
+      {/* Monthly Revenue vs Cost Waterfall */}
+      <MonthlyWaterfallChart paybackResult={monthlyPayback} />
     </div>
   );
 }
