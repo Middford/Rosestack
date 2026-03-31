@@ -1,0 +1,346 @@
+// ============================================================
+// The Beeches — Demo Property Seed Data
+// First RoseStack deployment. Fixed UUIDs for deterministic demo.
+// ============================================================
+
+export const THE_BEECHES: {
+  home: object;
+  batterySystem: object;
+  consumptionInputs: object;
+  lead: object;
+} = {
+  home: {
+    id: '00000000-0000-0000-0000-000000000001',
+    address: '14 The Beeches, Whalley',
+    postcode: 'BB7 9TF',
+    latitude: 53.8246,
+    longitude: -2.3992,
+    phase: '3-phase',
+    status: 'live',
+    epcRating: 'C',
+    propertyType: 'detached',
+    gardenAccess: true,
+    bedrooms: 5,
+    floorAreaSqm: 265,
+    builtYear: 1962,
+    heatingType: 'heat_pump',
+    installDate: new Date('2025-01-15'),
+    contractEndDate: new Date('2035-01-15'),
+    monthlyHomeownerPayment: 100,
+    esaContractRef: 'ESA-001-BEECHES',
+    exportLimitKw: 50,
+    propertyScore: 87,
+    g99Probability: 0.85,
+    consumptionKwhPerYear: 8400,
+    notes:
+      'First RoseStack deployment. 3-phase confirmed, large garden, heat pump installed 2023.',
+  },
+
+  batterySystem: {
+    homeId: '00000000-0000-0000-0000-000000000001',
+    inverterModel: 'Sigenergy M1 100kW',
+    batteryModules: 16,
+    totalCapacityKwh: 192,
+    batteryChemistry: 'LFP',
+    solarPvKwp: 6.0,
+    installCost: 46800,
+    annualMaintenanceCost: 350,
+    warrantyYears: 10,
+    degradationRatePercent: 2,
+    maxChargeRateKw: 96,
+    maxDischargeRateKw: 96,
+    roundTripEfficiency: 0.92,
+  },
+
+  consumptionInputs: {
+    floorAreaSqm: 265,
+    bedrooms: 5,
+    propertyType: 'detached',
+    builtYear: 1962,
+    epcRating: 'C',
+    occupants: 4,
+    workFromHome: true,
+    heatingType: 'heat_pump',
+    heatPumpKw: 12,
+    heatPumpCop: 3.2,
+    hasEv: true,
+    evChargingKw: 7.4,
+    evMilesPerWeek: 300,
+    hasSolar: true,
+    solarKwp: 6.0,
+    solarOrientationFactor: 0.92,
+    morningPeakOccupancy: true,
+    eveningPeakOccupancy: true,
+  },
+
+  lead: {
+    homeId: '00000000-0000-0000-0000-000000000001',
+    name: 'Demo Homeowner',
+    phone: null,
+    email: null,
+    source: 'referral',
+    status: 'contracted',
+    notes: [],
+  },
+};
+
+// ============================================================
+// Summary record — used by the portfolio dashboard and API
+// ============================================================
+
+export const BEECHES_SUMMARY = {
+  title: 'The Beeches, Whalley (BB7)',
+  description:
+    'First RoseStack deployment. 5-bed detached, 1962 build. 192kWh Sigenergy system with 6kWp solar and heat pump.',
+  capacity: 192,
+  inverterKw: 96,
+  phase: '3-phase',
+  location: 'Ribble Valley',
+  status: 'live',
+  installDate: '2025-01-15',
+  estimatedAnnualRevenueLikely: 15500,
+  estimatedPaybackMonths: 72,
+  highlights: [
+    '192kWh LFP battery — 16 x Sigenergy 12kWh modules',
+    '96kW three-phase inverter — fast charge and discharge',
+    '6kWp south-facing solar — double-cycle strategy',
+    'Octopus Agile — half-hourly rate optimisation',
+    'ENWL G99 approved — 50kW export limit',
+  ],
+};
+
+// ============================================================
+// Full PortfolioProperty-compatible record for demo display
+// ============================================================
+
+export const BEECHES_PORTFOLIO_PROPERTY = {
+  id: 'port-000',
+  address: '14 The Beeches, Whalley',
+  postcode: 'BB7 9TF',
+  latitude: 53.8246,
+  longitude: -2.3992,
+  propertyType: 'detached' as const,
+  bedrooms: 5,
+  phase: '3-phase' as const,
+  epcRating: 'C',
+  gardenLocation: 'Large rear garden, south-facing',
+  nearestSubstationId: 'enwl-bb7-whalley',
+  homeownerName: 'Demo Homeowner',
+  homeownerPhone: '',
+  homeownerEmail: '',
+  esaContractRef: 'ESA-001-BEECHES',
+  esaStartDate: '2025-01-15',
+  esaEndDate: '2035-01-15',
+  monthlyHomeownerPayment: 100,
+  referralSource: 'Direct approach',
+  notes: 'First RoseStack deployment. 3-phase confirmed, large garden, heat pump installed 2023.',
+  status: 'live' as const,
+  installDate: '2025-01-15',
+  commissionDate: '2025-01-22',
+
+  // Hardware
+  system: {
+    id: 'sys-beeches-001',
+    homeId: 'port-000',
+    inverterModel: 'Sigenergy M1 100kW',
+    batteryModules: 16,
+    totalCapacityKwh: 192,
+    batteryChemistry: 'LFP' as const,
+    solarPvKwp: 6.0,
+    installCost: 46800,
+    annualMaintenanceCost: 350,
+    warrantyYears: 10,
+    degradationRatePercent: 2,
+    maxChargeRateKw: 96,
+    maxDischargeRateKw: 96,
+    roundTripEfficiency: 0.92,
+  },
+  solarPanelModel: 'JA Solar 415W',
+  solarPanelCount: 15,
+  solarKwp: 6.0,
+  solarOrientation: 'South-facing',
+  solarTilt: 35,
+  installationCost: 7200,
+  g99ApplicationCost: 350,
+  mcsCertificationCost: 500,
+  ancillaryCosts: 2000,
+  totalCapitalCost: 46800 + 7200 + 350 + 500 + 2000,
+
+  // Tariff
+  tariff: {
+    id: 'octopus-agile',
+    supplier: 'Octopus Energy',
+    name: 'Octopus Agile',
+    type: 'agile' as const,
+    importRates: { avg: 24.5, peak: 35, offPeak: 7 },
+    exportRates: { avg: 15 },
+    standingChargePencePerDay: 60,
+    validFrom: new Date('2024-01-01'),
+    eligibilityRequirements: null,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
+  tariffId: 'octopus-agile',
+  cyclingStrategy: 'double' as const,
+  solarSelfConsumptionEstimate: 38,
+  savingSessionsParticipation: true,
+  estimatedSessionsPerYear: 25,
+  flexibilityParticipation: true,
+  estimatedFlexRevenue: 600,
+  segRegistered: true,
+  segRate: 15,
+
+  // Financial projections (static for demo — driven by scenario engine in live build)
+  projection: {
+    best: {
+      annualGrossRevenue: 19200,
+      annualCosts: 1450,
+      annualNetRevenue: 17750,
+      monthlyNetRevenue: 1479,
+      dailyNetRevenue: 48.6,
+      cumulativeCashflow: Array.from({ length: 10 }, (_, i) => 17750 * (i + 1) - 56850),
+      paybackMonths: 58,
+      irr: 0.18,
+      npv: 62000,
+      dscr: 2.4,
+    },
+    likely: {
+      annualGrossRevenue: 16800,
+      annualCosts: 1300,
+      annualNetRevenue: 15500,
+      monthlyNetRevenue: 1292,
+      dailyNetRevenue: 42.5,
+      cumulativeCashflow: Array.from({ length: 10 }, (_, i) => 15500 * (i + 1) - 56850),
+      paybackMonths: 72,
+      irr: 0.14,
+      npv: 44000,
+      dscr: 2.1,
+    },
+    worst: {
+      annualGrossRevenue: 12400,
+      annualCosts: 1200,
+      annualNetRevenue: 11200,
+      monthlyNetRevenue: 933,
+      dailyNetRevenue: 30.7,
+      cumulativeCashflow: Array.from({ length: 10 }, (_, i) => 11200 * (i + 1) - 56850),
+      paybackMonths: 96,
+      irr: 0.09,
+      npv: 18000,
+      dscr: 1.5,
+    },
+  },
+  summary: {
+    best: {
+      annualNetRevenue: 17750,
+      monthlyNetRevenue: 1479,
+      dailyNetRevenue: 48.6,
+      paybackMonths: 58,
+      irr: 0.18,
+      npv: 62000,
+      dscr: 2.4,
+    },
+    likely: {
+      annualNetRevenue: 15500,
+      monthlyNetRevenue: 1292,
+      dailyNetRevenue: 42.5,
+      paybackMonths: 72,
+      irr: 0.14,
+      npv: 44000,
+      dscr: 2.1,
+    },
+    worst: {
+      annualNetRevenue: 11200,
+      monthlyNetRevenue: 933,
+      dailyNetRevenue: 30.7,
+      paybackMonths: 96,
+      irr: 0.09,
+      npv: 18000,
+      dscr: 1.5,
+    },
+  },
+
+  // Compliance
+  g99Status: 'approved' as const,
+  g99Reference: 'G99-ENWL-2025-0042',
+  mcsCertReference: 'MCS-2025-RS-000',
+  segRegistrationRef: 'SEG-OCT-2025-5001',
+  insurancePolicy: 'Hiscox Commercial Battery Storage - Policy HBC-2025-10001',
+  nextInspectionDate: '2026-07-15',
+
+  // Timeline
+  timeline: [
+    {
+      id: 'tl-0-1',
+      date: '2024-10-01',
+      type: 'status-change' as const,
+      title: 'Lead created',
+      description: 'Direct approach. Owner identified via EPC data sweep — 5-bed detached, BB7 postcode, 3-phase supply confirmed.',
+    },
+    {
+      id: 'tl-0-2',
+      date: '2024-10-20',
+      type: 'status-change' as const,
+      title: 'Site visit complete',
+      description: 'Garden access confirmed. South-facing. Existing heat pump. 3-phase metering verified.',
+    },
+    {
+      id: 'tl-0-3',
+      date: '2024-11-10',
+      type: 'status-change' as const,
+      title: 'Contracted',
+      description: 'ESA signed. 10-year agreement. Monthly payment £100.',
+    },
+    {
+      id: 'tl-0-4',
+      date: '2024-11-15',
+      type: 'compliance' as const,
+      title: 'G99 submitted',
+      description: 'Application submitted to ENWL. Reference: G99-ENWL-2025-0042',
+    },
+    {
+      id: 'tl-0-5',
+      date: '2024-12-20',
+      type: 'compliance' as const,
+      title: 'G99 approved',
+      description: 'ENWL approved within 5 weeks. 50kW export limit confirmed.',
+    },
+    {
+      id: 'tl-0-6',
+      date: '2025-01-15',
+      type: 'status-change' as const,
+      title: 'Installed',
+      description: '16 x Sigenergy 12kWh modules installed. 6kWp solar array (15 x JA Solar 415W). 3-phase inverter commissioned.',
+    },
+    {
+      id: 'tl-0-7',
+      date: '2025-01-17',
+      type: 'compliance' as const,
+      title: 'MCS certified',
+      description: 'MCS certificate issued. Ref: MCS-2025-RS-000',
+    },
+    {
+      id: 'tl-0-8',
+      date: '2025-01-22',
+      type: 'status-change' as const,
+      title: 'Commissioned and live',
+      description: 'System commissioned. Octopus Agile half-hourly optimisation active. SEG export registered.',
+    },
+    {
+      id: 'tl-0-9',
+      date: '2025-03-10',
+      type: 'milestone' as const,
+      title: 'First £1,000 revenue',
+      description: 'Cumulative net revenue passed £1,000 after 47 days live.',
+    },
+    {
+      id: 'tl-0-10',
+      date: '2026-01-22',
+      type: 'milestone' as const,
+      title: 'One year live',
+      description: 'Full year of operation completed. Actual revenue tracked within 4% of Likely scenario.',
+    },
+  ],
+
+  createdAt: '2024-10-01',
+  updatedAt: '2026-03-31',
+};

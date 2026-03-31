@@ -1,4 +1,16 @@
 export { substations, flexibilityTenders } from './substation-data';
+
+// Consumption model — 48×12 half-hour slot matrix
+export { buildConsumptionProfile, getNetDemandAfterSolar, estimateAnnualBillWithoutBattery } from './consumption-model';
+export type { ConsumptionInputs, ConsumptionProfile, ConsumptionMatrix, SolarProfile } from './consumption-model';
+
+// AAF — Arbitrage Availability Factor
+export { calculateAaf, calculateAafForTariff } from './aaf';
+export type { AafInputs, AafResult } from './aaf';
+
+// Sizing engine — battery system recommendations
+export { sizeBatterySystem, calculateG99Probability } from './sizing-engine';
+export type { SizingInputs, SizingOption, SizingResult } from './sizing-engine';
 export { targetProperties, getPropertiesByPostcode, getPropertiesBySubstation } from './property-data';
 export type { TargetProperty } from './property-data';
 // Real EPC data — 390 properties from the EPC API (March 2026)

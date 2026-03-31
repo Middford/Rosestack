@@ -7,6 +7,7 @@ import { calculateAllScenarios, summariseScenarios, formatGbp } from '@/shared/u
 import { batteries, inverters, solarPanels, heatPumps } from '@/modules/hardware/data';
 import { ALL_TARIFFS } from '@/modules/tariffs/data';
 import type { PortfolioProperty, PortfolioAlert, PortfolioSummaryStats, TimelineEvent, BulkTariffChangeResult } from './types';
+import { BEECHES_PORTFOLIO_PROPERTY } from './beeches-seed';
 
 // --- Build BatterySystem from hardware catalogue ---
 
@@ -448,6 +449,16 @@ export function generatePortfolioCsv(properties: PortfolioProperty[]): string {
 
   return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
 }
+
+// ============================================================
+// DEMO_PROPERTIES — canonical list for UI when database is unavailable.
+// The Beeches (port-000) is always first as the flagship demo property.
+// ============================================================
+
+export const DEMO_PROPERTIES: PortfolioProperty[] = [
+  BEECHES_PORTFOLIO_PROPERTY as unknown as PortfolioProperty,
+  ...PORTFOLIO_PROPERTIES,
+];
 
 // Re-export
 export { formatGbp };
