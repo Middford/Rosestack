@@ -7,6 +7,30 @@ export {
   DEFAULT_BATTERY_SYSTEM,
 } from './data';
 
+export {
+  fetchAgileRates,
+  getDailySlots,
+  getStatistics,
+  getAverageProfileByHalfHour,
+} from './agile-api';
+
+export type { AgileSlot, AgileStatistics } from './agile-api';
+
+export {
+  buildDayDispatchPlan,
+  calculateAnnualDispatchRevenue,
+  calculateDaysWithNegativePricing,
+  getOptimalChargeWindows,
+} from './dispatch-matrix';
+
+export type {
+  SlotAction,
+  DispatchSlot,
+  DayDispatchPlan,
+  SystemParams,
+  SavingSession,
+} from './dispatch-matrix';
+
 export type {
   TariffWithMeta,
   GridService,

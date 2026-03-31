@@ -11,6 +11,38 @@ import {
   pgEnum,
 } from 'drizzle-orm/pg-core';
 
+// --- Section 13: Pipeline Status Enum ---
+
+export const pipelineStatusEnum = pgEnum('pipeline_status', [
+  // Stage 0 - Free / No commitment
+  'new_lead',
+  'initial_contact',
+  'interested',
+  'property_assessed',
+  // Stage 1 - Site visit scheduled
+  'visit_scheduled',
+  'visit_complete',
+  // Stage 2 - Proposal
+  'proposal_prepared',
+  'proposal_sent',
+  'proposal_reviewing',
+  // Stage 3 - Contract
+  'verbal_agreement',
+  'contract_sent',
+  'contracted',
+  // Stage 4 - Installation
+  'g99_submitted',
+  'g99_approved',
+  'installation_scheduled',
+  // Stage 5 - Live
+  'installed',
+  'commissioned',
+  'live',
+  // Terminal states
+  'on_hold',
+  'lost',
+]);
+
 // --- Enums ---
 
 export const homeStatusEnum = pgEnum('home_status', [
@@ -86,6 +118,18 @@ export const homes = pgTable('homes', {
   monthlyHomeownerPayment: real('monthly_homeowner_payment'),
   esaContractRef: varchar('esa_contract_ref', { length: 100 }),
   notes: text('notes'),
+  // Section 13 additions
+  bedrooms: integer('bedrooms'),
+  floorAreaSqm: real('floor_area_sqm'),
+  builtYear: integer('built_year'),
+  heatingType: varchar('heating_type', { length: 50 }),
+  exportLimitKw: real('export_limit_kw'),
+  secondaryTransformerId: uuid('secondary_transformer_id'),
+  propertyScore: integer('property_score'),
+  g99Probability: real('g99_probability'),
+  consumptionKwhPerYear: real('consumption_kwh_per_year'),
+  solarKwp: real('solar_kwp'),
+  referralSource: varchar('referral_source', { length: 200 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -149,6 +193,13 @@ export const leads = pgTable('leads', {
   referredBy: varchar('referred_by', { length: 200 }),
   status: leadStatusEnum('status').notNull().default('new'),
   notes: jsonb('notes').default([]),
+  // Section 13 additions
+  pipelineStatus: pipelineStatusEnum('pipeline_status').default('new_lead'),
+  g99SubmittedDate: timestamp('g99_submitted_date'),
+  g99ApprovedDate: timestamp('g99_approved_date'),
+  contractSignedDate: timestamp('contract_signed_date'),
+  installDate: timestamp('install_date'),
+  commissionedDate: timestamp('commissioned_date'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -255,6 +306,137 @@ export const propertyTimeline = pgTable('property_timeline', {
   homeId: uuid('home_id').references(() => homes.id).notNull(),
   event: varchar('event', { length: 200 }).notNull(),
   description: text('description'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================
+// Section 13 — New Tables
+// ============================================================
+
+// 1. Consumption profiles (output of the 17-input consumption model)
+export const consumptionProfiles = pgTable('consumption_profiles', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  homeId: uuid('home_id').references(() => homes.id).notNull(),
+  // 17 inputs stored as JSONB
+  inputs: jsonb('inputs').notNull(),           // ConsumptionInputs object
+  // 48×12 matrix stored as flat array [slot0_jan, slot0_feb, ... slot47_dec]
+  matrixFlat: jsonb('matrix_flat').notNull(),  // 576 numbers
+  annualTotalKwh: real('annual_total_kwh').notNull(),
+  monthlyTotals: jsonb('monthly_totals').notNull(), // 12 numbers
+  solarGenKwhAnnual: real('solar_gen_kwh_annual'),
+  peakDemandKw: real('peak_demand_kw').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// 2. Secondary transformers (33/11kV primary -> 11kV -> LV secondary)
+export const secondaryTransformers = pgTable('secondary_transformers', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  primarySubstationId: uuid('primary_substation_id').references(() => substations.id),
+  name: varchar('name', { length: 200 }).notNull(),
+  dnoRef: varchar('dno_ref', { length: 100 }),
+  latitude: real('latitude').notNull(),
+  longitude: real('longitude').notNull(),
+  ratingKva: real('rating_kva'),
+  currentLoadPercent: real('current_load_percent'),
+  connectedPremises: integer('connected_premises'),
+  lvFeederCount: integer('lv_feeder_count'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// 3. Street intelligence (substation -> street mapping for prospecting)
+export const streetIntelligence = pgTable('street_intelligence', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  transformerId: uuid('transformer_id').references(() => secondaryTransformers.id),
+  postcode: varchar('postcode', { length: 10 }).notNull(),
+  streetName: varchar('street_name', { length: 300 }),
+  premiseCount: integer('premise_count'),
+  threePhaseEstimate: integer('three_phase_estimate'),
+  roseStackHomes: integer('rose_stack_homes').default(0),
+  avgPropertyAge: integer('avg_property_age'),
+  avgEpcRating: varchar('avg_epc_rating', { length: 5 }),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// 4. Dispatch slots (daily optimisation results — one row per half-hour slot per day per home)
+export const dispatchSlots = pgTable('dispatch_slots', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  homeId: uuid('home_id').references(() => homes.id).notNull(),
+  slotDate: varchar('slot_date', { length: 10 }).notNull(), // YYYY-MM-DD
+  slotIndex: integer('slot_index').notNull(),               // 0-47
+  importRatePence: real('import_rate_pence'),
+  exportRatePence: real('export_rate_pence'),
+  action: varchar('action', { length: 30 }).notNull(),      // charge/discharge/idle/solar_charge/saving_session
+  socStart: real('soc_start'),
+  socEnd: real('soc_end'),
+  energyKwh: real('energy_kwh'),
+  revenuePence: real('revenue_pence'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// 5. Dispatch daily summaries (one row per day per home)
+export const dispatchDaily = pgTable('dispatch_daily', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  homeId: uuid('home_id').references(() => homes.id).notNull(),
+  dispatchDate: varchar('dispatch_date', { length: 10 }).notNull(), // YYYY-MM-DD
+  totalChargeKwh: real('total_charge_kwh'),
+  totalDischargeKwh: real('total_discharge_kwh'),
+  totalImportCostPence: real('total_import_cost_pence'),
+  totalExportRevenuePence: real('total_export_revenue_pence'),
+  netRevenuePence: real('net_revenue_pence'),
+  cyclesCompleted: real('cycles_completed'),
+  savingSessionRevenuePence: real('saving_session_revenue_pence').default(0),
+  agileImportRateSource: varchar('agile_import_rate_source', { length: 50 }), // 'live' | 'forecast' | 'historical'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// 6. Tariff comparison (historical record of tariff optimisation sweep results)
+export const tariffComparison = pgTable('tariff_comparison', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  homeId: uuid('home_id').references(() => homes.id).notNull(),
+  sweepDate: timestamp('sweep_date').defaultNow().notNull(),
+  currentTariff: varchar('current_tariff', { length: 200 }).notNull(),
+  recommendedTariff: varchar('recommended_tariff', { length: 200 }),
+  currentAnnualRevenueLikely: real('current_annual_revenue_likely'),
+  recommendedAnnualRevenueLikely: real('recommended_annual_revenue_likely'),
+  upliftPercent: real('uplift_percent'),
+  status: varchar('status', { length: 30 }).default('pending'), // 'pending' | 'approved' | 'rejected' | 'switched'
+  approvedBy: varchar('approved_by', { length: 100 }),
+  switchedDate: timestamp('switched_date'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// 7. Tariff availability (which tariffs are currently open/closed/paused)
+export const tariffAvailability = pgTable('tariff_availability', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tariffName: varchar('tariff_name', { length: 200 }).notNull(),
+  supplier: varchar('supplier', { length: 100 }).notNull(),
+  status: varchar('status', { length: 30 }).notNull(), // 'open' | 'paused' | 'closed' | 'waitlist'
+  pauseReason: text('pause_reason'),
+  availableFrom: timestamp('available_from'),
+  availableTo: timestamp('available_to'),
+  lastChecked: timestamp('last_checked').defaultNow().notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// 8. Pipeline events (detailed status tracking for prospecting pipeline)
+export const pipelineEvents = pgTable('pipeline_events', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  leadId: uuid('lead_id').references(() => leads.id).notNull(),
+  eventType: varchar('event_type', { length: 100 }).notNull(), // 'status_change' | 'note' | 'meeting' | 'email' | 'call' | 'site_visit' | 'proposal' | 'contract' | 'g99_submitted' etc.
+  fromStatus: varchar('from_status', { length: 50 }),
+  toStatus: varchar('to_status', { length: 50 }),
+  notes: text('notes'),
+  performedBy: varchar('performed_by', { length: 100 }),
+  scheduledAt: timestamp('scheduled_at'),
+  completedAt: timestamp('completed_at'),
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
