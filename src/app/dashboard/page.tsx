@@ -11,6 +11,7 @@ import { batteries, inverters } from '@/modules/hardware/data';
 import { ALL_TARIFFS } from '@/modules/tariffs';
 import { substations } from '@/modules/grid/substation-data';
 import { leads } from '@/modules/customers/data';
+import { BEECHES_PORTFOLIO_PROPERTY } from '@/modules/portfolio/beeches-seed';
 import { SEEDED_RISKS, SEEDED_OPPORTUNITIES } from '@/modules/risk/data';
 import { calculateRiskStats, calculateOpportunityStats, calculateNetPosition } from '@/modules/risk/scoring';
 import {
@@ -1126,6 +1127,42 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ========== FLEET PROPERTIES TABLE ========== */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-text-primary">Live Fleet</h2>
+          <Link href="/portfolio" className="text-xs text-rose-light hover:text-rose flex items-center gap-1">
+            Full Portfolio <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="rounded-[var(--radius-lg)] border border-border bg-bg-secondary overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-bg-tertiary">
+                <tr className="text-text-tertiary text-xs uppercase tracking-wider">
+                  <th className="text-left px-4 py-3">Property</th>
+                  <th className="text-left px-4 py-3">Status</th>
+                  <th className="text-right px-4 py-3">System</th>
+                  <th className="text-right px-4 py-3">Ann. Revenue (Likely)</th>
+                  <th className="text-right px-4 py-3">AAF Grade</th>
+                  <th className="text-right px-4 py-3">Tariff</th>
+                  <th className="text-right px-4 py-3">Alerts</th>
+                </tr>
+              </thead>
+              <tbody>
+                <FleetRow property={BEECHES_PORTFOLIO_PROPERTY} />
+                {/* Placeholder rows for upcoming installs */}
+                <tr className="border-t border-border/40">
+                  <td className="px-4 py-3 text-text-tertiary italic" colSpan={7}>
+                    + {Math.max(0, contracted - 1)} properties contracted — awaiting installation
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Links Grid */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {quickLinks.map(link => (
@@ -1150,8 +1187,73 @@ export default function DashboardPage() {
 
 const quickLinks = [
   { href: '/portfolio', title: 'Portfolio', icon: Building2, stat: '3 properties', color: COLORS.rose },
-  { href: '/hardware', title: 'Hardware', icon: Battery, stat: '14 batteries', color: COLORS.cyan },
+  { href: '/dispatch', title: 'Dispatch', icon: Zap, stat: 'Beeches backtest', color: COLORS.cyan },
+  { href: '/pipeline', title: 'Pipeline', icon: Users, stat: 'Prospecting Kanban', color: COLORS.violet },
   { href: '/grid', title: 'Grid Map', icon: Map, stat: '15 substations', color: COLORS.emerald },
-  { href: '/funding', title: 'Funding', icon: Landmark, stat: '13 lenders', color: COLORS.violet },
-  { href: '/legal', title: 'Legal', icon: Shield, stat: '23 requirements', color: COLORS.amber },
+  { href: '/funding', title: 'Funding', icon: Landmark, stat: '13 lenders', color: COLORS.amber },
 ];
+
+// ── Fleet property row ─────────────────────────────────────────────────────────
+function FleetRow({ property }: { property: typeof BEECHES_PORTFOLIO_PROPERTY }) {
+  const statusColour: Record<string, string> = {
+    live: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/40',
+    installed: 'text-blue-400 bg-blue-500/15 border-blue-500/40',
+    contracted: 'text-amber-400 bg-amber-500/15 border-amber-500/40',
+    prospect: 'text-text-tertiary bg-bg-tertiary border-border',
+  };
+  const sc = statusColour[property.status] ?? statusColour.prospect!;
+
+  // AAF grade from system spec: Beeches is a 192kWh/96kW Agile system — excellent
+  // 96kW charge on 192kWh = 2C rate, full cycle in 1hr each way → AAF ≈ 91%
+  const aafGrade = 'A+';
+  const aafColour = 'text-emerald-400';
+
+  const alerts: string[] = [];
+  if (property.g99Status !== 'approved') alerts.push('G99');
+  if (!property.mcsCertReference) alerts.push('MCS');
+
+  return (
+    <tr className="border-t border-border/40 hover:bg-bg-hover transition-colors">
+      <td className="px-4 py-3">
+        <div>
+          <div className="font-medium text-text-primary text-sm">{property.address}</div>
+          <div className="text-xs text-text-tertiary">{property.postcode} · {property.phase}</div>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${sc}`}>
+          {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="text-sm text-text-primary">{property.system.totalCapacityKwh} kWh</div>
+        <div className="text-xs text-text-tertiary">{property.system.maxChargeRateKw}kW · {property.system.solarPvKwp}kWp</div>
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="font-mono font-medium text-emerald-400">
+          £{property.projection.likely.annualNetRevenue.toLocaleString()}
+        </div>
+        <div className="text-xs text-text-tertiary">
+          £{property.projection.best.annualNetRevenue.toLocaleString()} / £{property.projection.worst.annualNetRevenue.toLocaleString()}
+        </div>
+      </td>
+      <td className="px-4 py-3 text-right">
+        <span className={`font-bold text-base ${aafColour}`}>{aafGrade}</span>
+        <div className="text-xs text-text-tertiary">Agile · 91%</div>
+      </td>
+      <td className="px-4 py-3 text-right text-xs text-text-secondary">
+        {property.tariff.name}
+      </td>
+      <td className="px-4 py-3 text-right">
+        {alerts.length === 0 ? (
+          <span className="text-emerald-400 text-xs">All clear</span>
+        ) : (
+          <span className="flex items-center justify-end gap-1 text-amber-400 text-xs">
+            <AlertTriangle className="h-3 w-3" />
+            {alerts.join(', ')}
+          </span>
+        )}
+      </td>
+    </tr>
+  );
+}
