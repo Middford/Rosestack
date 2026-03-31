@@ -441,6 +441,23 @@ export const pipelineEvents = pgTable('pipeline_events', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// --- Agile Rates (raw Octopus half-hourly rate cache — import + export) ---
+
+export const agileRates = pgTable('agile_rates', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** 'import' = AGILE-24-10-01-N, 'export' = AGILE-OUTGOING-19-05-13-N */
+  type: varchar('type', { length: 10 }).notNull(),
+  /** ISO 8601 UTC — start of the half-hour slot */
+  validFrom: varchar('valid_from', { length: 30 }).notNull(),
+  /** ISO 8601 UTC — end of the half-hour slot */
+  validTo: varchar('valid_to', { length: 30 }).notNull(),
+  /** Rate in pence/kWh inclusive of 5% VAT */
+  valueIncVat: real('value_inc_vat').notNull(),
+  /** Octopus region suffix, e.g. 'N' for ENWL */
+  region: varchar('region', { length: 5 }).default('N').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // --- Revenue Actuals (for payback tracking on live homes) ---
 
 export const revenueActuals = pgTable('revenue_actuals', {

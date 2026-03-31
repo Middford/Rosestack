@@ -16,19 +16,23 @@ import {
   Building2,
   AlertTriangle,
   Boxes,
+  BarChart2,
+  GitBranch,
 } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/hardware', label: 'Hardware', icon: Battery },
+  { href: '/portfolio', label: 'Portfolio', icon: Building2 },
+  { href: '/dispatch', label: 'Dispatch', icon: BarChart2 },
+  { href: '/pipeline', label: 'Pipeline', icon: GitBranch },
   { href: '/tariffs', label: 'Tariffs', icon: Zap },
   { href: '/finance', label: 'Finance', icon: PoundSterling },
   { href: '/grid', label: 'Grid', icon: Map },
+  { href: '/hardware', label: 'Hardware', icon: Battery },
+  { href: '/customers', label: 'Customers', icon: Users },
   { href: '/strategy', label: 'Strategy', icon: Lightbulb },
   { href: '/funding', label: 'Funding', icon: Landmark },
   { href: '/legal', label: 'Legal', icon: Shield },
-  { href: '/customers', label: 'Customers', icon: Users },
-  { href: '/portfolio', label: 'Portfolio', icon: Building2 },
   { href: '/risk', label: 'Risk & Opps', icon: AlertTriangle },
   { href: '/product-design', label: 'Product Design', icon: Boxes },
 ];

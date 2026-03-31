@@ -1,19 +1,14 @@
 // ============================================================
 // Octopus Agile API Integration — ENWL Region (North West England)
 //
-// Region code H = ENWL (Electricity North West Limited), covering
-// the North West of England including Lancashire (where RoseStack
-// properties are located). The Octopus tariff code suffix "-H"
-// identifies this DNO region. Full region list:
-//   A = Eastern, B = East Midlands, C = London, D = Merseyside & North Wales,
-//   E = Midlands, F = North Eastern, G = North Western (old code for ENWL),
-//   H = South Western, J = Southern, K = South Eastern, L = South Western,
-//   M = Yorkshire, N = Southern, P = South Western
-// Octopus uses "H" for ENWL (North West England / Lancashire) in AGILE-24-10-01.
+// Region code N = ENWL (Electricity North West Limited), covering
+// Lancashire and the wider North West of England — the primary area for
+// all RoseStack battery deployments. Octopus uses "-N" as the suffix for
+// ENWL in both AGILE-24-10-01 (import) and AGILE-OUTGOING-19-05-13 (export).
 //
 // Public API — no authentication required.
-// Base URL (import): https://api.octopus.energy/v1/products/AGILE-24-10-01/electricity-tariffs/E-1R-AGILE-24-10-01-H/standard-unit-rates/
-// Base URL (export): https://api.octopus.energy/v1/products/AGILE-OUTGOING-19-05-13/electricity-tariffs/E-1R-AGILE-OUTGOING-19-05-13-H/standard-unit-rates/
+// Base URL (import): https://api.octopus.energy/v1/products/AGILE-24-10-01/electricity-tariffs/E-1R-AGILE-24-10-01-N/standard-unit-rates/
+// Base URL (export): https://api.octopus.energy/v1/products/AGILE-OUTGOING-19-05-13/electricity-tariffs/E-1R-AGILE-OUTGOING-19-05-13-N/standard-unit-rates/
 //
 // Rates are returned in pence per kWh inclusive of VAT (5% for electricity).
 // The API returns 48 half-hour slots per day in reverse chronological order.
@@ -46,11 +41,15 @@ interface OctopusApiResponse {
 
 // --- Constants ---
 
+// Region N = ENWL (Electricity North West Limited) — covers Lancashire and
+// the North West of England, where all RoseStack properties are located.
+// This is the correct suffix for AGILE-24-10-01 and AGILE-OUTGOING-19-05-13
+// for the ENWL distribution network.
 const AGILE_IMPORT_BASE =
-  'https://api.octopus.energy/v1/products/AGILE-24-10-01/electricity-tariffs/E-1R-AGILE-24-10-01-H/standard-unit-rates/';
+  'https://api.octopus.energy/v1/products/AGILE-24-10-01/electricity-tariffs/E-1R-AGILE-24-10-01-N/standard-unit-rates/';
 
 const AGILE_EXPORT_BASE =
-  'https://api.octopus.energy/v1/products/AGILE-OUTGOING-19-05-13/electricity-tariffs/E-1R-AGILE-OUTGOING-19-05-13-H/standard-unit-rates/';
+  'https://api.octopus.energy/v1/products/AGILE-OUTGOING-19-05-13/electricity-tariffs/E-1R-AGILE-OUTGOING-19-05-13-N/standard-unit-rates/';
 
 /** Maximum slots the API returns per page */
 const PAGE_SIZE = 100;
