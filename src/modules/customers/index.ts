@@ -1,2 +1,22 @@
 export * from './types';
-export { leads, referrals, campaigns, clubPartnerships, emailTemplates, getReferrerProfiles, getLeadsByStage, getLeadById, getRevenueAttribution, calculateReferralReward } from './data';
+export {
+  // Legacy exports (backward compat)
+  leads,
+  getLeadsByStage,
+  getLeadById,
+  // New pipeline exports
+  newLeads,
+  PIPELINE_STAGE_DEFINITIONS,
+  STATUS_LABELS,
+  getLeadsByStatus,
+  getLeadsByStageNumber,
+  getNewLeadById,
+  // Unchanged exports
+  referrals,
+  campaigns,
+  clubPartnerships,
+  emailTemplates,
+  getReferrerProfiles,
+  getRevenueAttribution,
+  calculateReferralReward,
+} from './data';
