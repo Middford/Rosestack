@@ -440,3 +440,25 @@ export const pipelineEvents = pgTable('pipeline_events', {
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+// --- Revenue Actuals (for payback tracking on live homes) ---
+
+export const revenueActuals = pgTable('revenue_actuals', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  homeId: uuid('home_id').references(() => homes.id).notNull(),
+  /** Month index from install (1-indexed) */
+  month: integer('month').notNull(),
+  /** Calendar month 1-12 */
+  calendarMonth: integer('calendar_month').notNull(),
+  calendarYear: integer('calendar_year').notNull(),
+  arbitrageRevenueGbp: real('arbitrage_revenue_gbp'),
+  savingSessionsRevenueGbp: real('saving_sessions_revenue_gbp'),
+  flexibilityRevenueGbp: real('flexibility_revenue_gbp'),
+  solarRevenueGbp: real('solar_revenue_gbp'),
+  segRevenueGbp: real('seg_revenue_gbp'),
+  totalRevenueGbp: real('total_revenue_gbp').notNull(),
+  costsGbp: real('costs_gbp').notNull(),
+  netRevenueGbp: real('net_revenue_gbp').notNull(),
+  cumulativeNetGbp: real('cumulative_net_gbp').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});

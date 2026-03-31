@@ -3,6 +3,7 @@
 // ============================================================
 
 import type { HomeStatus, PhaseType, PropertyType, BatterySystem, Tariff, ThreeScenarioProjection, ThreeScenarioSummary } from '@/shared/types';
+import type { FiveCostMetrics, MonthlyPaybackResult, ExportSensitivityResult } from '@/shared/utils/cost-metrics-types';
 
 export type CyclingStrategy = 'single' | 'double' | 'kraken-managed';
 export type PropertyStatusFilter = HomeStatus | 'all';
@@ -62,6 +63,11 @@ export interface PortfolioProperty {
   // Financial projection
   projection: ThreeScenarioProjection;
   summary: ThreeScenarioSummary;
+
+  // Cost metrics (computed, not stored)
+  costMetrics?: FiveCostMetrics;
+  monthlyPayback?: MonthlyPaybackResult;
+  exportSensitivity?: ExportSensitivityResult;
 
   // Compliance
   g99Status: 'not-applied' | 'submitted' | 'approved' | 'rejected';

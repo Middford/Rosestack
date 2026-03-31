@@ -8,6 +8,7 @@ import type {
   Tariff,
   TariffRate,
 } from '@/shared/types';
+import { getEffectiveExportKw } from '@/shared/utils/dno-limits';
 
 // ============================================================
 // Three-Scenario Financial Engine
@@ -144,10 +145,12 @@ export function calculateScenario(
   tariff: Tariff,
   assumptions: ScenarioAssumptions,
   years: number = 10,
+  totalCapitalCostOverride?: number,
 ): YearlyProjection[] {
   const projections: YearlyProjection[] = [];
-  const totalCapex = system.installCost * (1 + assumptions.hardwareCostChangePercent / 100)
-    + (system.installCost * 0.15 * (1 + assumptions.installCostChangePercent / 100)); // install ~15% of hardware
+  const totalCapex = totalCapitalCostOverride
+    ?? (system.installCost * (1 + assumptions.hardwareCostChangePercent / 100)
+      + (system.installCost * 0.15 * (1 + assumptions.installCostChangePercent / 100))); // install ~15% of hardware
 
   let cumulativeRevenue = 0;
 
@@ -221,9 +224,10 @@ export function calculateScenario(
     const SESSION_DURATION_HOURS = 1.0; // typical session is 1 hour (range 0.5-2hr)
     const HOUSEHOLD_BASELINE_KWH = 1.0; // typical UK home consumption during 1hr peak period
 
-    // Battery export during session is limited by inverter rate, not battery size
+    // Battery export during session is limited by inverter rate AND DNO export limit
+    const effectiveExportKw = getEffectiveExportKw(system);
     const maxExportDuringSessionKwh = Math.min(
-      system.maxDischargeRateKw * SESSION_DURATION_HOURS,
+      effectiveExportKw * SESSION_DURATION_HOURS,
       effectiveCapacity, // can't export more than available capacity
     );
 
@@ -382,8 +386,9 @@ export function summariseScenarios(
   projection: ThreeScenarioProjection,
   system: BatterySystem,
   annualDebtService: number = 0,
+  totalCapitalCostOverride?: number,
 ): ThreeScenarioSummary {
-  const totalCapex = system.installCost * 1.15; // hardware + ~15% install
+  const totalCapex = totalCapitalCostOverride ?? system.installCost * 1.15; // hardware + ~15% install
 
   function summarise(projections: YearlyProjection[]) {
     const cashFlows = [-totalCapex, ...projections.map(p => p.netRevenue)];
