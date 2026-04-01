@@ -12,9 +12,11 @@ import {
   TariffMonitor,
   HistoricalRates,
   PortfolioSweep,
+  FleetRevenueDashboard,
 } from '@/modules/tariffs/components';
 
 const TABS = [
+  { id: 'fleet', label: 'Fleet Revenue' },
   { id: 'database', label: 'Tariff Database' },
   { id: 'timeline', label: 'Rate Timeline' },
   { id: 'calculator', label: 'Revenue Calculator' },
@@ -27,7 +29,7 @@ const TABS = [
 type TabId = typeof TABS[number]['id'];
 
 export default function TariffsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('database');
+  const [activeTab, setActiveTab] = useState<TabId>('fleet');
 
   const bestSpread = Math.max(...ALL_TARIFFS.map(t => t.arbitrageSpreadPence));
   const totalGridServices = GRID_SERVICES.reduce((sum, s) => sum + (s.historicalEarningsPerHomePerYear ?? 0), 0);
@@ -92,6 +94,7 @@ export default function TariffsPage() {
 
       {/* Tab Content */}
       <div>
+        {activeTab === 'fleet' && <FleetRevenueDashboard />}
         {activeTab === 'database' && <TariffDatabase />}
         {activeTab === 'timeline' && <RateTimeline />}
         {activeTab === 'calculator' && <RevenueCalculator />}
