@@ -17,6 +17,15 @@ export {
 export type { AgileSlot, AgileStatistics } from './agile-api';
 
 export {
+  fetchFluxRates,
+  discoverFluxProductCodes,
+  fluxRatesToDbRows,
+  FLUX_FALLBACK_RATES,
+} from './flux-api';
+
+export type { FluxRates, FluxBandRates } from './flux-api';
+
+export {
   buildDayDispatchPlan,
   calculateAnnualDispatchRevenue,
   calculateDaysWithNegativePricing,

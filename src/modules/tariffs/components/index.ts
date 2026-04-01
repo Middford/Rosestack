@@ -5,3 +5,4 @@ export { RevenueComparison } from './revenue-comparison';
 export { TariffMonitor } from './tariff-monitor';
 export { HistoricalRates } from './historical-rates';
 export { PortfolioSweep } from './portfolio-sweep';
+export { FleetRevenueDashboard } from './fleet-revenue-dashboard';

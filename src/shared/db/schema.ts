@@ -458,6 +458,49 @@ export const agileRates = pgTable('agile_rates', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// --- Live Tariff Rates (raw Octopus API rate cache — Flux + IOF) ---
+
+export const tariffRates = pgTable('tariff_rates', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** e.g. 'FLUX-IMPORT-23-02-14', 'FLUX-EXPORT-23-02-14' */
+  productCode: varchar('product_code', { length: 100 }).notNull(),
+  /** e.g. 'E-1R-FLUX-IMPORT-23-02-14-G' */
+  tariffCode: varchar('tariff_code', { length: 200 }).notNull(),
+  /** 'import' | 'export' */
+  direction: varchar('direction', { length: 10 }).notNull(),
+  validFrom: timestamp('valid_from').notNull(),
+  validTo: timestamp('valid_to'),
+  valueExcVat: real('value_exc_vat').notNull(),
+  valueIncVat: real('value_inc_vat').notNull(),
+  /** Octopus region letter, e.g. 'G' for ENWL North West */
+  region: varchar('region', { length: 5 }).notNull().default('G'),
+  fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
+});
+
+// --- Tariff Summary (pre-computed band rates for quick revenue calculations) ---
+
+export const tariffSummary = pgTable('tariff_summary', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** 'flux' | 'iof' | 'agile' */
+  tariffName: varchar('tariff_name', { length: 50 }).notNull(),
+  /** Octopus region letter, e.g. 'G' for ENWL */
+  region: varchar('region', { length: 5 }).notNull().default('G'),
+  // Import rates (pence/kWh inc VAT)
+  offPeakImport: real('off_peak_import'),   // 02:00–05:00
+  dayImport: real('day_import'),            // 05:00–16:00 + 19:00–02:00
+  peakImport: real('peak_import'),          // 16:00–19:00
+  // Export rates (pence/kWh inc VAT)
+  offPeakExport: real('off_peak_export'),
+  dayExport: real('day_export'),
+  peakExport: real('peak_export'),
+  /** Standing charge in pence/day */
+  standingCharge: real('standing_charge'),
+  /** Best arbitrage spread: peakExport - offPeakImport */
+  spread: real('spread'),
+  validFrom: timestamp('valid_from').notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // --- Revenue Actuals (for payback tracking on live homes) ---
 
 export const revenueActuals = pgTable('revenue_actuals', {
