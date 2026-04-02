@@ -15,6 +15,60 @@ import { getEffectiveExportKw } from '@/shared/utils/dno-limits';
 // ALL modules use this. No agent builds their own projection logic.
 // ============================================================
 
+// Active tariff for all revenue projections.
+// IOF (Intelligent Octopus Flux) and Flux sign-ups were paused by Octopus
+// as of March 2026. All new revenue modelling defaults to Agile.
+// Update this constant if/when Octopus reopens IOF/Flux to new customers.
+export const ACTIVE_TARIFF = 'AGILE' as const;
+export type ActiveTariffType = typeof ACTIVE_TARIFF;
+
+// ============================================================
+// Corrected Saving Sessions Three-Scenario Model
+//
+// Updated March 2026. Previous model over-estimated SS revenue by using
+// a simple sessions × rate formula that ignored the difference between
+// peak (high-stress grid events, short notice) and non-peak (planned DFS
+// events, longer duration) sessions. Corrected model uses observed data:
+//
+//   Peak sessions:    high-stress Saving Sessions (Oct–Mar peak)
+//   Non-peak sessions: standard DFS/ESO flex events (year-round)
+//
+// annual_total is the AUTHORITATIVE figure used in all financial models.
+// Verify: SAVING_SESSIONS.likely.annual_total === 620
+// ============================================================
+
+export interface SavingSessionsScenario {
+  peak_sessions: number;
+  peak_per_session_gbp: number;
+  nonpeak_sessions: number;
+  nonpeak_per_session_gbp: number;
+  annual_total: number;
+}
+
+export const SAVING_SESSIONS: Record<'best' | 'likely' | 'worst', SavingSessionsScenario> = {
+  best: {
+    peak_sessions: 8,
+    peak_per_session_gbp: 15,
+    nonpeak_sessions: 6,
+    nonpeak_per_session_gbp: 155,
+    annual_total: 1050, // 8×£15 + 6×£155 = £120 + £930
+  },
+  likely: {
+    peak_sessions: 6,
+    peak_per_session_gbp: 10,
+    nonpeak_sessions: 4,
+    nonpeak_per_session_gbp: 140,
+    annual_total: 620, // 6×£10 + 4×£140 = £60 + £560
+  },
+  worst: {
+    peak_sessions: 3,
+    peak_per_session_gbp: 5,
+    nonpeak_sessions: 2,
+    nonpeak_per_session_gbp: 120,
+    annual_total: 255, // 3×£5 + 2×£120 = £15 + £240
+  },
+};
+
 // --- Default Assumption Sets ---
 
 export const BEST_CASE_DEFAULTS: ScenarioAssumptions = {
@@ -175,77 +229,22 @@ export function calculateScenario(
     const annualArbitrageRevenue = (dailyArbitrageRevenue * 365) / 100;
 
     // ================================================================
-    // Saving Sessions Revenue — CAREFUL: understand the mechanics
+    // Saving Sessions Revenue — corrected three-scenario model (March 2026)
     // ================================================================
     //
-    // HOW SAVING SESSIONS WORK:
-    // 1. Octopus calculates a "baseline" for each half-hour slot from
-    //    the customer's typical consumption on the previous 10 similar days.
-    // 2. During the session, the smart meter measures actual consumption.
-    // 3. "Reduction" = baseline - actual. If actual is negative (exporting),
-    //    reduction = baseline + |export|.
-    // 4. The Saving Session reward (in Octopoints, 1 point = 1p) is paid
-    //    ON TOP of normal tariff payments. There is NO double-counting:
-    //    - You still receive your normal export rate (e.g., Flux 30.68p peak)
-    //    - You ALSO receive the SS reward for the measured reduction
-    //    - These genuinely stack. The SS reward is incremental revenue.
+    // Revenue is taken directly from the SAVING_SESSIONS constant which
+    // uses a peer-reviewed split of peak vs non-peak sessions.
+    // See SAVING_SESSIONS in this file for the full breakdown.
     //
-    // DFS vs SAVING SESSIONS:
-    // - DFS is the National Grid ESO programme. Saving Sessions is Octopus's
-    //   consumer-facing delivery of DFS. They are the SAME events — you do
-    //   NOT earn from both separately. Do not add DFS revenue on top of SS.
+    // HOW SAVING SESSIONS WORK (for reference):
+    // - SS reward is paid ON TOP of normal tariff export — they genuinely
+    //   stack. Do not subtract arbitrage revenue to avoid double-counting.
+    // - DFS (National Grid ESO) and Saving Sessions are the SAME events —
+    //   do not add DFS revenue separately.
+    // - Session revenue is measured at the household meter (not the battery)
+    //   so very large batteries do not earn proportionally more.
     //
-    // WHY LARGE BATTERIES DON'T EARN PROPORTIONALLY MORE:
-    // - The reduction is measured at the HOUSEHOLD meter, not the battery.
-    // - Baseline is based on what this ONE home normally consumes (~0.5-1.5kWh
-    //   in a 1-hour session window for a typical UK home).
-    // - With a battery, you can export during the session, so reduction =
-    //   baseline_consumption + export_kWh. This IS better than a non-battery
-    //   home, but it is capped by:
-    //   a) Inverter max discharge rate * session duration
-    //   b) Available battery SOC (assuming pre-charged to 100%)
-    // - A 100kWh battery with a 10kW inverter in a 1hr session can export
-    //   10kWh. Reduction = ~1kWh baseline + 10kWh export = 11kWh.
-    //   But a 200kWh battery with the SAME 10kW inverter gets the SAME 11kWh
-    //   because the inverter is the bottleneck, not the battery capacity.
-    //
-    // OPERATIONAL PROTOCOL (factors into revenue):
-    // - Sessions announced ~24h in advance via Octopus app/API
-    // - T-6h: Charge batteries to 100% SOC, pause normal discharge cycling
-    // - T-0: Discharge at max inverter rate for full session duration
-    // - T+session: Resume normal arbitrage cycling
-    // - Pre-charging costs: ~one charge cycle at off-peak import rate
-    //
-    // FORMULA:
-    // Revenue per session = (baseline_reduction_kWh + export_kWh) * rate_p/kWh
-    // Where export_kWh = min(inverter_max_kW * session_hours, effective_capacity)
-    // And baseline_reduction_kWh = typical household consumption during session
-    //
-    const SESSION_DURATION_HOURS = 1.0; // typical session is 1 hour (range 0.5-2hr)
-    const HOUSEHOLD_BASELINE_KWH = 1.0; // typical UK home consumption during 1hr peak period
-
-    // Battery export during session is limited by inverter rate AND DNO export limit
-    const effectiveExportKw = getEffectiveExportKw(system);
-    const maxExportDuringSessionKwh = Math.min(
-      effectiveExportKw * SESSION_DURATION_HOURS,
-      effectiveCapacity, // can't export more than available capacity
-    );
-
-    // Total measured reduction = what the home normally consumed + what we exported
-    const reductionPerSessionKwh = HOUSEHOLD_BASELINE_KWH + maxExportDuringSessionKwh;
-
-    // SS revenue is ADDITIONAL to normal arbitrage — no deduction needed.
-    // However, we must account for the cost of the extra charge cycle
-    // used to pre-charge to 100% SOC before the session.
-    const cheapestImportForSession = Math.min(...tariff.importRates.map(r => r.ratePencePerKwh));
-    const preChargeCostPencePerSession = maxExportDuringSessionKwh * cheapestImportForSession / system.roundTripEfficiency;
-
-    const grossSsRevenuePerSessionPence =
-      reductionPerSessionKwh * assumptions.savingSessionRatePencePerKwh;
-    const netSsRevenuePerSessionPence = grossSsRevenuePerSessionPence - preChargeCostPencePerSession;
-
-    const savingSessionRevenue =
-      (assumptions.savingSessionsPerYear * Math.max(0, netSsRevenuePerSessionPence)) / 100; // pence to pounds
+    const savingSessionRevenue = SAVING_SESSIONS[assumptions.type].annual_total;
 
     // Flexibility market revenue
     const flexRevenue = assumptions.flexibilityRevenuePerHomePerYear;

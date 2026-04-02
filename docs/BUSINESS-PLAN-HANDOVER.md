@@ -22,7 +22,7 @@ RoseStack Energy is a Lancashire-based battery storage deployment and management
 
 The RoseStack Platform is a custom-built web application that serves as the operational brain of the business. It covers every aspect of the operation -- from sourcing hardware and identifying properties, through financial modelling and investor materials, to live portfolio monitoring and risk management.
 
-**Tech stack:** Next.js 16 / TypeScript / Recharts / Leaflet maps
+**Tech stack:** Next.js 15 / TypeScript / Recharts / Leaflet maps
 **Design:** Dark-mode dashboard with rose-red (#B91C4D) brand accent
 
 The platform has 12 modules, each covering a distinct area of the business. Every financial output displays three scenarios (Best / Likely / Worst case) -- this is a non-negotiable standard across the entire platform.

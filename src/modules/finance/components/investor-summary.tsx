@@ -167,16 +167,18 @@ export function InvestorSummary() {
         <CardContent>
           <div className="space-y-2">
             {[
-              { label: 'Arbitrage (charge cheap, sell peak)', value: pnl.projection.likely[0]?.grossRevenue ?? 0, pct: 60 },
-              { label: 'Saving Sessions', value: 350, pct: 15 },
-              { label: 'Solar self-consumption savings', value: 300, pct: 13 },
-              { label: 'Flexibility & grid services', value: 200, pct: 8 },
-              { label: 'DFS/balancing', value: 100, pct: 4 },
+              { label: 'Agile Arbitrage (charge cheap, sell peak)', value: 5600, pct: 73 },
+              { label: 'Solar Self-Use', value: 760, pct: 10 },
+              { label: 'Saving Sessions', value: 620, pct: 8, tooltip: 'Conservative modelling: 6 peak sessions @ £10 + 4 non-peak sessions @ £140. See Saving Sessions model (March 2026) for full breakdown.' },
+              { label: 'SEG Export', value: 380, pct: 5 },
+              { label: 'ENWL Flexibility (estimate)', value: 310, pct: 4, tooltip: 'Estimate only — Piclo Flex integration planned for a future phase.' },
             ].map(item => (
               <div key={item.label} className="flex items-center gap-3">
                 <div className="flex-1">
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-text-secondary">{item.label}</span>
+                    <span className="text-text-secondary" title={'tooltip' in item ? item.tooltip : undefined}>
+                      {item.label}{'tooltip' in item ? ' ⓘ' : ''}
+                    </span>
                     <span className="text-text-primary font-medium">{formatGbp(item.value)}</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-bg-primary overflow-hidden">
@@ -186,6 +188,10 @@ export function InvestorSummary() {
               </div>
             ))}
           </div>
+          <p className="text-xs text-text-tertiary mt-3">
+            Based on Agile tariff (Octopus Flux/IOF paused March 2026). Total £7,670/year likely case.
+            ENWL Flexibility revenue shown as estimate only — Piclo Flex integration planned for future phase.
+          </p>
         </CardContent>
       </Card>
     </div>

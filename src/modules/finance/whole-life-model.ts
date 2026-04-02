@@ -17,6 +17,7 @@ import {
   BEST_CASE_DEFAULTS,
   LIKELY_CASE_DEFAULTS,
   WORST_CASE_DEFAULTS,
+  SAVING_SESSIONS,
   formatGbp,
 } from '@/shared/utils/scenarios';
 import type {
@@ -309,11 +310,9 @@ function itemiseRevenue(
   assumptions: ScenarioAssumptions,
   system: BatterySystem,
 ): Omit<AnnualRevenue, 'year'> {
-  // Saving Sessions revenue is directly available as its own calculation.
-  // We back it out from the gross using the known formula from the scenario engine.
-  const savingSessionsRevenue = Math.max(0, assumptions.flexibilityRevenuePerHomePerYear > 0
-    ? yearData.grossRevenue * 0.04  // rough SS share when flex is also present
-    : yearData.grossRevenue * 0.06); // slightly higher when no flex
+  // Saving Sessions revenue — use SAVING_SESSIONS authoritative annual totals.
+  // These are scenario-specific flat values from the corrected March 2026 model.
+  const savingSessionsRevenue = SAVING_SESSIONS[assumptions.type].annual_total;
 
   // Flexibility market revenue from the assumption
   const flexibilityRevenue = assumptions.flexibilityRevenuePerHomePerYear;

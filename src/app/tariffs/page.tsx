@@ -44,6 +44,23 @@ export default function TariffsPage() {
         </p>
       </div>
 
+      {/* Tariff Status Banner — IOF/Flux paused March 2026 */}
+      <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 space-y-1">
+        <p className="text-sm font-semibold text-amber-400">Tariff Status Update — March 2026</p>
+        <ul className="text-xs text-amber-300/90 space-y-0.5 list-disc list-inside">
+          <li>
+            <strong>Intelligent Octopus Flux (IOF)</strong> — new sign-ups <strong>paused</strong> by Octopus Energy. Existing customers unaffected.
+          </li>
+          <li>
+            <strong>Octopus Flux</strong> — new sign-ups <strong>paused</strong>. Awaiting Octopus re-opening.
+          </li>
+          <li>
+            <strong>Octopus Agile</strong> — open for new sign-ups. All revenue figures on this page are{' '}
+            <strong>based on Agile tariff</strong> until IOF/Flux availability is confirmed.
+          </li>
+        </ul>
+      </div>
+
       {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <SimpleStatCard
