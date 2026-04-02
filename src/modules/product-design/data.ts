@@ -3,6 +3,34 @@
 // Sodium-ion cell options, inverters, costs, regulatory, manufacturing
 // ============================================================
 
+// ============================================================
+// RoseStack Own-Brand Na-Ion System — Cost Target
+//
+// Updated April 2026: cost target revised from £280/kWh to £220/kWh.
+// At 500+ units/year the CATL Naxtra cell cost drops materially and
+// UK assembly overhead is spread across a larger volume.
+//
+// Strategic rationale for own-brand Na-Ion system:
+//   1. Supply chain independence — removes reliance on Sigenergy/GivEnergy
+//      pricing power; RoseStack controls its own BoM.
+//   2. Margin expansion — at £220/kWh own-brand vs £295/kWh Sigenergy
+//      incumbent, gross margin per kWh improves by ~34%.
+//   3. IP ownership — proprietary cell-to-pack design, BMS configuration,
+//      and dispatch firmware create defensible technical moat.
+//   4. Fleet integration — own hardware enables tighter Kraken/Agile API
+//      integration and real-time dispatch optimisation not available via
+//      third-party inverters.
+//   5. Exit value — a vertically integrated hardware + software + fleet
+//      business commands a significant multiple premium over a pure
+//      deployment/aggregation play.
+//
+// Volume threshold: 500+ units before cost target is achievable.
+// Below 500 units, use third-party hardware (Sigenergy / GivEnergy stacks).
+// ============================================================
+
+export const NAION_COST_TARGET_GBP_KWH = 220;
+export const NAION_COST_TARGET_VOLUME_THRESHOLD_UNITS = 500;
+
 import type {
   SodiumIonCellSpec,
   PackDesign,

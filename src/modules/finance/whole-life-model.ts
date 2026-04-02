@@ -130,6 +130,12 @@ export interface WholeLifeModel {
     npv5Percent: number;
     /** Total net revenue over ESA term / totalCapex */
     lifetimeRevenueMultiple: number;
+    /**
+     * ESA end-of-term residual value (Option B: homeowner purchase at 40% of original CAPEX).
+     * Only meaningful at Year 10. Used in investor materials to show asset-backed floor value.
+     * Source: ESA end-of-term clause (comp-9b). Status: Draft — requires solicitor review.
+     */
+    residualValueGbp: number;
   };
   scenarios: {
     best: WholeLifeYear[];
@@ -534,6 +540,10 @@ export function buildWholeLifeModel(params: WholeLifeModelParams): WholeLifeMode
       ? Math.round((totalNetCashFlow / capex.totalCapex) * 100) / 100
       : 0;
 
+  // ESA end-of-term residual value: Option B purchase price = 40% of original CAPEX.
+  // Status: Draft — requires solicitor review before presenting to investors.
+  const residualValueGbp = Math.round(capex.totalCapex * 0.40);
+
   return {
     capex,
     projections,
@@ -548,6 +558,7 @@ export function buildWholeLifeModel(params: WholeLifeModelParams): WholeLifeMode
       npv8Percent,
       npv5Percent,
       lifetimeRevenueMultiple,
+      residualValueGbp,
     },
     scenarios: {
       // Single-scenario build: all three slots hold this scenario's projections.

@@ -75,7 +75,7 @@ export const complianceRequirements: ComplianceRequirement[] = [
   {
     id: 'comp-6',
     category: 'electrical-regs',
-    name: 'BS 7671 Wiring Regulations (incl. Amendment 4, Chapter 57)',
+    name: 'BS 7671:2018+A4:2024 — 19th Edition IET Wiring Regulations Amendment 4',
     description:
       'All battery storage installations must comply with BS 7671 (IET Wiring Regulations 18th Edition). Amendment 4 publishes 15 April 2026 and introduces new Chapter 57 dedicated to battery energy storage — covering thermal runaway protection, isolation requirements, location restrictions, ventilation, and documentation. This is the most significant regulatory change for domestic BESS in 2026.',
     status: 'action-needed',
@@ -118,6 +118,21 @@ export const complianceRequirements: ComplianceRequirement[] = [
     owner: 'Dave Middleton',
     dueDate: '2026-04-15',
     criticality: 'critical',
+  },
+  {
+    id: 'comp-9b',
+    category: 'esa-contract',
+    name: 'ESA End-of-Term Options — Draft',
+    description:
+      'The ESA must define what happens at the end of the 10-year term. Three options must be included in the template for homeowner choice:\n\n' +
+      'Option A (Default) — Equipment Removal: RoseStack removes the battery system at its own cost within 90 days of term end. Homeowner has no further liability. Site restored to original condition.\n\n' +
+      'Option B — Purchase at Residual Value: Homeowner may purchase the system at 40% of original CAPEX (residual value). Ownership transfers; RoseStack provides warranty documentation and final commissioning report.\n\n' +
+      'Option C — Renewed ESA: Parties may agree a renewed 5-year ESA at a reduced homeowner payment (reflecting depreciated asset value). Rates and terms renegotiated at the time.',
+    status: 'action-needed',
+    owner: 'Dave Middleton',
+    dueDate: '2026-06-01',
+    criticality: 'high',
+    notes: 'Default is Option A (removal). Options B and C require homeowner opt-in. Solicitor must draft all three scenarios. Status: Draft — requires solicitor review.',
   },
   {
     id: 'comp-10',

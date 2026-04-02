@@ -69,6 +69,23 @@ export const SAVING_SESSIONS: Record<'best' | 'likely' | 'worst', SavingSessions
   },
 };
 
+// ============================================================
+// Revenue Mix — Likely Case, Year 1, Agile Tariff, March 2026
+//
+// Used by Finance page, Dashboard, and Investor Summary charts.
+// Total: £7,670/year per home.
+// Note: ENWL Flexibility is an estimate — Piclo Flex integration planned.
+// ============================================================
+
+export const REVENUE_MIX = {
+  agileArbitrage:     { gbp: 5600, pct: 73, label: 'Agile Arbitrage' },
+  solarSelfUse:       { gbp: 760,  pct: 10, label: 'Solar Self-Use' },
+  savingSessions:     { gbp: 620,  pct: 8,  label: 'Saving Sessions' },
+  segExport:          { gbp: 380,  pct: 5,  label: 'SEG Export' },
+  enwlFlexibility:    { gbp: 310,  pct: 4,  label: 'ENWL Flexibility (estimate)' },
+  total:              7670,
+} as const;
+
 // --- Default Assumption Sets ---
 
 export const BEST_CASE_DEFAULTS: ScenarioAssumptions = {

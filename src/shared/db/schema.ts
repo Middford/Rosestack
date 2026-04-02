@@ -130,6 +130,8 @@ export const homes = pgTable('homes', {
   consumptionKwhPerYear: real('consumption_kwh_per_year'),
   solarKwp: real('solar_kwp'),
   referralSource: varchar('referral_source', { length: 200 }),
+  /** How property data was obtained: 'ENWL Open Data' | 'PACE Call' | 'Site Survey' | 'Modelled Estimate' */
+  dataSource: varchar('data_source', { length: 100 }).notNull().default('Modelled Estimate'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -180,6 +182,8 @@ export const substations = pgTable('substations', {
   flexibilityTenderActive: boolean('flexibility_tender_active').notNull().default(false),
   connectedHomes: integer('connected_homes'),
   maxNewConnections: integer('max_new_connections'),
+  /** How this record was obtained: 'ENWL Open Data' | 'PACE Call' | 'Site Survey' | 'Modelled Estimate' */
+  dataSource: varchar('data_source', { length: 100 }).notNull().default('Modelled Estimate'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
