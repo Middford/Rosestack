@@ -494,6 +494,23 @@ export const SEEDED_RISKS: RiskItem[] = [
 
   // --- 5. Operational Risks ---
   {
+    id: 'R-OPS-000',
+    name: 'Single-property test dependency',
+    category: 'operational',
+    description: 'All backtesting, revenue projections, and financial modelling are based on a single reference property — The Beeches (192kWh/96kW, 3-phase, Burnley). This creates survivorship bias: if The Beeches is unrepresentatively favourable (large garden, good grid connection, high-consumption household), portfolio projections will overstate actual fleet performance.',
+    probability: 3,
+    impact: 3,
+    score: 9,
+    rating: riskRating(9),
+    mitigationStrategy: 'Model 3-5 representative properties covering the full spectrum of deployment scenarios: (1) The Beeches 192kWh/96kW 3-phase [existing], (2) Garden Standard 160kWh/40kW 3-phase, (3) Single-phase 54kWh/11.5kW, (4) Semi-detached terraced limited garden, (5) Constrained substation area. Run all financial projections against the full representative set and use the average, not just The Beeches.',
+    mitigationOwner: 'Dave',
+    mitigationStatus: 'not-started',
+    residualScore: 4,
+    triggerThreshold: 'Any deviation >15% between The Beeches actuals and projected revenue in the first 6 months post-installation',
+    contingencyPlan: 'Recalibrate financial models against actual fleet data once 3+ homes are live. Update SAVING_SESSIONS, REVENUE_MIX, and CAPACITY_RESERVE constants with real observed values.',
+    lastReviewed: new Date('2026-04-02'),
+  },
+  {
     id: 'R-OPS-001',
     name: 'Installer capacity',
     category: 'operational',

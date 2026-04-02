@@ -438,4 +438,19 @@ export const strategyInitiatives: StrategyInitiative[] = [
     durationMonths: 12,
     description: 'Full aggregation platform. Bid portfolio into national balancing mechanism. Virtual power plant operator.',
   },
+  {
+    id: 'init-wholesale-tariff',
+    name: 'Wholesale Tariff Pathway',
+    phase: 'phase-4',
+    category: 'vertical',
+    startMonth: 48,
+    durationMonths: 18,
+    description: 'At 100+ homes, RoseStack can access wholesale energy markets directly rather than using retail tariffs (Agile/Flux). ' +
+      'Key advantages: (1) Wholesale revenue is ~2× per kWh vs retail arbitrage — at 100 homes × 192kWh, a 1p/kWh improvement is worth ~£35,000/yr. ' +
+      '(2) Ofgem supply licence: Independent supply licence costs £350–£1,050/yr (the cheapest route). ' +
+      '(3) Accreditation timeline: ~12 months for BSC (Balancing and Settlement Code) registration, Elexon accreditation, and MPAS access. ' +
+      '(4) 100-home fleet minimum: below 100 homes the fixed accreditation cost (~£80–150k total setup) is not recoverable; at 100+ homes it yields a 3–5 year IRR improvement. ' +
+      'Prerequisite: ENWL flexibility partnership and Piclo Flex aggregator relationship must be established in Phase 3 first.',
+    dependencies: ['init-aggregation', 'init-ev-charging'],
+  },
 ];
