@@ -25,6 +25,7 @@ import type {
   ScenarioAssumptions,
   YearlyProjection,
 } from '@/shared/types';
+import { ALL_TARIFFS } from '@/modules/tariffs/data';
 
 // ============================================================
 // Data Structures
@@ -660,31 +661,23 @@ export function formatCapexBreakdown(capex: CapexBreakdown): string {
 /**
  * The Beeches reference tariff — Octopus Intelligent Octopus Flux (IOF).
  *
- * This is an inline copy of the IOF rates used in the codebase tests so that
- * the reference model works without requiring Agent 2's tariff data (which
- * may not yet be merged). When Agent 2 data is available, callers can pass
- * the real tariff instead.
+ * IOF scenario revenue shown at paused rates. Source from tariffs/data.ts, not hardcoded.
+ *
+ * IOF signups were paused by Octopus in early 2026. The current live IOF rates use equal
+ * import/export pricing (24.27p off-peak, 32.36p peak both ways), giving only an 8.09p
+ * arbitrage spread. This means the IOF scenario correctly shows near-zero arbitrage
+ * revenue while paused — do NOT revert to the old pre-pause rates (11.44p / 39.44p).
+ *
+ * When IOF resumes, tariffs/data.ts will be updated and this model will automatically
+ * reflect the current rates without any change needed here.
  */
-const BEECHES_IOF_TARIFF: Tariff = {
-  id: 'tariff-iof-beeches-reference',
-  supplier: 'Octopus Energy',
-  name: 'Intelligent Octopus Flux',
-  type: 'flux',
-  importRates: [
-    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 11.44 },
-    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 24.50 },
-    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 39.44 },
-    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 24.50 },
-  ],
-  exportRates: [
-    { periodStart: '02:00', periodEnd: '05:00', ratePencePerKwh: 4.10 },
-    { periodStart: '05:00', periodEnd: '16:00', ratePencePerKwh: 16.30 },
-    { periodStart: '16:00', periodEnd: '19:00', ratePencePerKwh: 30.68 },
-    { periodStart: '19:00', periodEnd: '02:00', ratePencePerKwh: 16.30 },
-  ],
-  standingChargePencePerDay: 46.36,
-  validFrom: new Date('2024-01-01'),
-};
+const _iofTariffFromData = ALL_TARIFFS.find(t => t.id === 'octopus-iof');
+if (!_iofTariffFromData) {
+  throw new Error(
+    'IOF tariff not found in tariffs/data.ts — ensure octopus-iof is present in ALL_TARIFFS',
+  );
+}
+const BEECHES_IOF_TARIFF: Tariff = _iofTariffFromData;
 
 /**
  * Return the three-scenario whole-life model for The Beeches demo property.

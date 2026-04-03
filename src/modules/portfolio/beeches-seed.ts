@@ -191,6 +191,19 @@ export const BEECHES_PORTFOLIO_PROPERTY = {
   segRate: 15,
 
   // Financial projections (static for demo — driven by scenario engine in live build)
+  //
+  // WHY BEECHES REVENUE IS ~2× A TYPICAL SINGLE-PHASE HOME:
+  // A typical RS-25 / 64kWh / single-phase home earns ~£7,000–£8,500/yr (likely case).
+  // The Beeches earns ~£15,500/yr (likely) because:
+  //   1. Battery: 192kWh vs ~64kWh — 3× the energy throughput per cycle
+  //   2. Inverter: 96kW 3-phase vs 3.68kW single-phase export limit
+  //      → The DNO export limit for single-phase is ~3.68kW (16A × 230V)
+  //      → The Beeches has a 50kW ENWL-approved export limit on 3-phase
+  //      → This enables full charge/discharge cycles in ~2hrs vs ~17hrs for single-phase
+  //   3. Cycling: multiple daily full cycles possible (3-phase enables rapid turnaround)
+  //   4. Saving Sessions: 96kW inverter can export 96kWh in a 1-hr session
+  //      (vs ~3.68kWh for single-phase) — though SS reward is measured at household meter
+  // This is a proof-of-concept deployment, not a typical RoseStack installation.
   projection: {
     best: {
       annualGrossRevenue: 19200,

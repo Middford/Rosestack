@@ -12,6 +12,7 @@ import {
   LIKELY_CASE_DEFAULTS,
   WORST_CASE_DEFAULTS,
 } from '../data';
+import { REVENUE_MIX } from '@/shared/utils/scenarios';
 import type { ScenarioAssumptions } from '@/shared/types';
 
 export function ModelBuilder() {
@@ -120,7 +121,7 @@ export function ModelBuilder() {
           worstValue={formatGbp(summary.worst.tenYearNpv)}
         />
         <StatCard
-          label="Annual Net Revenue"
+          label={`Annual Net Revenue — Typical home revenue — ${REVENUE_MIX.referenceSystem}`}
           bestValue={formatGbp(summary.best.annualNetRevenue)}
           likelyValue={formatGbp(summary.likely.annualNetRevenue)}
           worstValue={formatGbp(summary.worst.annualNetRevenue)}
@@ -209,6 +210,25 @@ export function ModelBuilder() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Revenue Reference Footnote */}
+      <div className="rounded-[var(--radius-md)] border border-border bg-bg-secondary p-4 text-xs text-text-secondary space-y-1">
+        <p className="font-medium text-text-primary">Revenue reference notes</p>
+        <p>
+          Revenue figures above are for the selected system configuration.
+          Reference system for &ldquo;typical home&rdquo; comparisons:{' '}
+          <span className="font-medium text-text-primary">{REVENUE_MIX.referenceSystem}</span>.
+        </p>
+        <p>
+          <span className="font-medium text-text-primary">The Beeches (proof of concept) — 192kWh 3-phase</span> generates
+          approximately 2× typical home revenue due to 3× battery capacity, a 96kW 3-phase inverter
+          (vs 3.68kW single-phase limit), and a 50kW ENWL-approved export limit enabling multiple daily cycles.
+        </p>
+        <p className="text-text-tertiary">
+          Revenue varies by system size and phase. The Beeches is a 192kWh 3-phase installation.
+          Typical single-phase homes generate approximately half this revenue.
+        </p>
+      </div>
     </div>
   );
 }

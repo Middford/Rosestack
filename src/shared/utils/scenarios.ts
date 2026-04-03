@@ -15,6 +15,31 @@ import { getEffectiveExportKw } from '@/shared/utils/dno-limits';
 // ALL modules use this. No agent builds their own projection logic.
 // ============================================================
 
+// ============================================================
+// Revenue Mix — Reference System Benchmarks
+//
+// Reference system: RS-25 / 64kWh / single-phase
+// This is a TYPICAL residential BESS deployment — NOT The Beeches.
+//
+// WHY THE BEECHES EARNS ~2× A TYPICAL HOME:
+//   - 192kWh vs ~64kWh battery: 3× the throughput for arbitrage
+//   - 96kW 3-phase inverter vs 3.68kW single-phase limit:
+//     allows 26× the peak discharge rate, enabling full daily cycles
+//   - 3-phase export: can export to all three phases simultaneously
+//   - Multiple full charge/discharge cycles per day are feasible
+// Typical single-phase homes generate approximately half Beeches revenue.
+// ============================================================
+export const REVENUE_MIX = {
+  /** Reference system label for UI display */
+  referenceSystem: 'RS-25 / 64kWh / single-phase' as const,
+  /** Approximate annual revenue composition for a typical single-phase home */
+  arbitragePercent: 60,
+  savingSessionsPercent: 20,
+  flexibilityPercent: 12,
+  segPercent: 5,
+  capacityMarketPercent: 3,
+} as const;
+
 // --- Default Assumption Sets ---
 
 export const BEST_CASE_DEFAULTS: ScenarioAssumptions = {
