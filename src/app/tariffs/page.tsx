@@ -17,6 +17,7 @@ import {
 import { IofModeller } from '@/modules/tariffs/components/iof-modeller';
 import { AgileModeller } from '@/modules/tariffs/components/agile-modeller';
 import { FluxModeller } from '@/modules/tariffs/components/flux-modeller';
+import { TariffComparisonModeller } from '@/modules/tariffs/components/tariff-comparison-modeller';
 
 const TABS = [
   { id: 'fleet', label: 'Fleet Revenue' },
@@ -30,6 +31,7 @@ const TABS = [
   { id: 'iof-model', label: 'IOF Model' },
   { id: 'agile-model', label: 'Agile Model' },
   { id: 'flux-model', label: 'Flux Model' },
+  { id: 'head-to-head', label: 'Head-to-Head' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -128,6 +130,7 @@ export default function TariffsPage() {
         {activeTab === 'iof-model' && <IofModeller />}
         {activeTab === 'agile-model' && <AgileModeller />}
         {activeTab === 'flux-model' && <FluxModeller />}
+        {activeTab === 'head-to-head' && <TariffComparisonModeller />}
       </div>
     </div>
   );

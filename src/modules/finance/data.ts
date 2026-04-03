@@ -55,15 +55,19 @@ function buildSystem(
 }
 
 export const SYSTEM_OPTIONS: SystemOption[] = [
-  buildSystem('bat-sigenergy', 1, 'inv-sigenergy-m1', 5),
-  buildSystem('bat-sigenergy', 2, 'inv-sigenergy-m1', 5),
-  buildSystem('bat-givenergy', 1, 'inv-givenergy', 4),
-  buildSystem('bat-givenergy', 2, 'inv-givenergy', 4),
-  buildSystem('bat-byd-hvs', 2, 'inv-fronius', 5),
-  buildSystem('bat-byd-hvs', 3, 'inv-fronius', 5),
-  buildSystem('bat-huawei-luna', 1, 'inv-huawei', 5),
-  buildSystem('bat-huawei-luna', 2, 'inv-huawei', 5),
-  buildSystem('bat-fox-ess', 1, 'inv-fox-ess', 4),
+  // Fogstar + Deye — RoseStack primary config (best £/kWh)
+  buildSystem('bat-fogstar-64', 3, 'inv-deye-20k', 4),
+  buildSystem('bat-fogstar-64', 5, 'inv-deye-20k', 4),
+  buildSystem('bat-fogstar', 5, 'inv-deye-20k', 4),
+  // Fogstar + Solis — alternative LV config
+  buildSystem('bat-fogstar-64', 5, 'inv-solis-30k', 3),
+  // SigenStack + M1 — IOF-approved large-scale
+  buildSystem('bat-sigenstack', 7, 'inv-sigenergy-m1', 1),
+  buildSystem('bat-sigenstack', 14, 'inv-sigenergy-m1', 1),
+  buildSystem('bat-sigenstack', 21, 'inv-sigenergy-m1', 1),
+  // SigenStor + M1 — IOF-approved residential
+  buildSystem('bat-sigenstor', 4, 'inv-sigenergy-m1', 1),
+  buildSystem('bat-sigenstor', 6, 'inv-sigenergy-m1', 1),
 ]
   .filter((s): s is BatterySystem => s !== null)
   .map(sys => ({

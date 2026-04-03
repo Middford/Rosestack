@@ -133,6 +133,27 @@ export const homes = pgTable('homes', {
   referralSource: varchar('referral_source', { length: 200 }),
   /** How property data was obtained: 'ENWL Open Data' | 'PACE Call' | 'Site Survey' | 'Modelled Estimate' */
   dataSource: varchar('data_source', { length: 100 }).notNull().default('Modelled Estimate'),
+  // Project / cashflow fields
+  /** Target install date — drives the cashflow forecast timeline */
+  targetInstallDate: timestamp('target_install_date'),
+  /** Tariff the project will operate on: 'flux' | 'agile' | 'iof' */
+  tariffName: varchar('tariff_name', { length: 20 }),
+  /** Annual insurance cost in GBP (default £500) */
+  insuranceCostAnnual: real('insurance_cost_annual').default(500),
+  /** G99 application fee in GBP (default £350) */
+  g99ApplicationCost: real('g99_application_cost').default(350),
+  /** Override auto-calculated installation cost (null = use phase-based default) */
+  installationCostOverride: real('installation_cost_override'),
+  /** Override battery_systems.annualMaintenanceCost if set */
+  maintenanceCostOverride: real('maintenance_cost_override'),
+  /** Override solar cost (null = solarKwp × £400) */
+  solarCostOverride: real('solar_cost_override'),
+  /** Daily household consumption in kWh */
+  dailyConsumptionKwh: real('daily_consumption_kwh').default(24),
+  /** Whether property has a heat pump */
+  hasHeatPump: boolean('has_heat_pump').default(false),
+  /** Number of EVs (0-2) */
+  evCount: integer('ev_count').default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -431,6 +452,27 @@ export const tariffAvailability = pgTable('tariff_availability', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// 8a. Project cashflow settings (single-row config for the rolling credit facility model)
+export const projectCashflowSettings = pgTable('project_cashflow_settings', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** Total facility size in GBP */
+  facilitySize: real('facility_size').notNull().default(500000),
+  /** Annual interest rate as percentage (e.g. 6.0 = 6%) */
+  interestRatePercent: real('interest_rate_percent').notNull().default(6.0),
+  /** Default G99 application fee per project in GBP */
+  g99FeeDefault: real('g99_fee_default').notNull().default(350),
+  /** Default annual insurance per project in GBP */
+  insuranceDefault: real('insurance_default').notNull().default(500),
+  /** Default annual maintenance per project in GBP */
+  maintenanceDefault: real('maintenance_default').notNull().default(150),
+  /** Default monthly homeowner payment in GBP */
+  homeownerPaymentDefault: real('homeowner_payment_default').notNull().default(100),
+  /** Forecast horizon in months */
+  horizonMonths: integer('horizon_months').notNull().default(96),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // 8. Pipeline events (detailed status tracking for prospecting pipeline)
 export const pipelineEvents = pgTable('pipeline_events', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -443,6 +485,25 @@ export const pipelineEvents = pgTable('pipeline_events', {
   scheduledAt: timestamp('scheduled_at'),
   completedAt: timestamp('completed_at'),
   metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// --- Flux Rates (Octopus Flux band rates — 4 bands per day, import + export) ---
+
+export const fluxRates = pgTable('flux_rates', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** 'import' | 'export' */
+  type: varchar('type', { length: 10 }).notNull(),
+  /** e.g. 'FLUX-IMPORT-23-02-14', 'FLUX-EXPORT-23-02-14' */
+  productCode: varchar('product_code', { length: 50 }),
+  /** ISO 8601 UTC — start of the band period */
+  validFrom: varchar('valid_from', { length: 30 }).notNull(),
+  /** ISO 8601 UTC — end of the band period */
+  validTo: varchar('valid_to', { length: 30 }).notNull(),
+  /** Rate in pence/kWh inclusive of 5% VAT */
+  valueIncVat: real('value_inc_vat').notNull(),
+  /** Octopus region suffix, e.g. 'N' for ENWL */
+  region: varchar('region', { length: 5 }).default('N').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

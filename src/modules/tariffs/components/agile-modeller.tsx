@@ -29,9 +29,9 @@ const tooltipStyle = {
 
 export function AgileModeller() {
   const [batteryId, setBatteryId] = useState('bat-fogstar-64');
-  const [stacks, setStacks] = useState(5);
-  const [inverterId, setInverterId] = useState('inv-deye-20k');
-  const [inverterCount, setInverterCount] = useState(4);
+  const [stacks, setStacks] = useState(4);
+  const [inverterId, setInverterId] = useState('inv-solis-30k');
+  const [inverterCount, setInverterCount] = useState(3);
   const [solarKwp, setSolarKwp] = useState(25);
   const [exportLimitKw, setExportLimitKw] = useState(66);
   const [houseKwh, setHouseKwh] = useState(24);

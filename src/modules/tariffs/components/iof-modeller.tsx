@@ -42,10 +42,10 @@ const tooltipStyle = {
 
 export function IofModeller() {
   // Hardware selections
-  const [batteryId, setBatteryId] = useState('bat-fogstar');
-  const [stacks, setStacks] = useState(10);
-  const [inverterId, setInverterId] = useState('inv-sunsynk');
-  const [inverterCount, setInverterCount] = useState(3);
+  const [batteryId, setBatteryId] = useState('bat-sigenstack');
+  const [stacks, setStacks] = useState(21);
+  const [inverterId, setInverterId] = useState('inv-sigenergy-m1');
+  const [inverterCount, setInverterCount] = useState(1);
   const [solarKwp, setSolarKwp] = useState(25);
   const [exportLimitKw, setExportLimitKw] = useState(66);
 

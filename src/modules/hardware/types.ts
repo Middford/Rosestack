@@ -25,6 +25,7 @@ export interface BatterySpec {
   wholesalePriceGbp: number;
   mcsCertified: boolean;
   iofCompatible: boolean;
+  axleVppCompatible: boolean;
   compatibleInverters: string[];
   imageUrl?: string;
   notes?: string;
@@ -42,6 +43,7 @@ export interface InverterSpec {
   threePhase: boolean;
   g99Compliant: boolean;
   iofCompatible: boolean;
+  axleVppCompatible: boolean;
   octopusApiIntegration: boolean;
   homeAssistantCompatible: boolean;
   priceGbp: number;

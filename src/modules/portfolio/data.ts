@@ -51,9 +51,9 @@ const iofTariff = ALL_TARIFFS.find(t => t.id === 'octopus-iof')!;
 const fluxTariff = ALL_TARIFFS.find(t => t.id === 'octopus-flux')!;
 const agileTariff = ALL_TARIFFS.find(t => t.id === 'octopus-agile')!;
 
-const system1 = buildSystemFromCatalogue('bat-sigenergy', 17, 'inv-sigenergy-m1', 8);
-const system2 = buildSystemFromCatalogue('bat-givenergy', 2, 'inv-givenergy', 4);
-const system3 = buildSystemFromCatalogue('bat-byd-hvs', 3, 'inv-fronius', 6);
+const system1 = buildSystemFromCatalogue('bat-sigenstack', 17, 'inv-sigenergy-m1', 8);
+const system2 = buildSystemFromCatalogue('bat-fogstar-64', 5, 'inv-deye-20k', 4);
+const system3 = buildSystemFromCatalogue('bat-sigenstor', 6, 'inv-sigenergy-m1', 1);
 
 const proj1 = generateProjection(system1, iofTariff);
 const proj2 = generateProjection(system2, fluxTariff);

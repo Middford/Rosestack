@@ -6,3 +6,4 @@ export { TariffMonitor } from './tariff-monitor';
 export { HistoricalRates } from './historical-rates';
 export { PortfolioSweep } from './portfolio-sweep';
 export { FleetRevenueDashboard } from './fleet-revenue-dashboard';
+export { TariffComparisonModeller } from './tariff-comparison-modeller';
