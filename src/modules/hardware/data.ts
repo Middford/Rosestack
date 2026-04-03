@@ -294,25 +294,50 @@ export const batteries: BatterySpec[] = [
   {
     id: 'bat-fogstar',
     manufacturer: 'Fogstar',
-    model: 'Fogstar Energy 10kWh',
+    model: 'Fogstar Energy 48.3kWh Stack (3 × 16.1kWh)',
     category: 'battery',
-    capacityPerModuleKwh: 10.24,
-    maxModulesPerString: 4,
+    capacityPerModuleKwh: 48.3,  // per stack (3 modules)
+    maxModulesPerString: 1,       // 1 stack = 1 unit, parallel stacks for scaling
     chemistry: 'LFP',
-    cycleLife: 6000,
+    cycleLife: 8000,              // at 91% DOD
     degradationRatePercent: 2.0,
-    roundTripEfficiency: 95,
-    chargeRateKw: 5.12,
-    dischargeRateKw: 5.12,
-    ipRating: 'IP55',
-    weightKg: 96,
-    operatingTempMin: 0,
+    roundTripEfficiency: 93,      // 48V LV system
+    chargeRateKw: 15.36,          // 300A × 51.2V
+    dischargeRateKw: 15.36,       // 300A × 51.2V
+    ipRating: 'IP65',
+    weightKg: 394,
+    operatingTempMin: -15,        // with integrated heating
     operatingTempMax: 45,
-    warrantyYears: 10,
-    wholesalePriceGbp: 2400,
+    warrantyYears: 6,             // 6yr warranty, 10yr UK support
+    wholesalePriceGbp: 4999,      // 3-module stack
     mcsCertified: true,
     iofCompatible: false,
-    compatibleInverters: ['inv-victron', 'inv-sunsynk', 'inv-solax'],
+    compatibleInverters: ['inv-victron', 'inv-sunsynk', 'inv-solax', 'inv-deye-20k'],
+    notes: '314Ah LiFePO4. JK 2A active balancing. Built-in aerosol fire suppression. Integrated heating for charging to -15°C. 150A SEPLOS BMS. 350A breaker. LCD touchscreen. CAN/RS485 comms. Scales to 1.23MWh in parallel.',
+  },
+  {
+    id: 'bat-fogstar-64',
+    manufacturer: 'Fogstar',
+    model: 'Fogstar Energy 64.4kWh Stack (4 × 16.1kWh)',
+    category: 'battery',
+    capacityPerModuleKwh: 64.4,  // per stack (4 modules)
+    maxModulesPerString: 1,       // 1 stack = 1 unit
+    chemistry: 'LFP',
+    cycleLife: 8000,              // at 91% DOD
+    degradationRatePercent: 2.0,
+    roundTripEfficiency: 93,
+    chargeRateKw: 15.36,          // 300A × 51.2V
+    dischargeRateKw: 15.36,
+    ipRating: 'IP65',
+    weightKg: 525,
+    operatingTempMin: -15,
+    operatingTempMax: 45,
+    warrantyYears: 6,
+    wholesalePriceGbp: 5999,      // 4-module stack
+    mcsCertified: true,
+    iofCompatible: false,
+    compatibleInverters: ['inv-victron', 'inv-sunsynk', 'inv-solax', 'inv-deye-20k'],
+    notes: '314Ah LiFePO4. JK 2A active balancing. Built-in aerosol fire suppression. Integrated heating. 150A SEPLOS BMS. 350A breaker. Scales to 1.23MWh in parallel.',
   },
 ];
 
@@ -354,6 +379,27 @@ export const inverters: InverterSpec[] = [
     priceGbp: 2800,
     warrantyYears: 12,
     maxOutputKw: 6,
+  },
+  {
+    id: 'inv-deye-20k',
+    manufacturer: 'Deye',
+    model: 'SUN-20K-SG05LP3-EU-SM2 20kW 3-Phase Hybrid LV',
+    category: 'inverter',
+    maxPvInputKw: 32,
+    maxBatteryCapacityKwh: 999, // LV 48V bus, limited by BMS not inverter
+    mpptTrackers: 2,
+    hybrid: true,
+    threePhase: true,
+    g99Compliant: true, // VDE 4105, EN 50549, IEC 62109
+    iofCompatible: false,
+    octopusApiIntegration: false,
+    homeAssistantCompatible: true,
+    priceGbp: 2300, // ~€2,700
+    warrantyYears: 10,
+    maxOutputKw: 20, // 20kW AC output, 97.6% max efficiency
+    // Battery: 40-60V range, 350A max charge/discharge, RS485/CAN
+    // IP65, -40°C to +60°C, on-grid/off-grid/UPS modes
+    // Compatible: NKON ESS, Pylontech US5000, Dyness, Fogstar (48V LFP)
   },
   {
     id: 'inv-solax',
@@ -821,10 +867,16 @@ export const compatibilityMatrix: CompatibilityEntry[] = [
   { batteryId: 'bat-fogstar', inverterId: 'inv-victron', compatible: true, iofEligible: false },
   { batteryId: 'bat-fogstar', inverterId: 'inv-sunsynk', compatible: true, iofEligible: false },
   { batteryId: 'bat-fogstar', inverterId: 'inv-solax', compatible: true, iofEligible: false },
+  { batteryId: 'bat-fogstar', inverterId: 'inv-deye-20k', compatible: true, iofEligible: false },
   { batteryId: 'bat-fogstar', inverterId: 'inv-sigenergy-m1', compatible: false, iofEligible: false },
   { batteryId: 'bat-fogstar', inverterId: 'inv-givenergy', compatible: false, iofEligible: false },
   { batteryId: 'bat-fogstar', inverterId: 'inv-fox-ess', compatible: false, iofEligible: false },
   { batteryId: 'bat-fogstar', inverterId: 'inv-huawei', compatible: false, iofEligible: false },
   { batteryId: 'bat-fogstar', inverterId: 'inv-fronius', compatible: false, iofEligible: false },
   { batteryId: 'bat-fogstar', inverterId: 'inv-sma', compatible: false, iofEligible: false },
+  // Fogstar 64.4kWh stack compatibility
+  { batteryId: 'bat-fogstar-64', inverterId: 'inv-victron', compatible: true, iofEligible: false },
+  { batteryId: 'bat-fogstar-64', inverterId: 'inv-sunsynk', compatible: true, iofEligible: false },
+  { batteryId: 'bat-fogstar-64', inverterId: 'inv-solax', compatible: true, iofEligible: false },
+  { batteryId: 'bat-fogstar-64', inverterId: 'inv-deye-20k', compatible: true, iofEligible: false },
 ];

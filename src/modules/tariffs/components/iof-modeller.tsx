@@ -47,11 +47,16 @@ export function IofModeller() {
   const [inverterId, setInverterId] = useState('inv-sunsynk');
   const [inverterCount, setInverterCount] = useState(3);
   const [solarKwp, setSolarKwp] = useState(25);
+  const [exportLimitKw, setExportLimitKw] = useState(66);
 
   // Household settings
   const [houseKwh, setHouseKwh] = useState(24);
   const [hasHeatPump, setHasHeatPump] = useState(true);
   const [evCount, setEvCount] = useState(2);
+  const [evMilesPerYear, setEvMilesPerYear] = useState(10000); // per EV
+
+  // Convert miles/year to kWh/day: typical EV = 3.5 miles/kWh
+  const evKwhPerDay = Math.round((evMilesPerYear / 365 / 3.5) * 10) / 10;
 
   // Look up selected hardware
   const battery = batteries.find(b => b.id === batteryId) ?? batteries[0]!;
@@ -61,8 +66,21 @@ export function IofModeller() {
   const totalCapKwh = stacks * battery.capacityPerModuleKwh * battery.maxModulesPerString;
   const totalInverterKw = inverterCount * inverter.maxOutputKw;
   const phaseType = inverter.threePhase ? 'three' as const : 'single' as const;
-  const exportLimitKw = phaseType === 'three' ? 66 : 22;
+  const defaultExportKw = phaseType === 'three' ? 66 : 22;
   const effectiveChargeKw = Math.min(totalInverterKw, stacks * battery.chargeRateKw * battery.maxModulesPerString);
+  const batteryDischargeKw = stacks * battery.dischargeRateKw * battery.maxModulesPerString;
+  const usableKwh = totalCapKwh * 0.80; // 20% floor
+  const maxDischargeIn3hrs = usableKwh / 3; // kW needed to empty usable in peak window
+
+  // Determine limiting factor for peak export
+  const limits = [
+    { id: 'inverter', label: 'Inverter Output', kw: totalInverterKw },
+    { id: 'export', label: 'Export Limit (G99)', kw: exportLimitKw },
+    { id: 'battery-rate', label: 'Battery Discharge Rate', kw: batteryDischargeKw },
+    { id: 'battery-cap', label: 'Battery Capacity (3hr drain)', kw: maxDischargeIn3hrs },
+  ];
+  const effectiveExportKw = Math.min(...limits.map(l => l.kw));
+  const limitingFactor = limits.find(l => l.kw === effectiveExportKw)!;
 
   // CAPEX calculation
   const capex = useMemo(() => {
@@ -88,13 +106,13 @@ export function IofModeller() {
     const config: IofModelConfig = {
       batteryCapKwh: totalCapKwh,
       inverterKw: totalInverterKw,
-      exportLimitKw,
+      exportLimitKw: effectiveExportKw, // use actual bottleneck, not just G99
       solarKwp,
       efficiency: battery.roundTripEfficiency / 100,
       houseKwhPerDay: houseKwh,
       hasHeatPump,
       evCount,
-      evKwhPerDay: 15,
+      evKwhPerDay,
     };
     const r = runIofModel(config);
     // Calculate payback
@@ -215,31 +233,49 @@ export function IofModeller() {
           </div>
 
           <div>
-            <label className={labelClass}>Export Limit</label>
-            <div className="text-lg font-bold text-text-primary mt-1">{exportLimitKw}kW</div>
-            <p className="text-xs text-text-tertiary">{phaseType === 'three' ? 'G99 3-phase' : 'G100 1-phase'}</p>
+            <label className={labelClass}>Export Limit (kW)</label>
+            <input
+              type="number"
+              min={3}
+              max={200}
+              step={1}
+              value={exportLimitKw}
+              onChange={e => setExportLimitKw(Math.max(3, Math.min(200, Number(e.target.value))))}
+              className={numberClass}
+            />
+            <p className="text-xs text-text-tertiary mt-1">
+              Default: {defaultExportKw}kW ({phaseType === 'three' ? 'G99 3-ph' : 'G100 1-ph'})
+            </p>
           </div>
         </div>
 
-        {/* System summary row */}
-        <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div>
-            <span className="text-xs text-text-tertiary">Total Battery</span>
-            <p className="text-sm font-semibold text-text-primary">{totalCapKwh.toFixed(0)} kWh</p>
-          </div>
-          <div>
+        {/* System summary row — red border on the limiting factor */}
+        <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 md:grid-cols-6 gap-3">
+          <div className={`rounded-lg p-2 ${limitingFactor.id === 'inverter' ? 'ring-2 ring-red-500 bg-red-500/5' : ''}`}>
             <span className="text-xs text-text-tertiary">Total Inverter</span>
             <p className="text-sm font-semibold text-text-primary">{totalInverterKw} kW</p>
+            {limitingFactor.id === 'inverter' && <p className="text-xs text-red-400 font-medium">⚠ BOTTLENECK</p>}
           </div>
-          <div>
-            <span className="text-xs text-text-tertiary">Effective Charge Rate</span>
-            <p className="text-sm font-semibold text-text-primary">{effectiveChargeKw.toFixed(1)} kW</p>
+          <div className={`rounded-lg p-2 ${limitingFactor.id === 'export' ? 'ring-2 ring-red-500 bg-red-500/5' : ''}`}>
+            <span className="text-xs text-text-tertiary">Export Limit</span>
+            <p className="text-sm font-semibold text-text-primary">{exportLimitKw} kW</p>
+            {limitingFactor.id === 'export' && <p className="text-xs text-red-400 font-medium">⚠ BOTTLENECK</p>}
           </div>
-          <div>
+          <div className={`rounded-lg p-2 ${limitingFactor.id === 'battery-rate' ? 'ring-2 ring-red-500 bg-red-500/5' : ''}`}>
+            <span className="text-xs text-text-tertiary">Battery Discharge</span>
+            <p className="text-sm font-semibold text-text-primary">{batteryDischargeKw.toFixed(1)} kW</p>
+            {limitingFactor.id === 'battery-rate' && <p className="text-xs text-red-400 font-medium">⚠ BOTTLENECK</p>}
+          </div>
+          <div className={`rounded-lg p-2 ${limitingFactor.id === 'battery-cap' ? 'ring-2 ring-red-500 bg-red-500/5' : ''}`}>
+            <span className="text-xs text-text-tertiary">Usable Capacity</span>
+            <p className="text-sm font-semibold text-text-primary">{usableKwh.toFixed(0)} kWh</p>
+            {limitingFactor.id === 'battery-cap' && <p className="text-xs text-red-400 font-medium">⚠ BOTTLENECK</p>}
+          </div>
+          <div className="rounded-lg p-2">
             <span className="text-xs text-text-tertiary">Peak Export</span>
-            <p className="text-sm font-semibold text-text-primary">{result.system.maxPeakExportKwh.toFixed(0)} kWh/day</p>
+            <p className="text-sm font-semibold text-blue-400">{effectiveExportKw.toFixed(0)} kW → {(effectiveExportKw * 3).toFixed(0)} kWh/day</p>
           </div>
-          <div>
+          <div className="rounded-lg p-2">
             <span className="text-xs text-text-tertiary">Total CAPEX</span>
             <p className="text-sm font-bold text-rose">£{capex.total.toLocaleString()}</p>
           </div>
@@ -295,6 +331,23 @@ export function IofModeller() {
                 </button>
               ))}
             </div>
+            {evCount > 0 && (
+              <div className="mt-2">
+                <label className={labelClass}>Miles/year per EV</label>
+                <input
+                  type="number"
+                  min={1000}
+                  max={30000}
+                  step={500}
+                  value={evMilesPerYear}
+                  onChange={e => setEvMilesPerYear(Math.max(1000, Math.min(30000, Number(e.target.value))))}
+                  className={numberClass}
+                />
+                <p className="text-xs text-text-tertiary mt-1">
+                  = {evKwhPerDay} kWh/day/EV ({(evKwhPerDay * evCount).toFixed(1)} total) @ 3.5 mi/kWh
+                </p>
+              </div>
+            )}
           </div>
           <div>
             <label className={labelClass}>IOF Rates</label>
@@ -480,7 +533,7 @@ export function IofModeller() {
         Peak export: {exportLimitKw}kW × 3hrs = {result.system.maxPeakExportKwh}kWh/day at 38.26p (import = export parity).
         House on battery 24/7. 20% discharge floor ({result.system.dischargeFloorKwh}kWh).
         Solar calibrated to 900 kWh/kWp/yr for Lancashire (53.8°N).
-        EVs charge {evCount * 15}kWh/day at off-peak 16.40p.</p>
+        EVs: {evCount} × {evMilesPerYear.toLocaleString()} miles/yr = {(evKwhPerDay * evCount).toFixed(1)}kWh/day at off-peak 16.40p.</p>
       </div>
     </div>
   );
