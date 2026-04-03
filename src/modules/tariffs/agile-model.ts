@@ -247,56 +247,53 @@ export function runAgileModel(
     // Determine which slots to charge and discharge
     const actions = new Array<string>(48).fill('idle');
 
-    if (strategy === 'trade' || strategy === 'neg-only') {
-      // Mark negative/very cheap slots for charging
-      for (let i = 0; i < 48; i++) {
-        if (impRates[i] <= 0) actions[i] = 'charge-neg';
-        else if (impRates[i] < 5 && strategy === 'trade') actions[i] = 'charge';
-      }
-
-      if (strategy === 'trade') {
-        // Find additional charge slots (cheapest available)
-        const chargeNeeded = CAP - batKwh;
-        const slotsNeeded = Math.ceil(chargeNeeded / MAX_CHARGE_SLOT);
-        const unassigned = impRates.map((r: number, i: number) => ({ i, r }))
-          .filter((_s: { i: number; r: number }, i: number) => actions[i] === 'idle')
-          .sort((a: { r: number }, b: { r: number }) => a.r - b.r);
-
-        let assigned = 0;
-        for (const s of unassigned) {
-          if (assigned >= slotsNeeded) break;
-          if (s.r < 15) { // Don't charge above 15p
-            actions[s.i] = 'charge';
-            assigned++;
-          }
-        }
-
-        // Mark discharge slots (most expensive export + self-use value)
-        const dischargeValue = impRates.map((imp: number, i: number) => ({
-          i,
-          imp,
-          exp: expRates[i] as number,
-          value: Math.max(expRates[i] as number, imp * 0.5), // blend of export + partial self-use
-        }));
-        dischargeValue.sort((a: { value: number }, b: { value: number }) => b.value - a.value);
-
-        for (const s of dischargeValue) {
-          if (actions[s.i] !== 'idle') continue;
-          const cheapestCharge = Math.min(...impRates.filter((_r: number, i: number) => actions[i] === 'charge' || actions[i] === 'charge-neg'));
-          const spread = s.exp - (cheapestCharge / EFF) - CYCLE_COST_PER_KWH;
-          if (spread > 0) {
-            actions[s.i] = 'discharge';
-          }
-        }
-      }
-    }
-
-    // Always discharge for self-use on expensive import slots (saves money even on hold days)
+    // ALWAYS charge on negative pricing — free money regardless of strategy
     for (let i = 0; i < 48; i++) {
-      if (actions[i] === 'idle' && impRates[i] > 25 && batKwh > FLOOR + 10) {
-        actions[i] = 'self-use';
+      if (impRates[i] <= 0) actions[i] = 'charge-neg';
+    }
+
+    if (strategy === 'trade') {
+      // PAIRED APPROACH: match each charge slot with a discharge slot
+      // Only execute pairs where the SPECIFIC pair is profitable
+
+      // Candidate charge slots: sorted cheapest first (excluding already-assigned neg slots)
+      const chargeCandidates = impRates
+        .map((r: number, i: number) => ({ i, r }))
+        .filter((s: { i: number; r: number }) => actions[s.i] === 'idle' && s.r < 20)
+        .sort((a: { r: number }, b: { r: number }) => a.r - b.r);
+
+      // Candidate discharge slots: sorted most expensive first
+      const dischargeCandidates = expRates
+        .map((r: number, i: number) => ({ i, r }))
+        .filter((s: { i: number; r: number }) => actions[s.i] === 'idle')
+        .sort((a: { r: number }, b: { r: number }) => b.r - a.r);
+
+      // Pair them 1:1, only if each pair is individually profitable
+      const usedCharge = new Set<number>();
+      const usedDischarge = new Set<number>();
+
+      for (const dis of dischargeCandidates) {
+        // Find the cheapest unused charge slot that occurs BEFORE this discharge slot
+        const bestCharge = chargeCandidates.find(
+          (c: { i: number; r: number }) => !usedCharge.has(c.i) && c.i < dis.i
+        );
+        if (!bestCharge) continue;
+
+        // Check if THIS SPECIFIC PAIR is profitable
+        const effectiveChargeCost = bestCharge.r / EFF;
+        const spread = dis.r - effectiveChargeCost - CYCLE_COST_PER_KWH;
+
+        if (spread > 0) {
+          actions[bestCharge.i] = 'charge';
+          actions[dis.i] = 'discharge';
+          usedCharge.add(bestCharge.i);
+          usedDischarge.add(dis.i);
+        }
       }
     }
+
+    // Self-use is now handled in the slot execution loop — house ALWAYS
+    // runs off solar first, then battery, regardless of import rate.
 
     // ── Execute slot by slot ──
     for (let i = 0; i < 48; i++) {
@@ -304,27 +301,43 @@ export function runAgileModel(
       const expR = expRates[i] as number;
       const solKwh = solar[i] as number;
 
-      // Solar: store in battery if room, export excess at export rate
-      if (solKwh > 0) {
-        const toStore = Math.min(solKwh, CAP - batKwh);
-        batKwh += toStore;
-        daySolIn += toStore;
-        const solarExcess = solKwh - toStore;
-        if (solarExcess > 0) {
-          // Battery full — export solar surplus directly
-          const solarExpKwh = Math.min(solarExcess, MAX_DISCHARGE_SLOT);
-          dayExportRev += solarExpKwh * expR;
-          dayExportKwh += solarExpKwh;
-        }
+      // 1. Solar powers the house FIRST (no battery round-trip loss)
+      const houseDem = housePerSlot(i, month, houseKwhPerDay, hasHeatPump);
+      let solarRemaining = solKwh;
+      let houseRemaining = houseDem;
+
+      if (solarRemaining > 0 && houseRemaining > 0) {
+        const solarToHouse = Math.min(solarRemaining, houseRemaining);
+        solarRemaining -= solarToHouse;
+        houseRemaining -= solarToHouse;
+        // Solar powering house saves import rate (no efficiency loss)
+        daySelfUseVal += solarToHouse * impR;
+        daySelfUseKwh += solarToHouse;
       }
 
-      // House demand always served from battery if available
-      const houseDem = housePerSlot(i, month, houseKwhPerDay, hasHeatPump);
-      if (batKwh > FLOOR + houseDem) {
-        batKwh -= houseDem;
-        daySelfUseVal += houseDem * impR; // valued at import rate
-        daySelfUseKwh += houseDem;
+      // 2. Remaining solar → battery (if room)
+      if (solarRemaining > 0) {
+        const toStore = Math.min(solarRemaining, CAP - batKwh);
+        batKwh += toStore;
+        daySolIn += toStore;
+        solarRemaining -= toStore;
       }
+
+      // 3. Remaining solar (battery full) → export to grid
+      if (solarRemaining > 0.01) {
+        const solarExpKwh = Math.min(solarRemaining, MAX_DISCHARGE_SLOT);
+        dayExportRev += solarExpKwh * expR;
+        dayExportKwh += solarExpKwh;
+      }
+
+      // 4. Remaining house demand → battery (always, not just >25p)
+      if (houseRemaining > 0 && batKwh > FLOOR + houseRemaining) {
+        batKwh -= houseRemaining;
+        daySelfUseVal += houseRemaining * impR; // saved at import rate
+        daySelfUseKwh += houseRemaining;
+        houseRemaining = 0;
+      }
+      // If battery can't cover remaining house demand, house draws from grid (not our cost)
 
       if (actions[i] === 'charge-neg' || actions[i] === 'charge') {
         const headroom = CAP - batKwh;

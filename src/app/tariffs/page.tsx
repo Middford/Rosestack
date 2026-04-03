@@ -16,6 +16,7 @@ import {
 } from '@/modules/tariffs/components';
 import { IofModeller } from '@/modules/tariffs/components/iof-modeller';
 import { AgileModeller } from '@/modules/tariffs/components/agile-modeller';
+import { FluxModeller } from '@/modules/tariffs/components/flux-modeller';
 
 const TABS = [
   { id: 'fleet', label: 'Fleet Revenue' },
@@ -28,6 +29,7 @@ const TABS = [
   { id: 'sweep', label: 'Portfolio Sweep' },
   { id: 'iof-model', label: 'IOF Model' },
   { id: 'agile-model', label: 'Agile Model' },
+  { id: 'flux-model', label: 'Flux Model' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -125,6 +127,7 @@ export default function TariffsPage() {
         {activeTab === 'sweep' && <PortfolioSweep />}
         {activeTab === 'iof-model' && <IofModeller />}
         {activeTab === 'agile-model' && <AgileModeller />}
+        {activeTab === 'flux-model' && <FluxModeller />}
       </div>
     </div>
   );
