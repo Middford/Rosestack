@@ -24,36 +24,36 @@ export interface AgileProduct {
   description: string;
 }
 
-export const AGILE_PRODUCTS: AgileProduct[] = [
+export const AGILE_PRODUCTS: AgileProduct[] = ([
   {
     code: 'AGILE-24-10-01',
-    type: 'import',
+    type: 'import' as const,
     region: 'N',
     priority: 1,
     description: 'Current Agile import (Oct 2024+)',
   },
   {
     code: 'AGILE-FLEX-22-11-25',
-    type: 'import',
+    type: 'import' as const,
     region: 'N',
     priority: 2,
     description: 'Previous Agile import (Nov 2022 – Oct 2024)',
   },
   {
     code: 'AGILE-18-02-21',
-    type: 'import',
+    type: 'import' as const,
     region: 'N',
     priority: 3,
     description: 'Original Agile import (Mar 2018 – Nov 2022)',
   },
   {
     code: 'AGILE-OUTGOING-19-05-13',
-    type: 'export',
+    type: 'export' as const,
     region: 'N',
     priority: 1,
     description: 'Agile export / Outgoing (May 2019+)',
   },
-].sort((a, b) => a.priority - b.priority);
+] satisfies AgileProduct[]).sort((a, b) => a.priority - b.priority);
 
 // --- Constants ---
 
