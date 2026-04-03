@@ -14,6 +14,7 @@ import {
   PortfolioSweep,
   FleetRevenueDashboard,
 } from '@/modules/tariffs/components';
+import { IofModeller } from '@/modules/tariffs/components/iof-modeller';
 
 const TABS = [
   { id: 'fleet', label: 'Fleet Revenue' },
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'monitor', label: 'Monitor' },
   { id: 'historical', label: 'Historical' },
   { id: 'sweep', label: 'Portfolio Sweep' },
+  { id: 'iof-model', label: 'IOF Model' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -119,6 +121,7 @@ export default function TariffsPage() {
         {activeTab === 'monitor' && <TariffMonitor />}
         {activeTab === 'historical' && <HistoricalRates />}
         {activeTab === 'sweep' && <PortfolioSweep />}
+        {activeTab === 'iof-model' && <IofModeller />}
       </div>
     </div>
   );
