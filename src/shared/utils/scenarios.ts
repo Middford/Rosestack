@@ -8,7 +8,9 @@ import type {
   Tariff,
   TariffRate,
 } from '@/shared/types';
-import { getEffectiveExportKw } from '@/shared/utils/dno-limits';
+// getEffectiveExportKw was used in the old per-session SS calculation (deprecated).
+// Retained here as a comment in case it's needed if the per-session model is restored.
+// import { getEffectiveExportKw } from '@/shared/utils/dno-limits';
 
 // ============================================================
 // Three-Scenario Financial Engine
@@ -40,6 +42,27 @@ export const REVENUE_MIX = {
   capacityMarketPercent: 3,
 } as const;
 
+// ============================================================
+// Saving Sessions — Annual Revenue Constants
+//
+// Annual totals derived from National Grid DFS programme data 2022-2026.
+// Based on a domestic property with pre-charge strategy and typical session
+// participation (1-hr sessions, household baseline ~1kWh, battery pre-charged).
+//
+// These constants REPLACE the old savingSessionsPerYear × savingSessionRatePencePerKwh
+// per-session calculation. The fixed annual totals are simpler and more defensible
+// given the volatility of per-session rates (range: 100p-400p across seasons).
+//
+// Best  £1,050 — 15 sessions at ~350p avg (programme expands, healthy rates)
+// Likely  £620 — 10 sessions at ~200p avg (current conservative baseline)
+// Worst   £255 — 4 sessions at ~100p avg (programme scales back significantly)
+// ============================================================
+export const SAVING_SESSIONS = {
+  best:   { annual_total: 1050 }, // £1,050/yr
+  likely: { annual_total:  620 }, // £620/yr
+  worst:  { annual_total:  255 }, // £255/yr
+} as const;
+
 // --- Default Assumption Sets ---
 
 export const BEST_CASE_DEFAULTS: ScenarioAssumptions = {
@@ -47,11 +70,12 @@ export const BEST_CASE_DEFAULTS: ScenarioAssumptions = {
   energyInflationPercent: 8,
   batteryDegradationPercent: 1.5,
   iofSpreadChangePercent: 15,
+  // @deprecated — savingSessionsPerYear and savingSessionRatePencePerKwh are no longer
+  // used in the active revenue calculation. The SAVING_SESSIONS constant above is used
+  // instead. These fields remain here for backwards compatibility with stress-test
+  // overrides in funding/data.ts only. Do not use in new calculations.
   savingSessionsPerYear: 15,
-  // Saving Sessions rate in p/kWh of measured REDUCTION (baseline + export).
-  // 2022/23 season averaged ~400p; 2023/24 ~250p; trend is downward.
-  // Best case: programme expands, more sessions, rates stay healthy.
-  savingSessionRatePencePerKwh: 350, // 350p = £3.50/kWh — high but seen in early seasons
+  savingSessionRatePencePerKwh: 350,
   flexibilityRevenuePerHomePerYear: 2000,
   hardwareCostChangePercent: -20,
   installCostChangePercent: -10,
@@ -68,12 +92,10 @@ export const LIKELY_CASE_DEFAULTS: ScenarioAssumptions = {
   energyInflationPercent: 5,
   batteryDegradationPercent: 2,
   iofSpreadChangePercent: 0,
-  // Saving Sessions: 2023/24 had ~12 sessions, 2024/25 had ~10.
-  // Likely case assumes programme continues at similar scale.
+  // @deprecated — use SAVING_SESSIONS.likely.annual_total instead.
+  // Retained for backwards compatibility with funding/data.ts overrides.
   savingSessionsPerYear: 10,
-  // Average rates have trended down: 2022/23 ~400p, 2023/24 ~250p, 2024/25 ~200p.
-  // Likely case uses a conservative current average.
-  savingSessionRatePencePerKwh: 200, // 200p = £2.00/kWh — conservative average
+  savingSessionRatePencePerKwh: 200,
   flexibilityRevenuePerHomePerYear: 500,
   hardwareCostChangePercent: 0,
   installCostChangePercent: 0,
@@ -90,10 +112,10 @@ export const WORST_CASE_DEFAULTS: ScenarioAssumptions = {
   energyInflationPercent: 2,
   batteryDegradationPercent: 3,
   iofSpreadChangePercent: -20,
-  // Worst case: programme scales back significantly or is discontinued.
-  // Grid stress events may reduce as more renewables/storage come online.
+  // @deprecated — use SAVING_SESSIONS.worst.annual_total instead.
+  // Retained for backwards compatibility with funding/data.ts overrides.
   savingSessionsPerYear: 4,
-  savingSessionRatePencePerKwh: 100, // 100p = £1.00/kWh — minimal programme
+  savingSessionRatePencePerKwh: 100,
   flexibilityRevenuePerHomePerYear: 0,
   hardwareCostChangePercent: 10,
   installCostChangePercent: 15,
@@ -200,7 +222,7 @@ export function calculateScenario(
     const annualArbitrageRevenue = (dailyArbitrageRevenue * 365) / 100;
 
     // ================================================================
-    // Saving Sessions Revenue — CAREFUL: understand the mechanics
+    // Saving Sessions Revenue
     // ================================================================
     //
     // HOW SAVING SESSIONS WORK:
@@ -226,51 +248,13 @@ export function calculateScenario(
     //   in a 1-hour session window for a typical UK home).
     // - With a battery, you can export during the session, so reduction =
     //   baseline_consumption + export_kWh. This IS better than a non-battery
-    //   home, but it is capped by:
-    //   a) Inverter max discharge rate * session duration
-    //   b) Available battery SOC (assuming pre-charged to 100%)
-    // - A 100kWh battery with a 10kW inverter in a 1hr session can export
-    //   10kWh. Reduction = ~1kWh baseline + 10kWh export = 11kWh.
-    //   But a 200kWh battery with the SAME 10kW inverter gets the SAME 11kWh
-    //   because the inverter is the bottleneck, not the battery capacity.
+    //   home, but it is capped by inverter rate * session duration.
     //
-    // OPERATIONAL PROTOCOL (factors into revenue):
-    // - Sessions announced ~24h in advance via Octopus app/API
-    // - T-6h: Charge batteries to 100% SOC, pause normal discharge cycling
-    // - T-0: Discharge at max inverter rate for full session duration
-    // - T+session: Resume normal arbitrage cycling
-    // - Pre-charging costs: ~one charge cycle at off-peak import rate
-    //
-    // FORMULA:
-    // Revenue per session = (baseline_reduction_kWh + export_kWh) * rate_p/kWh
-    // Where export_kWh = min(inverter_max_kW * session_hours, effective_capacity)
-    // And baseline_reduction_kWh = typical household consumption during session
-    //
-    const SESSION_DURATION_HOURS = 1.0; // typical session is 1 hour (range 0.5-2hr)
-    const HOUSEHOLD_BASELINE_KWH = 1.0; // typical UK home consumption during 1hr peak period
-
-    // Battery export during session is limited by inverter rate AND DNO export limit
-    const effectiveExportKw = getEffectiveExportKw(system);
-    const maxExportDuringSessionKwh = Math.min(
-      effectiveExportKw * SESSION_DURATION_HOURS,
-      effectiveCapacity, // can't export more than available capacity
-    );
-
-    // Total measured reduction = what the home normally consumed + what we exported
-    const reductionPerSessionKwh = HOUSEHOLD_BASELINE_KWH + maxExportDuringSessionKwh;
-
-    // SS revenue is ADDITIONAL to normal arbitrage — no deduction needed.
-    // However, we must account for the cost of the extra charge cycle
-    // used to pre-charge to 100% SOC before the session.
-    const cheapestImportForSession = Math.min(...tariff.importRates.map(r => r.ratePencePerKwh));
-    const preChargeCostPencePerSession = maxExportDuringSessionKwh * cheapestImportForSession / system.roundTripEfficiency;
-
-    const grossSsRevenuePerSessionPence =
-      reductionPerSessionKwh * assumptions.savingSessionRatePencePerKwh;
-    const netSsRevenuePerSessionPence = grossSsRevenuePerSessionPence - preChargeCostPencePerSession;
-
-    const savingSessionRevenue =
-      (assumptions.savingSessionsPerYear * Math.max(0, netSsRevenuePerSessionPence)) / 100; // pence to pounds
+    // REVENUE SOURCE: SAVING_SESSIONS constant (annual totals by scenario).
+    // @deprecated assumptions.savingSessionsPerYear and
+    // assumptions.savingSessionRatePencePerKwh are NOT used here.
+    // Use SAVING_SESSIONS[assumptions.type].annual_total instead.
+    const savingSessionRevenue = SAVING_SESSIONS[assumptions.type].annual_total;
 
     // Flexibility market revenue
     const flexRevenue = assumptions.flexibilityRevenuePerHomePerYear;
