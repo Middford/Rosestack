@@ -856,6 +856,27 @@ export const SEEDED_RISKS: RiskItem[] = [
     contingencyPlan: 'Rebalance portfolio across tariff types; increase flexibility market participation.',
     lastReviewed: new Date('2026-03-25'),
   },
+  {
+    id: 'R-REG-PAS63100-BEECHES',
+    name: 'PAS 63100 capacity exceedance — The Beeches',
+    category: 'regulatory',
+    description:
+      'The Beeches is a 192kWh installation. PAS 63100:2024 limits domestic external BESS to 80kWh maximum. This system is 112kWh over the limit. Resolution route not yet confirmed. Risk of: (1) insurance invalidation if insurer requires PAS 63100 compliance; (2) potential enforcement action by Lancashire Fire & Rescue; (3) reputational damage if fire incident occurs at an out-of-compliance installation.',
+    probability: 4,
+    impact: 4,
+    score: 16,
+    rating: riskRating(16),
+    mitigationStrategy:
+      'Confirm resolution route before any further >80kWh deployments. Three routes available: (A) Multiple enclosures each <80kWh with required separation; (B) Site-specific fire risk assessment + Lancashire Fire & Rescue non-domestic classification; (C) Reduce system size to ≤80kWh. Engage insurer and Lancashire Fire & Rescue immediately.',
+    mitigationOwner: 'Dave',
+    mitigationStatus: 'not-started',
+    residualScore: 6,
+    triggerThreshold:
+      'Any insurance renewal, fire inspection, or new MCS audit that requires PAS 63100 sign-off',
+    contingencyPlan:
+      'If no resolution route is confirmed: (1) pause all >80kWh new installations; (2) engage specialist fire safety consultant for site-specific assessment of The Beeches; (3) notify insurer proactively and confirm coverage remains valid.',
+    lastReviewed: new Date('2026-04-03'),
+  },
 ];
 
 // ============================================================

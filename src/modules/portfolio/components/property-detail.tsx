@@ -457,8 +457,56 @@ function FinancialTab({ property: p }: { property: PortfolioProperty }) {
 function ComplianceTab({ property: p }: { property: PortfolioProperty }) {
   const g99Variant = p.g99Status === 'approved' ? 'success' : p.g99Status === 'submitted' ? 'warning' : p.g99Status === 'rejected' ? 'danger' : 'default';
 
+  // PAS 63100:2024 limits domestic external BESS to 80kWh maximum.
+  // Systems exceeding this require a confirmed resolution route before installation.
+  const pas63100CapacityKwh = 80;
+  const pas63100Exceedance =
+    p.system.totalCapacityKwh > pas63100CapacityKwh
+      ? p.system.totalCapacityKwh - pas63100CapacityKwh
+      : 0;
+
   return (
     <div className="space-y-6">
+      {/* PAS 63100 Capacity Exceedance Alert */}
+      {pas63100Exceedance > 0 && (
+        <div className="rounded-[var(--radius-md)] border-2 border-red-500 bg-red-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-red-400 font-bold text-lg mt-0.5">⚠</span>
+            <div className="space-y-2">
+              <p className="font-bold text-red-400 text-sm">
+                COMPLIANCE ISSUE: PAS 63100:2024 limits domestic external BESS to 80kWh.
+                This system is {p.system.totalCapacityKwh}kWh — {pas63100Exceedance}kWh over limit.
+                Resolution route not confirmed.
+              </p>
+              <p className="text-xs text-red-300">
+                PAS 63100:2024 (BSI fire safety standard for BESS in dwellings) sets a maximum of 80kWh
+                for external/detached garage installations. This system at {p.system.totalCapacityKwh}kWh
+                exceeds that limit by {pas63100Exceedance}kWh. The following resolution routes must be evaluated:
+              </p>
+              <ul className="text-xs text-red-300 list-disc list-inside space-y-1">
+                <li>
+                  <strong>Route A — Multiple enclosures:</strong> Split battery across two or more separate
+                  fire-rated enclosures, each under 80kWh, with required separation distances.
+                </li>
+                <li>
+                  <strong>Route B — Commercial exemption:</strong> Obtain a site-specific fire risk assessment
+                  and engage with Lancashire Fire &amp; Rescue for a non-domestic/commercial classification.
+                </li>
+                <li>
+                  <strong>Route C — Reduce system size:</strong> Reduce installed capacity to 80kWh or below
+                  to comply without requiring additional approvals.
+                </li>
+              </ul>
+              <p className="text-xs text-red-400 font-medium">
+                Action required: Confirm resolution route with insurer and Lancashire Fire &amp; Rescue before
+                any further installations of this capacity. This is recorded in the legal compliance register
+                (comp-7) and the risk register (R-REG-PAS63100-BEECHES).
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader><CardTitle>G99 / Grid Connection</CardTitle></CardHeader>
