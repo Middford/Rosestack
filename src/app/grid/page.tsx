@@ -49,6 +49,17 @@ export default function GridPage() {
         </p>
       </div>
 
+      {/* DEMO DATA Banner */}
+      <div className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-4 py-3">
+        <p className="text-sm font-semibold text-blue-400">ℹ DEMO DATA</p>
+        <p className="text-xs text-blue-300/90 mt-1">
+          Substation names, constraint statuses, and flexibility tender values on this page are modelled estimates,
+          not live ENWL data. Property EPC data is real (DLUHC Open Data). Grid data sources are labelled per record
+          (ENWL Open Data / PACE Call / Site Survey / Modelled Estimate).
+          Live ENWL substation data integration is planned for Phase 2.
+        </p>
+      </div>
+
       {/* Summary stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <SimpleStatCard

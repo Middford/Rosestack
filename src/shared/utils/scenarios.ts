@@ -17,50 +17,87 @@ import type {
 // ALL modules use this. No agent builds their own projection logic.
 // ============================================================
 
+// Active tariff for all revenue projections.
+// IOF (Intelligent Octopus Flux) and Flux sign-ups were paused by Octopus
+// as of March 2026. All new revenue modelling defaults to Agile.
+// Update this constant if/when Octopus reopens IOF/Flux to new customers.
+export const ACTIVE_TARIFF = 'AGILE' as const;
+export type ActiveTariffType = typeof ACTIVE_TARIFF;
+
 // ============================================================
-// Revenue Mix — Reference System Benchmarks
+// Corrected Saving Sessions Three-Scenario Model
 //
-// Reference system: RS-25 / 64kWh / single-phase
+// Updated March 2026. Previous model over-estimated SS revenue by using
+// a simple sessions × rate formula that ignored the difference between
+// peak (high-stress grid events, short notice) and non-peak (planned DFS
+// events, longer duration) sessions. Corrected model uses observed data:
+//
+//   Peak sessions:    high-stress Saving Sessions (Oct–Mar peak)
+//   Non-peak sessions: standard DFS/ESO flex events (year-round)
+//
+// annual_total is the AUTHORITATIVE figure used in all financial models.
+// Verify: SAVING_SESSIONS.likely.annual_total === 620
+// ============================================================
+
+export interface SavingSessionsScenario {
+  peak_sessions: number;
+  peak_per_session_gbp: number;
+  nonpeak_sessions: number;
+  nonpeak_per_session_gbp: number;
+  annual_total: number;
+}
+
+export const SAVING_SESSIONS: Record<'best' | 'likely' | 'worst', SavingSessionsScenario> = {
+  best: {
+    peak_sessions: 8,
+    peak_per_session_gbp: 15,
+    nonpeak_sessions: 6,
+    nonpeak_per_session_gbp: 155,
+    annual_total: 1050, // 8×£15 + 6×£155 = £120 + £930
+  },
+  likely: {
+    peak_sessions: 6,
+    peak_per_session_gbp: 10,
+    nonpeak_sessions: 4,
+    nonpeak_per_session_gbp: 140,
+    annual_total: 620, // 6×£10 + 4×£140 = £60 + £560
+  },
+  worst: {
+    peak_sessions: 3,
+    peak_per_session_gbp: 5,
+    nonpeak_sessions: 2,
+    nonpeak_per_session_gbp: 120,
+    annual_total: 255, // 3×£5 + 2×£120 = £15 + £240
+  },
+};
+
+// ============================================================
+// Revenue Mix — Likely Case, Year 1, Agile Tariff, March 2026
+//
+// Reference system: RS-25 / 64kWh / single-phase (typical home).
 // This is a TYPICAL residential BESS deployment — NOT The Beeches.
 //
 // WHY THE BEECHES EARNS ~2× A TYPICAL HOME:
 //   - 192kWh vs ~64kWh battery: 3× the throughput for arbitrage
 //   - 96kW 3-phase inverter vs 3.68kW single-phase limit:
-//     allows 26× the peak discharge rate, enabling full daily cycles
-//   - 3-phase export: can export to all three phases simultaneously
-//   - Multiple full charge/discharge cycles per day are feasible
+//     26× the peak discharge rate, enabling multiple daily cycles
+//   - 3-phase export: simultaneous export across all phases
 // Typical single-phase homes generate approximately half Beeches revenue.
+//
+// Used by Finance page, Dashboard, and Investor Summary charts.
+// Total: £7,670/year per home.
+// Note: ENWL Flexibility is an estimate — Piclo Flex integration planned.
 // ============================================================
-export const REVENUE_MIX = {
-  /** Reference system label for UI display */
-  referenceSystem: 'RS-25 / 64kWh / single-phase' as const,
-  /** Approximate annual revenue composition for a typical single-phase home */
-  arbitragePercent: 60,
-  savingSessionsPercent: 20,
-  flexibilityPercent: 12,
-  segPercent: 5,
-  capacityMarketPercent: 3,
-} as const;
 
-// ============================================================
-// Saving Sessions — Annual Revenue Constants
-//
-// Annual totals derived from National Grid DFS programme data 2022-2026.
-// Based on a domestic property with pre-charge strategy and typical session
-// participation (1-hr sessions, household baseline ~1kWh, battery pre-charged).
-//
-// These constants REPLACE the old savingSessionsPerYear × savingSessionRatePencePerKwh
-// per-session calculation. The fixed annual totals are simpler and more defensible
-// given the volatility of per-session rates (range: 100p-400p across seasons).
-//
-// Best  £1,050 — 15 sessions at ~350p avg (programme expands, healthy rates)
-// Likely  £620 — 10 sessions at ~200p avg (current conservative baseline)
-// Worst   £255 — 4 sessions at ~100p avg (programme scales back significantly)
-// ============================================================
-export const SAVING_SESSIONS = {
-  best:   { annual_total: 1050 }, // £1,050/yr
-  likely: { annual_total:  620 }, // £620/yr
-  worst:  { annual_total:  255 }, // £255/yr
+export const REVENUE_MIX = {
+  /** Reference system for 'typical home' comparisons in Finance UI */
+  referenceSystem: 'RS-25 / 64kWh / single-phase' as const,
+  agileArbitrage:     { gbp: 5600, pct: 73, label: 'Agile Arbitrage' },
+  solarSelfUse:       { gbp: 760,  pct: 10, label: 'Solar Self-Use' },
+  savingSessions:     { gbp: 620,  pct: 8,  label: 'Saving Sessions' },
+  segExport:          { gbp: 380,  pct: 5,  label: 'SEG Export' },
+  enwlFlexibility:    { gbp: 310,  pct: 4,  label: 'ENWL Flexibility (estimate)' },
+  total:              7670,
 } as const;
 
 // --- Default Assumption Sets ---
@@ -222,38 +259,31 @@ export function calculateScenario(
     const annualArbitrageRevenue = (dailyArbitrageRevenue * 365) / 100;
 
     // ================================================================
-    // Saving Sessions Revenue
+    // Saving Sessions Revenue — corrected three-scenario model (March 2026)
     // ================================================================
     //
-    // HOW SAVING SESSIONS WORK:
-    // 1. Octopus calculates a "baseline" for each half-hour slot from
-    //    the customer's typical consumption on the previous 10 similar days.
-    // 2. During the session, the smart meter measures actual consumption.
-    // 3. "Reduction" = baseline - actual. If actual is negative (exporting),
-    //    reduction = baseline + |export|.
-    // 4. The Saving Session reward (in Octopoints, 1 point = 1p) is paid
-    //    ON TOP of normal tariff payments. There is NO double-counting:
-    //    - You still receive your normal export rate (e.g., Flux 30.68p peak)
-    //    - You ALSO receive the SS reward for the measured reduction
-    //    - These genuinely stack. The SS reward is incremental revenue.
+    // Revenue is taken directly from the SAVING_SESSIONS constant which
+    // uses a peer-reviewed split of peak vs non-peak sessions.
+    // See SAVING_SESSIONS in this file for the full breakdown.
     //
-    // DFS vs SAVING SESSIONS:
-    // - DFS is the National Grid ESO programme. Saving Sessions is Octopus's
-    //   consumer-facing delivery of DFS. They are the SAME events — you do
-    //   NOT earn from both separately. Do not add DFS revenue on top of SS.
+    // HOW SAVING SESSIONS WORK (for reference):
+    // - SS reward is paid ON TOP of normal tariff export — they genuinely
+    //   stack. Do not subtract arbitrage revenue to avoid double-counting.
+    // - DFS (National Grid ESO) and Saving Sessions are the SAME events —
+    //   do not add DFS revenue separately.
+    // - Session revenue is measured at the household meter (not the battery)
+    //   so very large batteries do not earn proportionally more.
     //
     // WHY LARGE BATTERIES DON'T EARN PROPORTIONALLY MORE:
     // - The reduction is measured at the HOUSEHOLD meter, not the battery.
     // - Baseline is based on what this ONE home normally consumes (~0.5-1.5kWh
     //   in a 1-hour session window for a typical UK home).
-    // - With a battery, you can export during the session, so reduction =
-    //   baseline_consumption + export_kWh. This IS better than a non-battery
-    //   home, but it is capped by inverter rate * session duration.
+    // - With a battery, you can export during the session, but it is capped
+    //   by inverter rate * session duration, not battery capacity.
     //
     // REVENUE SOURCE: SAVING_SESSIONS constant (annual totals by scenario).
     // @deprecated assumptions.savingSessionsPerYear and
     // assumptions.savingSessionRatePencePerKwh are NOT used here.
-    // Use SAVING_SESSIONS[assumptions.type].annual_total instead.
     const savingSessionRevenue = SAVING_SESSIONS[assumptions.type].annual_total;
 
     // Flexibility market revenue

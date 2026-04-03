@@ -14,6 +14,9 @@ import {
   PortfolioSweep,
   FleetRevenueDashboard,
 } from '@/modules/tariffs/components';
+import { IofModeller } from '@/modules/tariffs/components/iof-modeller';
+import { AgileModeller } from '@/modules/tariffs/components/agile-modeller';
+import { FluxModeller } from '@/modules/tariffs/components/flux-modeller';
 
 const TABS = [
   { id: 'fleet', label: 'Fleet Revenue' },
@@ -24,6 +27,9 @@ const TABS = [
   { id: 'monitor', label: 'Monitor' },
   { id: 'historical', label: 'Historical' },
   { id: 'sweep', label: 'Portfolio Sweep' },
+  { id: 'iof-model', label: 'IOF Model' },
+  { id: 'agile-model', label: 'Agile Model' },
+  { id: 'flux-model', label: 'Flux Model' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -42,6 +48,23 @@ export default function TariffsPage() {
         <p className="text-sm text-text-secondary mt-1">
           UK energy tariff database, revenue calculator, and portfolio optimisation
         </p>
+      </div>
+
+      {/* Tariff Status Banner — IOF/Flux paused March 2026 */}
+      <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 space-y-1">
+        <p className="text-sm font-semibold text-amber-400">Tariff Status Update — March 2026</p>
+        <ul className="text-xs text-amber-300/90 space-y-0.5 list-disc list-inside">
+          <li>
+            <strong>Intelligent Octopus Flux (IOF)</strong> — new sign-ups <strong>paused</strong> by Octopus Energy. Existing customers unaffected.
+          </li>
+          <li>
+            <strong>Octopus Flux</strong> — new sign-ups <strong>paused</strong>. Awaiting Octopus re-opening.
+          </li>
+          <li>
+            <strong>Octopus Agile</strong> — open for new sign-ups. All revenue figures on this page are{' '}
+            <strong>based on Agile tariff</strong> until IOF/Flux availability is confirmed.
+          </li>
+        </ul>
       </div>
 
       {/* Summary Stats */}
@@ -102,6 +125,9 @@ export default function TariffsPage() {
         {activeTab === 'monitor' && <TariffMonitor />}
         {activeTab === 'historical' && <HistoricalRates />}
         {activeTab === 'sweep' && <PortfolioSweep />}
+        {activeTab === 'iof-model' && <IofModeller />}
+        {activeTab === 'agile-model' && <AgileModeller />}
+        {activeTab === 'flux-model' && <FluxModeller />}
       </div>
     </div>
   );

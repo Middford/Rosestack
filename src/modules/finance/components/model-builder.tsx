@@ -216,8 +216,13 @@ export function ModelBuilder() {
         <p className="font-medium text-text-primary">Revenue reference notes</p>
         <p>
           Revenue figures above are for the selected system configuration.
-          Reference system for &ldquo;typical home&rdquo; comparisons:{' '}
-          <span className="font-medium text-text-primary">{REVENUE_MIX.referenceSystem}</span>.
+          Typical home revenue —{' '}
+          <span className="font-medium text-text-primary">{REVENUE_MIX.referenceSystem}</span>:
+          {' '}{REVENUE_MIX.agileArbitrage.label} {formatGbp(REVENUE_MIX.agileArbitrage.gbp)},
+          {' '}{REVENUE_MIX.savingSessions.label} {formatGbp(REVENUE_MIX.savingSessions.gbp)},
+          {' '}{REVENUE_MIX.enwlFlexibility.label} {formatGbp(REVENUE_MIX.enwlFlexibility.gbp)},
+          {' '}{REVENUE_MIX.segExport.label} {formatGbp(REVENUE_MIX.segExport.gbp)}.
+          Total: {formatGbp(REVENUE_MIX.total)}/yr (likely case).
         </p>
         <p>
           <span className="font-medium text-text-primary">The Beeches (proof of concept) — 192kWh 3-phase</span> generates

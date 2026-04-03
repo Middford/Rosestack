@@ -85,6 +85,26 @@ export default function FundingPage() {
         ))}
       </div>
 
+      {/* SEIS/EIS Excluded Trade Warning — not dismissible */}
+      <div className="rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-4 space-y-2">
+        <p className="text-sm font-bold text-red-400">
+          ⚠ SEIS/EIS — Excluded Trade Risk: Advance Assurance Required
+        </p>
+        <p className="text-xs text-red-300/90 leading-relaxed">
+          Energy arbitrage / battery trading may constitute an <strong>excluded trade</strong> under HMRC SEIS/EIS rules,
+          disqualifying RoseStack from qualifying for tax-relief-backed investor funding.
+          Probability: <strong>Medium</strong>. Impact: <strong>High</strong> — would significantly reduce early investor appeal.
+        </p>
+        <p className="text-xs text-red-300/90 leading-relaxed">
+          <strong>Required action before any SEIS/EIS raise:</strong> Obtain HMRC Advance Assurance.
+          Engage specialist SEIS/EIS counsel to structure the business around ESA service delivery (not energy trading).
+          Do not present SEIS/EIS relief to investors until Advance Assurance is in hand.
+        </p>
+        <p className="text-xs text-red-400/70 italic">
+          This warning cannot be dismissed. Remove only after HMRC Advance Assurance is received. See Risk Register R-REG-004.
+        </p>
+      </div>
+
       <div>
         {activeTab === 'lenders' && <LenderDatabase />}
         {activeTab === 'deals' && <DealStructurer />}

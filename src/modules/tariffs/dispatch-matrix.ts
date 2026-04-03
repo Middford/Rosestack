@@ -26,6 +26,20 @@ import type { AgileSlot } from './agile-api';
 // Re-export AgileSlot so tests and callers can import it from this module.
 export type { AgileSlot } from './agile-api';
 
+// Tariff types supported by the dispatch engine
+export type DispatchTariffType = 'AGILE' | 'IOF' | 'FLUX';
+
+// CAPACITY_RESERVE: fraction of usable capacity held back as a grid-stability
+// reserve. Varies by tariff — IOF requires a larger reserve because the
+// inverter must respond to time-of-use windows precisely; Agile is more
+// flexible (half-hourly re-dispatch), so a smaller reserve suffices.
+// Usage: effectiveMaxSoc = maxSoc - CAPACITY_RESERVE[tariff]
+export const CAPACITY_RESERVE: Record<DispatchTariffType, number> = {
+  AGILE: 0.05, // 5 % reserve — flexible half-hourly re-dispatch
+  IOF: 0.20,   // 20 % reserve — strict ToU windows, larger buffer needed
+  FLUX: 0.10,  // 10 % reserve — fixed peak/off-peak windows
+};
+
 // --- Public Types ---
 
 export type SlotAction =
@@ -171,6 +185,7 @@ export function buildDayDispatchPlan(
   solarGenerationKwh?: number[],
   savingSession?: SavingSession,
   date: string = 'unknown',
+  tariffType: DispatchTariffType = 'AGILE',
 ): DayDispatchPlan {
   // ---- Validate and normalise inputs ----
   if (importRates.length !== 48 || exportRates.length !== 48) {
@@ -183,9 +198,13 @@ export function buildDayDispatchPlan(
     maxDischargeRateKw,
     roundTripEfficiency,
     minSoc,
-    maxSoc,
     exportLimitKw,
   } = params;
+
+  // Apply tariff-specific capacity reserve on top of the system maxSoc.
+  // CAPACITY_RESERVE[tariff] is held back to ensure the battery always has
+  // headroom to respond without breaching physical limits.
+  const maxSoc = Math.max(params.minSoc, params.maxSoc - CAPACITY_RESERVE[tariffType]);
 
   const effectiveDischargeRateKw = exportLimitKw
     ? Math.min(maxDischargeRateKw, exportLimitKw)

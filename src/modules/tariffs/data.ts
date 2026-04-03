@@ -668,6 +668,44 @@ export const PORTFOLIO_SWEEP_DATA: PropertyTariffSweep[] = [
 ];
 
 // ============================================================
+// Tariff Availability Seeds
+// Current open/paused/closed status for key tariffs (as of March 2026).
+// These should be synced to the tariff_availability DB table via the
+// /api/tariffs/availability route on first run.
+// ============================================================
+
+export interface TariffAvailabilitySeed {
+  tariffName: string;
+  supplier: string;
+  status: 'open' | 'paused' | 'closed' | 'waitlist';
+  pauseReason?: string;
+  notes?: string;
+}
+
+export const TARIFF_AVAILABILITY_SEEDS: TariffAvailabilitySeed[] = [
+  {
+    tariffName: 'Intelligent Octopus Flux (IOF)',
+    supplier: 'Octopus Energy',
+    status: 'paused',
+    pauseReason: 'New sign-ups paused by Octopus Energy as of early 2026. Existing customers remain on the tariff. No confirmed re-opening date.',
+    notes: 'Monitor octopus.energy/tariffs and OctoPlus forum for updates.',
+  },
+  {
+    tariffName: 'Octopus Flux',
+    supplier: 'Octopus Energy',
+    status: 'paused',
+    pauseReason: 'New sign-ups paused alongside IOF. Time-of-use structure remains available for existing customers.',
+    notes: 'Fallback to Agile for all new deployments.',
+  },
+  {
+    tariffName: 'Octopus Agile',
+    supplier: 'Octopus Energy',
+    status: 'open',
+    notes: 'Open to new sign-ups. Half-hourly pricing — active tariff for all RoseStack revenue projections as of March 2026.',
+  },
+];
+
+// ============================================================
 // Default system config for calculator
 // ============================================================
 

@@ -9,6 +9,7 @@ import {
   timestamp,
   jsonb,
   pgEnum,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 // --- Section 13: Pipeline Status Enum ---
@@ -130,6 +131,8 @@ export const homes = pgTable('homes', {
   consumptionKwhPerYear: real('consumption_kwh_per_year'),
   solarKwp: real('solar_kwp'),
   referralSource: varchar('referral_source', { length: 200 }),
+  /** How property data was obtained: 'ENWL Open Data' | 'PACE Call' | 'Site Survey' | 'Modelled Estimate' */
+  dataSource: varchar('data_source', { length: 100 }).notNull().default('Modelled Estimate'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -180,6 +183,8 @@ export const substations = pgTable('substations', {
   flexibilityTenderActive: boolean('flexibility_tender_active').notNull().default(false),
   connectedHomes: integer('connected_homes'),
   maxNewConnections: integer('max_new_connections'),
+  /** How this record was obtained: 'ENWL Open Data' | 'PACE Call' | 'Site Survey' | 'Modelled Estimate' */
+  dataSource: varchar('data_source', { length: 100 }).notNull().default('Modelled Estimate'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -445,8 +450,10 @@ export const pipelineEvents = pgTable('pipeline_events', {
 
 export const agileRates = pgTable('agile_rates', {
   id: uuid('id').defaultRandom().primaryKey(),
-  /** 'import' = AGILE-24-10-01-N, 'export' = AGILE-OUTGOING-19-05-13-N */
+  /** 'import' | 'export' */
   type: varchar('type', { length: 10 }).notNull(),
+  /** Octopus product code, e.g. 'AGILE-18-02-21', 'AGILE-OUTGOING-19-05-13' */
+  productCode: varchar('product_code', { length: 50 }),
   /** ISO 8601 UTC — start of the half-hour slot */
   validFrom: varchar('valid_from', { length: 30 }).notNull(),
   /** ISO 8601 UTC — end of the half-hour slot */
@@ -456,7 +463,9 @@ export const agileRates = pgTable('agile_rates', {
   /** Octopus region suffix, e.g. 'N' for ENWL */
   region: varchar('region', { length: 5 }).default('N').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => [
+  uniqueIndex('agile_rates_slot_uniq').on(table.type, table.validFrom, table.region),
+]);
 
 // --- Live Tariff Rates (raw Octopus API rate cache — Flux + IOF) ---
 
@@ -522,3 +531,148 @@ export const revenueActuals = pgTable('revenue_actuals', {
   cumulativeNetGbp: real('cumulative_net_gbp').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+// ============================================================
+// Agile Backtest & Optimiser Tables
+// ============================================================
+
+// --- Ingestion job tracking for bulk Agile rate imports ---
+
+export const agileIngestionJobs = pgTable('agile_ingestion_jobs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending | running | completed | failed
+  productCode: varchar('product_code', { length: 50 }).notNull(),
+  type: varchar('type', { length: 10 }).notNull(), // import | export
+  totalSlots: integer('total_slots').default(0),
+  insertedSlots: integer('inserted_slots').default(0),
+  skippedSlots: integer('skipped_slots').default(0),
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  error: text('error'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// --- Backtest system configurations ---
+
+export const backtestConfigs = pgTable('backtest_configs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** Human-readable name, e.g. 'RS-300', 'Beeches 600kWh', 'Custom 3-phase' */
+  name: varchar('name', { length: 100 }).notNull(),
+  /** Full SystemParams as JSONB — capacity, rates, efficiency, solar, export limit, etc. */
+  params: jsonb('params').notNull(),
+  /** 'single' | 'three' */
+  phaseType: varchar('phase_type', { length: 10 }).notNull(),
+  /** Summary fields for quick filtering */
+  totalCapacityKwh: real('total_capacity_kwh').notNull(),
+  totalInverterKw: real('total_inverter_kw').notNull(),
+  solarKwp: real('solar_kwp').default(0),
+  exportLimitKw: real('export_limit_kw').notNull(),
+  /** Total hardware + install cost in GBP */
+  totalCapexGbp: real('total_capex_gbp').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// --- Daily backtest results (one row per config × date) ---
+
+export const backtestDailyResults = pgTable('backtest_daily_results', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  configId: uuid('config_id').references(() => backtestConfigs.id).notNull(),
+  /** YYYY-MM-DD (UK local date) */
+  date: varchar('date', { length: 10 }).notNull(),
+  /** Tariff used for this day's dispatch: 'agile' | 'iof' | 'flux' */
+  tariff: varchar('tariff', { length: 10 }).notNull().default('agile'),
+  totalChargeKwh: real('total_charge_kwh').notNull(),
+  totalDischargeKwh: real('total_discharge_kwh').notNull(),
+  totalImportCostPence: real('total_import_cost_pence').notNull(),
+  totalExportRevenuePence: real('total_export_revenue_pence').notNull(),
+  netRevenuePence: real('net_revenue_pence').notNull(),
+  cyclesCompleted: real('cycles_completed'),
+  /** Number of half-hour slots with profitable export (Agile advantage metric) */
+  profitableExportSlots: integer('profitable_export_slots'),
+  /** Number of slots where import rate was <= 0 (zero-cost/negative charging) */
+  zeroCostChargeSlots: integer('zero_cost_charge_slots'),
+  /** SOC at end of day as fraction 0-1 (for multi-day carry-over) */
+  endOfDaySoc: real('end_of_day_soc'),
+  /** 'agile_outgoing' | 'assumed_5.5p' — tracks export rate provenance */
+  exportSource: varchar('export_source', { length: 20 }).default('agile_outgoing'),
+  computedAt: timestamp('computed_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('backtest_daily_uniq').on(table.configId, table.date, table.tariff),
+]);
+
+// --- Monthly tariff comparison (aggregated from daily results) ---
+
+export const backtestMonthlyComparison = pgTable('backtest_monthly_comparison', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  configId: uuid('config_id').references(() => backtestConfigs.id).notNull(),
+  /** Calendar month 1-12 */
+  month: integer('month').notNull(),
+  /** Number of years averaged across */
+  yearsAveraged: integer('years_averaged').notNull(),
+  /** Agile: average daily net revenue in pence */
+  agileAvgDailyPence: real('agile_avg_daily_pence').notNull(),
+  /** Agile: average profitable export slots per day */
+  agileAvgExportSlots: real('agile_avg_export_slots'),
+  /** Agile: average zero-cost charge slots per day */
+  agileAvgZeroCostSlots: real('agile_avg_zero_cost_slots'),
+  /** IOF: average daily net revenue in pence */
+  iofAvgDailyPence: real('iof_avg_daily_pence').notNull(),
+  /** IOF: max discharge per day in kWh (limited by 3hr peak window) */
+  iofMaxDailyDischargeKwh: real('iof_max_daily_discharge_kwh'),
+  /** Which tariff wins this month */
+  bestTariff: varchar('best_tariff', { length: 10 }).notNull(),
+  /** Agile advantage over IOF in pence/day (negative = IOF wins) */
+  agileDeltaPence: real('agile_delta_pence').notNull(),
+  computedAt: timestamp('computed_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('backtest_monthly_uniq').on(table.configId, table.month),
+]);
+
+// --- Hardware optimiser run results ---
+
+export const optimiserRuns = pgTable('optimiser_runs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** 'single' | 'three' */
+  phaseType: varchar('phase_type', { length: 10 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  /** All configurations tested as JSONB array */
+  configGrid: jsonb('config_grid'),
+  /** Best configuration found (JSONB with params + metrics) */
+  bestConfig: jsonb('best_config'),
+  /** Best 10-year NPV at 8% in GBP */
+  bestNpv10yr: real('best_npv_10yr'),
+  /** Stack count where marginal NPV drops below cost */
+  diminishingReturnsAtStack: integer('diminishing_returns_at_stack'),
+  /** Annual revenue under optimal monthly switching in pence */
+  optimalSwitchingRevenuePence: real('optimal_switching_revenue_pence'),
+  /** Switching calendar as JSONB: { 1: 'agile', 2: 'iof', ... 12: 'agile' } */
+  switchingCalendar: jsonb('switching_calendar'),
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  error: text('error'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// --- Daily prediction table (forward-looking 365 days) ---
+
+export const dailyPredictions = pgTable('daily_predictions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  configId: uuid('config_id').references(() => backtestConfigs.id).notNull(),
+  /** YYYY-MM-DD (future date) */
+  date: varchar('date', { length: 10 }).notNull(),
+  /** Predicted daily net revenue in pence — likely case */
+  predictedRevenuePenceLikely: real('predicted_revenue_pence_likely').notNull(),
+  /** Best case prediction */
+  predictedRevenuePenceBest: real('predicted_revenue_pence_best').notNull(),
+  /** Worst case prediction */
+  predictedRevenuePenceWorst: real('predicted_revenue_pence_worst').notNull(),
+  /** Which tariff is optimal for this day's month */
+  optimalTariff: varchar('optimal_tariff', { length: 10 }).notNull(),
+  /** Seasonal index used (ratio vs annual mean, e.g. 1.3 = 30% above average) */
+  seasonalIndex: real('seasonal_index'),
+  /** Battery capacity after degradation in kWh */
+  effectiveCapacityKwh: real('effective_capacity_kwh'),
+  computedAt: timestamp('computed_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('daily_predictions_uniq').on(table.configId, table.date),
+]);
