@@ -16,7 +16,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/shared/db';
 import { enwlSubstations, enwlLct, enwlCapacity, enwlFlexTenders, enwlDistTx } from '@/shared/db/schema';
-import { eq, and, gte, lte, sql as dsql } from 'drizzle-orm';
+import { eq, and, gte, lte, inArray } from 'drizzle-orm';
 import {
   rankSubstations,
   scorePropertyTiered,
@@ -79,7 +79,7 @@ async function handleSubstations(params: URLSearchParams) {
 
   // Fetch LCT data
   const lctRows = subNumbers.length > 0
-    ? await db.select().from(enwlLct).where(dsql`${enwlLct.distributionSubstation} = ANY(${subNumbers})`)
+    ? await db.select().from(enwlLct).where(inArray(enwlLct.distributionSubstation, subNumbers))
     : [];
   const lctMap = new Map<string, LctData>();
   for (const r of lctRows) {
@@ -141,7 +141,7 @@ async function handleSubstations(params: URLSearchParams) {
       primaryFeeder: enwlDistTx.primaryFeeder,
     })
       .from(enwlDistTx)
-      .where(dsql`${enwlDistTx.distributionNumber} = ANY(${subNumbers})`);
+      .where(inArray(enwlDistTx.distributionNumber, subNumbers));
     for (const r of txRows) {
       distTxMap.set(r.distributionNumber, r);
     }
