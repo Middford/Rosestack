@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SimpleStatCard } from '@/shared/ui';
 import { LeadPipeline } from '@/modules/customers/components/lead-pipeline';
 import { LeadScoring } from '@/modules/customers/components/lead-scoring';
 import {
-  newLeads as leads,
   PIPELINE_STAGE_DEFINITIONS,
 } from '@/modules/customers/data';
+import type { Lead } from '@/modules/customers/types';
 import { CashflowModel } from '@/modules/projects/components/cashflow-model';
 import { PoundSterling, Home, ShieldCheck, Clock, TrendingUp, BarChart2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui';
@@ -27,6 +27,21 @@ type Tab = 'kanban' | 'scoring' | 'funnel' | 'cashflow';
 
 export default function PipelinePage() {
   const [activeTab, setActiveTab] = useState<Tab>('kanban');
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  useEffect(() => {
+    fetch('/api/pipeline')
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        const mapped = (Array.isArray(data) ? data : []).map((l: Record<string, unknown>) => ({
+          ...l,
+          createdAt: new Date(l.createdAt as string),
+          updatedAt: new Date(l.updatedAt as string),
+        })) as Lead[];
+        setLeads(mapped);
+      })
+      .catch(() => {});
+  }, []);
 
   // ── Pipeline metrics ──────────────────────────────────────────────────────────
   const activeLeads = leads.filter(l => l.status !== 'lost' && l.status !== 'on_hold');

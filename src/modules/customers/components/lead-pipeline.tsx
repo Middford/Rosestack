@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@/shared/ui';
 import { cn } from '@/shared/ui/utils';
 import {
   PIPELINE_STAGE_DEFINITIONS,
   STATUS_LABELS,
-  newLeads,
 } from '../data';
 import type { Lead, PipelineStatus, PipelineStageNumber } from '../types';
 import { stageNumber } from '../types';
@@ -490,7 +489,24 @@ function PipelineHeader({ leads }: { leads: Lead[] }) {
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export function LeadPipeline() {
-  const [leadData, setLeadData] = useState<Lead[]>(newLeads);
+  const [leadData, setLeadData] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/pipeline')
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        // Map API dates to Date objects
+        const mapped = (Array.isArray(data) ? data : []).map((l: Record<string, unknown>) => ({
+          ...l,
+          createdAt: new Date(l.createdAt as string),
+          updatedAt: new Date(l.updatedAt as string),
+        })) as Lead[];
+        setLeadData(mapped);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleMove = (lead: Lead, direction: 'forward' | 'back') => {
     const idx = STATUS_ORDER.indexOf(lead.status);
