@@ -156,6 +156,9 @@ export async function GET(request: Request) {
 
       return {
         ...score,
+        // Property location (from EPC data)
+        latitude: prop.latitude,
+        longitude: prop.longitude,
         // Substation context
         nearestSubstationNumber: nearestSub?.substationNumber ?? null,
         nearestSubstationOutfeed: nearestSub?.outfeed ?? null,

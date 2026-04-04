@@ -40,6 +40,14 @@ function MapBounds() {
 
 export function GridMap() {
   const [substations, setSubstations] = useState<SubstationMarker[]>([]);
+  const [properties, setProperties] = useState<Array<{
+    propertyId: string; address: string; postcode: string; totalScore: number;
+    breakdown: { tier: number }; latitude?: number; longitude?: number;
+    bedrooms: number; propertyType: string; phaseStatus: string;
+    solarNearby: number; generationHeadroomKva: number | null;
+    estimatedConnectionCost: number; epcRating: string;
+  }>>([]);
+  const [showProperties, setShowProperties] = useState(true);
   const [loading, setLoading] = useState(true);
   const [colorBy, setColorBy] = useState<'score' | 'phase' | 'solar'>('score');
   const [minTier, setMinTier] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -58,11 +66,20 @@ export function GridMap() {
   }
 
   useEffect(() => {
-    fetch('/api/grid/scoring?type=substations&lat=53.8&lng=-2.4&radius=15&limit=500')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.substations) setSubstations(data.substations);
-      })
+    Promise.all([
+      fetch('/api/grid/scoring?type=substations&lat=53.8&lng=-2.4&radius=15&limit=500')
+        .then(res => res.ok ? res.json() : null),
+      fetch('/api/grid/properties?limit=200')
+        .then(res => res.ok ? res.json() : null),
+    ]).then(([subData, propData]) => {
+      if (subData?.substations) setSubstations(subData.substations);
+      if (propData?.properties) {
+        // The API doesn't return lat/lng directly — get from EPC data via the property finder
+        // For now, properties don't have lat/lng in the response, so we'll use the ones
+        // that do have coordinates (from the EPC seed data matched by address)
+        setProperties(propData.properties);
+      }
+    })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -150,8 +167,19 @@ export function GridMap() {
           )}
         </div>
 
+        {/* Properties toggle */}
+        <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showProperties}
+            onChange={e => setShowProperties(e.target.checked)}
+            className="rounded border-border"
+          />
+          Show Top 200 Properties
+        </label>
+
         <span className="text-xs text-text-tertiary ml-auto">
-          {loading ? 'Loading...' : `${filtered.length} of ${substations.length} substations`}
+          {loading ? 'Loading...' : `${filtered.length} substations${showProperties ? ` + ${properties.length} properties` : ''}`}
         </span>
       </div>
 
@@ -263,6 +291,47 @@ export function GridMap() {
               </Popup>
             </CircleMarker>
           ))}
+
+          {/* Top 200 Properties — door-knock targets */}
+          {showProperties && properties.map(prop => {
+            if (!prop.latitude || !prop.longitude) return null;
+            const tier = prop.breakdown?.tier ?? 5;
+            const propColor = tier === 1 ? '#B91C4D' : tier === 2 ? '#3B82F6' : tier === 3 ? '#F59E0B' : '#6B7280';
+            return (
+              <CircleMarker
+                key={prop.propertyId}
+                center={[prop.latitude, prop.longitude]}
+                radius={tier <= 2 ? 6 : 4}
+                pathOptions={{
+                  color: propColor,
+                  fillColor: propColor,
+                  fillOpacity: tier === 1 ? 0.9 : 0.6,
+                  weight: tier === 1 ? 2 : 1,
+                }}
+                eventHandlers={{
+                  click: () => loadTrace(prop.latitude!, prop.longitude!),
+                }}
+              >
+                <Popup>
+                  <div className="text-xs space-y-1 min-w-[200px]" style={{ color: '#0F1117' }}>
+                    <p className="font-bold text-sm">{prop.address}</p>
+                    <p>{prop.postcode} — {prop.bedrooms} bed {prop.propertyType}</p>
+                    <p className="font-semibold" style={{ color: propColor }}>
+                      Score: {prop.totalScore} — Tier {tier}
+                    </p>
+                    <hr />
+                    <p>Phase: {prop.phaseStatus === 'already-3-phase' ? '✅ 3-phase' : prop.phaseStatus === 'cheap-upgrade' ? '🟡 Upgrade' : '🔴 Complex'}</p>
+                    <p>EPC: {prop.epcRating} | Solar nearby: {prop.solarNearby}</p>
+                    {prop.generationHeadroomKva != null && (
+                      <p>Gen headroom: {Math.round(prop.generationHeadroomKva)} kVA</p>
+                    )}
+                    <p>Est. connection: £{prop.estimatedConnectionCost.toLocaleString()}</p>
+                    <p className="text-[10px] italic">Click to trace infrastructure</p>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            );
+          })}
 
           {/* The Beeches — RoseStack flagship property */}
           <CircleMarker
