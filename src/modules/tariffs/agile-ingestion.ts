@@ -249,8 +249,8 @@ export async function ingestLatestRates(): Promise<{
     sql`SELECT MAX(valid_from) as max_from FROM agile_rates WHERE type = 'export'`,
   );
 
-  const importFrom = (latestImport.rows[0] as { max_from: string | null })?.max_from;
-  const exportFrom = (latestExport.rows[0] as { max_from: string | null })?.max_from;
+  const importFrom = (latestImport[0] as { max_from: string | null })?.max_from;
+  const exportFrom = (latestExport[0] as { max_from: string | null })?.max_from;
 
   let importInserted = 0;
   let exportInserted = 0;
@@ -320,7 +320,7 @@ export async function getIngestionCoverage(): Promise<Array<{
     ORDER BY type, MIN(valid_from)
   `);
 
-  return (result.rows as Array<{
+  return (result as unknown as Array<{
     type: string;
     product_code: string | null;
     slot_count: number;

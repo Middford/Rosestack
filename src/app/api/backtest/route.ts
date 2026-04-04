@@ -161,7 +161,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     configId,
     dailyCount: { agile: agileDaily.length, iof: iofDaily.length },
-    monthlySummary: monthlySummary.rows,
+    monthlySummary: monthlySummary,
     // Return last 30 days as sample (full data available via pagination)
     recentDays: agileDaily.slice(-30),
   });

@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "rosestack-dev",
-      "runtimeExecutable": "npx.cmd",
-      "runtimeArgs": ["next", "dev", "--turbopack", "--port", "3001"],
-      "port": 3001
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "3002"],
+      "port": 3002
     }
   ]
 }
