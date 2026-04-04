@@ -20,16 +20,26 @@ interface SubstationMarker {
   grade: string;
 }
 
+// Substation colors — blue tones to distinguish from green properties
 function scoreToColor(score: number): string {
-  if (score >= 80) return '#10B981'; // green — Tier 1 Prime
-  if (score >= 60) return '#3B82F6'; // blue — Tier 2 Strong
-  if (score >= 45) return '#F59E0B'; // amber — Tier 3 Viable
-  if (score >= 30) return '#8B5CF6'; // purple — Tier 4 Possible
-  return '#6B7280'; // grey — Tier 5
+  if (score >= 80) return '#3B82F6'; // bright blue — high score
+  if (score >= 60) return '#60A5FA'; // lighter blue — good
+  if (score >= 45) return '#93C5FD'; // pale blue — fair
+  if (score >= 30) return '#BFDBFE'; // very pale blue — low
+  return '#6B7280'; // grey — poor
 }
 
 function phaseColor(outfeed: string): string {
-  return outfeed === '415V' ? '#10B981' : '#6B7280';
+  return outfeed === '415V' ? '#3B82F6' : '#6B7280';
+}
+
+// Property colors — green tones to stand out from blue substations
+function propertyTierColor(tier: number): string {
+  if (tier === 1) return '#10B981'; // bright green — Prime
+  if (tier === 2) return '#34D399'; // lighter green — Strong
+  if (tier === 3) return '#F59E0B'; // amber — Viable
+  if (tier === 4) return '#8B5CF6'; // purple — Possible
+  return '#6B7280'; // grey — Deprioritise
 }
 
 function MapBounds() {
@@ -135,9 +145,9 @@ export function GridMap() {
   function getColor(sub: SubstationMarker): string {
     if (colorBy === 'phase') return phaseColor(sub.outfeed);
     if (colorBy === 'solar') {
-      if (sub.solarInstallations >= 10) return '#10B981';
-      if (sub.solarInstallations >= 3) return '#3B82F6';
-      if (sub.solarInstallations >= 1) return '#F59E0B';
+      if (sub.solarInstallations >= 10) return '#3B82F6';
+      if (sub.solarInstallations >= 3) return '#60A5FA';
+      if (sub.solarInstallations >= 1) return '#93C5FD';
       return '#6B7280';
     }
     return scoreToColor(sub.totalScore);
@@ -191,28 +201,23 @@ export function GridMap() {
           ))}
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-3 text-xs text-text-tertiary">
-          {colorBy === 'score' && (
-            <>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> T1 (80+)</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> T2 (60-79)</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> T3 (45-59)</span>
-            </>
-          )}
-          {colorBy === 'phase' && (
-            <>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> 3-Phase</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-500" /> Single</span>
-            </>
-          )}
-          {colorBy === 'solar' && (
-            <>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> 10+</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> 3-9</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> 1-2</span>
-            </>
-          )}
+        {/* Full legend — substations + properties + special markers */}
+        <div className="flex flex-col gap-1 text-[10px] text-text-tertiary">
+          <div className="flex items-center gap-3">
+            <span className="font-semibold text-text-secondary">Substations:</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#3B82F6' }} /> High score</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#60A5FA' }} /> Good</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#93C5FD' }} /> Fair</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#6B7280' }} /> Low</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="font-semibold text-text-secondary">Properties:</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#10B981' }} /> T1 Prime</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#34D399' }} /> T2 Strong</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#F59E0B' }} /> T3 Viable</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#8B5CF6' }} /> T4 Possible</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full" style={{ background: '#B91C4D' }} /> The Beeches</span>
+          </div>
         </div>
 
         {/* Properties toggle */}
@@ -344,7 +349,7 @@ export function GridMap() {
           {showProperties && properties.map(prop => {
             if (!prop.latitude || !prop.longitude) return null;
             const tier = prop.breakdown?.tier ?? 5;
-            const propColor = tier === 1 ? '#10B981' : tier === 2 ? '#3B82F6' : tier === 3 ? '#F59E0B' : '#6B7280';
+            const propColor = propertyTierColor(tier);
             return (
               <CircleMarker
                 key={prop.propertyId}
