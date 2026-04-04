@@ -266,12 +266,9 @@ export function GridMap() {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
-          {/* Trace lines: feeder substations → primary */}
+          {/* Trace: Property → Nearest Substation → Primary */}
           {trace && (() => {
             const t = trace as any;
-            const feederPoints: [number, number][] = (t.feeder?.substations || [])
-              .filter((s: any) => s.latitude && s.longitude)
-              .map((s: any) => [s.latitude, s.longitude] as [number, number]);
             const primaryPoint = t.primary?.latitude && t.primary?.longitude
               ? [t.primary.latitude, t.primary.longitude] as [number, number]
               : null;
@@ -285,10 +282,6 @@ export function GridMap() {
                 {/* Line from property to nearest substation */}
                 {nearestPoint && (
                   <Polyline positions={[propPoint, nearestPoint]} pathOptions={{ color: '#B91C4D', weight: 3, dashArray: '8,6' }} />
-                )}
-                {/* Lines connecting feeder substations */}
-                {feederPoints.length > 1 && (
-                  <Polyline positions={feederPoints} pathOptions={{ color: '#8B5CF6', weight: 1.5, opacity: 0.5 }} />
                 )}
                 {/* Line from nearest substation to primary */}
                 {nearestPoint && primaryPoint && (
@@ -305,6 +298,17 @@ export function GridMap() {
                     </Popup>
                   </CircleMarker>
                 )}
+                {/* Nearest substation highlight */}
+                {nearestPoint && (
+                  <CircleMarker center={nearestPoint} radius={9} pathOptions={{ color: '#3B82F6', fillColor: '#3B82F6', fillOpacity: 0.9, weight: 2 }}>
+                    <Popup>
+                      <div className="text-xs" style={{ color: '#0F1117' }}>
+                        <p className="font-bold">Nearest Sub: #{t.nearestSubstation?.substationNumber}</p>
+                        <p>{t.nearestSubstation?.outfeed} | {t.nearestSubstation?.distanceKm ? Math.round(t.nearestSubstation.distanceKm * 1000) + 'm' : ''}</p>
+                      </div>
+                    </Popup>
+                  </CircleMarker>
+                )}
                 {/* Property marker */}
                 <CircleMarker center={propPoint} radius={8} pathOptions={{ color: '#B91C4D', fillColor: '#B91C4D', fillOpacity: 1, weight: 3 }}>
                   <Popup>
@@ -314,11 +318,6 @@ export function GridMap() {
                     </div>
                   </Popup>
                 </CircleMarker>
-                {/* Feeder substation highlights */}
-                {feederPoints.map((pos, i) => (
-                  <CircleMarker key={`feeder-${i}`} center={pos} radius={4}
-                    pathOptions={{ color: '#8B5CF6', fillColor: '#8B5CF6', fillOpacity: 0.5, weight: 1 }} />
-                ))}
               </>
             );
           })()}
@@ -535,9 +534,8 @@ export function GridMap() {
 
             {/* Legend */}
             <div className="flex gap-4 text-[10px] text-text-tertiary pt-1 border-t border-border">
-              <span className="flex items-center gap-1"><span className="w-6 h-0.5 bg-rose inline-block" style={{ borderTop: '2px dashed #B91C4D' }} /> Property → Substation</span>
-              <span className="flex items-center gap-1"><span className="w-6 h-0.5 bg-violet-500 inline-block" /> Feeder network</span>
-              <span className="flex items-center gap-1"><span className="w-6 h-0.5 bg-amber-500 inline-block" style={{ borderTop: '2px dashed #F59E0B' }} /> → Primary substation</span>
+              <span className="flex items-center gap-1"><span className="w-6 h-0.5 inline-block" style={{ borderTop: '2px dashed #B91C4D' }} /> Property → Nearest substation</span>
+              <span className="flex items-center gap-1"><span className="w-6 h-0.5 inline-block" style={{ borderTop: '2px dashed #F59E0B' }} /> Substation → Primary</span>
             </div>
 
             {/* Data disclaimer */}
