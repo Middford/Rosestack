@@ -296,7 +296,7 @@ export function GridMap() {
           {showProperties && properties.map(prop => {
             if (!prop.latitude || !prop.longitude) return null;
             const tier = prop.breakdown?.tier ?? 5;
-            const propColor = tier === 1 ? '#B91C4D' : tier === 2 ? '#3B82F6' : tier === 3 ? '#F59E0B' : '#6B7280';
+            const propColor = tier === 1 ? '#10B981' : tier === 2 ? '#3B82F6' : tier === 3 ? '#F59E0B' : '#6B7280';
             return (
               <CircleMarker
                 key={prop.propertyId}
