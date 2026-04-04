@@ -420,7 +420,7 @@ export function GridMap() {
 
           {/* The Beeches — RoseStack flagship property */}
           <CircleMarker
-            center={[53.7239, -2.4863]}
+            center={[53.720611, -2.483972]}
             radius={10}
             pathOptions={{
               color: '#B91C4D',
@@ -429,7 +429,7 @@ export function GridMap() {
               weight: 3,
             }}
             eventHandlers={{
-              click: () => loadTrace(53.7239, -2.4863),
+              click: () => loadTrace(53.720611, -2.483972),
             }}
           >
             <Popup>
