@@ -154,6 +154,21 @@ export const homes = pgTable('homes', {
   hasHeatPump: boolean('has_heat_pump').default(false),
   /** Number of EVs (0-2) */
   evCount: integer('ev_count').default(0),
+  // Octopus API meter credentials (for fetching actual consumption/export data)
+  /** Octopus API key from customer's developer dashboard */
+  octopusApiKey: varchar('octopus_api_key', { length: 200 }),
+  /** Octopus account number (e.g. A-AAAA1111) */
+  octopusAccountNumber: varchar('octopus_account_number', { length: 30 }),
+  /** Import MPAN (Meter Point Administration Number) */
+  importMpan: varchar('import_mpan', { length: 20 }),
+  /** Import meter serial number */
+  importSerialNumber: varchar('import_serial_number', { length: 20 }),
+  /** Export MPAN */
+  exportMpan: varchar('export_mpan', { length: 20 }),
+  /** Export meter serial number */
+  exportSerialNumber: varchar('export_serial_number', { length: 20 }),
+  /** Last time meter data was synced from Octopus */
+  lastMeterSync: timestamp('last_meter_sync'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

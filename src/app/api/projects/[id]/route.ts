@@ -80,6 +80,10 @@ export async function PATCH(
       'installationCostOverride', 'maintenanceCostOverride', 'solarCostOverride',
       'dailyConsumptionKwh', 'hasHeatPump', 'evCount', 'epcRating',
       'propertyType', 'gardenAccess', 'notes', 'bedrooms',
+      // Octopus meter credentials
+      'octopusApiKey', 'octopusAccountNumber',
+      'importMpan', 'importSerialNumber',
+      'exportMpan', 'exportSerialNumber',
     ];
 
     for (const col of homeColumns) {
