@@ -8,6 +8,7 @@ import {
   newLeads as leads,
   PIPELINE_STAGE_DEFINITIONS,
 } from '@/modules/customers/data';
+import { CashflowModel } from '@/modules/projects/components/cashflow-model';
 import { PoundSterling, Home, ShieldCheck, Clock, TrendingUp, BarChart2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -22,7 +23,7 @@ const tooltipStyle = {
   fontSize: '12px',
 };
 
-type Tab = 'kanban' | 'scoring' | 'funnel';
+type Tab = 'kanban' | 'scoring' | 'funnel' | 'cashflow';
 
 export default function PipelinePage() {
   const [activeTab, setActiveTab] = useState<Tab>('kanban');
@@ -73,6 +74,7 @@ export default function PipelinePage() {
     { id: 'kanban', label: 'Kanban Board' },
     { id: 'funnel', label: 'Funnel & Metrics' },
     { id: 'scoring', label: 'Lead Scoring' },
+    { id: 'cashflow', label: 'Cashflow Model' },
   ];
 
   return (
@@ -252,6 +254,8 @@ export default function PipelinePage() {
       )}
 
       {activeTab === 'scoring' && <LeadScoring />}
+
+      {activeTab === 'cashflow' && <CashflowModel />}
     </div>
   );
 }

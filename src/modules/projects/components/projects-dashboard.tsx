@@ -7,7 +7,6 @@ import { Card } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { SimpleStatCard } from '@/shared/ui/stat-card';
 import { ProjectTable } from './project-table';
-import { CashflowModel } from './cashflow-model';
 
 interface Project {
   id: string;
@@ -21,12 +20,9 @@ interface Project {
   targetInstallDate: string | null;
 }
 
-type Tab = 'projects' | 'cashflow';
-
 export function ProjectsDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('projects');
 
   useEffect(() => {
     async function fetchProjects() {
@@ -54,38 +50,14 @@ export function ProjectsDashboard() {
       ? projects.reduce((sum, p) => sum + (p.paybackYears ?? 0), 0) / projects.length
       : 0;
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'projects', label: 'Projects' },
-    { key: 'cashflow', label: 'Cashflow Model' },
-  ];
-
   return (
     <div className="space-y-6">
-      {/* Tab bar */}
-      <div className="flex items-center gap-1 border-b border-border">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
-              activeTab === tab.key
-                ? 'text-rose'
-                : 'text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            {tab.label}
-            {activeTab === tab.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-rose rounded-t" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'projects' && (
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-text-primary">Projects</h1>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">Projects</h1>
+          <p className="text-sm text-text-secondary mt-1">Confirmed installations — contracted through to live</p>
+        </div>
             <Link href="/projects/add">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
@@ -146,10 +118,6 @@ export function ProjectsDashboard() {
               </Link>
             </Card>
           )}
-        </div>
-      )}
-
-      {activeTab === 'cashflow' && <CashflowModel />}
     </div>
   );
 }
