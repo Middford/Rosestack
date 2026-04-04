@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Card } from '@/shared/ui/card';
 import { batteries, inverters } from '@/modules/hardware/data';
 import type { ProjectCapex } from '@/modules/projects/types';
-import type { HardwareState, TariffName } from './wizard-shell';
+import { estimateDailyConsumption } from '@/modules/projects/utils';
+import type { HardwareState, TariffName, PropertyState } from './wizard-shell';
 
 interface StepHardwareProps {
   hardware: HardwareState;
@@ -13,6 +15,7 @@ interface StepHardwareProps {
   tariffName: TariffName;
   setTariffName: Dispatch<SetStateAction<TariffName>>;
   capex: ProjectCapex;
+  property: PropertyState;
   systemTotals: {
     totalCapKwh: number;
     totalInverterKw: number;
@@ -36,10 +39,38 @@ export function StepHardware({
   tariffName,
   setTariffName,
   capex,
+  property,
   systemTotals,
 }: StepHardwareProps) {
-  const set = <K extends keyof HardwareState>(key: K, val: HardwareState[K]) =>
-    setHardware((prev) => ({ ...prev, [key]: val }));
+  // Track whether user has manually moved the consumption slider
+  const [consumptionOverridden, setConsumptionOverridden] = useState(false);
+
+  const set = <K extends keyof HardwareState>(key: K, val: HardwareState[K]) => {
+    setHardware((prev) => {
+      const next = { ...prev, [key]: val };
+      // Auto-recalculate consumption when heat pump or EVs change
+      // unless the user has manually overridden the slider
+      if ((key === 'hasHeatPump' || key === 'evCount') && !consumptionOverridden) {
+        next.dailyConsumptionKwh = estimateDailyConsumption({
+          bedrooms: property.bedrooms,
+          propertyType: property.propertyType,
+          epcRating: property.epcRating,
+          hasHeatPump: key === 'hasHeatPump' ? (val as boolean) : next.hasHeatPump,
+          evCount: key === 'evCount' ? (val as number) : next.evCount,
+        });
+      }
+      return next;
+    });
+  };
+
+  // Estimated consumption from property attributes (always shown for reference)
+  const estimatedConsumption = estimateDailyConsumption({
+    bedrooms: property.bedrooms,
+    propertyType: property.propertyType,
+    epcRating: property.epcRating,
+    hasHeatPump: hardware.hasHeatPump,
+    evCount: hardware.evCount,
+  });
 
   const maxDischargeKw =
     (systemTotals.battery?.dischargeRateKw ?? 0) * hardware.batteryStacks;
@@ -153,23 +184,47 @@ export function StepHardware({
         </div>
       </div>
 
-      {/* Daily consumption slider */}
+      {/* Daily consumption slider — auto-estimated from property + heat pump + EVs */}
       <div className="space-y-2">
-        <label className={labelClass}>
-          Daily Consumption: {hardware.dailyConsumptionKwh} kWh
-        </label>
+        <div className="flex items-center justify-between">
+          <label className={labelClass}>
+            Daily Consumption: <span className="text-text-primary font-semibold">{hardware.dailyConsumptionKwh} kWh</span>
+          </label>
+          <div className="flex items-center gap-2">
+            {consumptionOverridden && (
+              <button
+                type="button"
+                onClick={() => {
+                  setConsumptionOverridden(false);
+                  set('dailyConsumptionKwh', estimatedConsumption);
+                }}
+                className="text-[10px] text-rose hover:text-rose-light transition-colors"
+              >
+                Reset to estimate
+              </button>
+            )}
+            <span className="text-[10px] text-text-tertiary">
+              Est: {estimatedConsumption} kWh
+              {property.bedrooms > 0 && ` (${property.bedrooms}-bed ${property.propertyType}${property.epcRating ? `, EPC ${property.epcRating}` : ''}${hardware.hasHeatPump ? ', heat pump' : ''}${hardware.evCount > 0 ? `, ${hardware.evCount} EV` : ''})`}
+            </span>
+          </div>
+        </div>
         <input
           type="range"
-          min={10}
-          max={50}
+          min={5}
+          max={80}
           step={1}
           value={hardware.dailyConsumptionKwh}
-          onChange={(e) => set('dailyConsumptionKwh', parseInt(e.target.value))}
-          className="w-full accent-rose"
+          onChange={(e) => {
+            setConsumptionOverridden(true);
+            setHardware((prev) => ({ ...prev, dailyConsumptionKwh: parseInt(e.target.value) }));
+          }}
+          className={`w-full ${consumptionOverridden ? 'accent-amber-500' : 'accent-rose'}`}
         />
         <div className="flex justify-between text-[10px] text-text-tertiary">
-          <span>10 kWh</span>
-          <span>50 kWh</span>
+          <span>5 kWh</span>
+          <span>{consumptionOverridden ? 'Manual override' : 'Auto-estimated'}</span>
+          <span>80 kWh</span>
         </div>
       </div>
 

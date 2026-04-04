@@ -7,6 +7,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/shared/db';
 import { homes, batterySystems, leads } from '@/shared/db/schema';
 import { eq } from 'drizzle-orm';
+import { batteries, inverters } from '@/modules/hardware/data';
+import { calculateProjectCapex, getSystemTotals } from '@/modules/projects/utils';
 
 // --- GET: Fetch all projects ---
 
@@ -43,12 +45,38 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Validate essential fields
-    if (!body.address || !body.postcode || !body.latitude || !body.longitude || !body.phase) {
+    if (!body.address || !body.postcode) {
       return NextResponse.json(
-        { error: 'Missing required fields: address, postcode, latitude, longitude, phase' },
+        { error: 'Missing required fields: address, postcode' },
         { status: 400 },
       );
     }
+
+    // Derive system specs from hardware catalogue
+    const batteryId = body.batteryId ?? 'bat-fogstar-64';
+    const inverterId = body.inverterId ?? 'inv-solis-30k';
+    const batteryStacks = body.batteryStacks ?? 4;
+    const inverterCount = body.inverterCount ?? 3;
+    const solarKwp = body.solarKwp ?? 25;
+    const phase = body.phase ?? '3-phase';
+
+    const battery = batteries.find(b => b.id === batteryId);
+    const inverter = inverters.find(i => i.id === inverterId);
+    const { totalCapKwh, totalInverterKw, efficiency } = getSystemTotals(
+      batteryId, batteryStacks, inverterId, inverterCount,
+    );
+
+    const capex = calculateProjectCapex({
+      batteryId,
+      batteryStacks,
+      inverterId,
+      inverterCount,
+      solarKwp,
+      phase,
+      g99ApplicationCost: body.g99ApplicationCost,
+      installationCostOverride: body.installationCostOverride,
+      solarCostOverride: body.solarCostOverride,
+    });
 
     // 1. Insert into homes
     const [home] = await db
@@ -56,15 +84,15 @@ export async function POST(request: Request) {
       .values({
         address: body.address,
         postcode: body.postcode,
-        latitude: body.latitude,
-        longitude: body.longitude,
-        phase: body.phase,
+        latitude: body.latitude ?? 53.8,
+        longitude: body.longitude ?? -2.4,
+        phase,
         status: 'prospect',
         targetInstallDate: body.targetInstallDate ? new Date(body.targetInstallDate) : null,
-        tariffName: body.tariffName ?? null,
-        solarKwp: body.solarKwp ?? null,
-        exportLimitKw: body.exportLimitKw ?? null,
-        monthlyHomeownerPayment: body.monthlyHomeownerPayment ?? null,
+        tariffName: body.tariffName ?? 'flux',
+        solarKwp,
+        exportLimitKw: body.exportLimitKw ?? 66,
+        monthlyHomeownerPayment: body.monthlyHomeownerPayment ?? 100,
         insuranceCostAnnual: body.insuranceCostAnnual ?? 500,
         g99ApplicationCost: body.g99ApplicationCost ?? 350,
         installationCostOverride: body.installationCostOverride ?? null,
@@ -73,27 +101,42 @@ export async function POST(request: Request) {
         dailyConsumptionKwh: body.dailyConsumptionKwh ?? 24,
         hasHeatPump: body.hasHeatPump ?? false,
         evCount: body.evCount ?? 0,
+        propertyType: body.propertyType ?? null,
+        bedrooms: body.bedrooms ?? null,
+        gardenAccess: body.gardenAccess ?? null,
+        epcRating: body.epcRating ?? null,
+        esaContractRef: body.esaContractRef ?? null,
       })
       .returning();
 
-    // 2. Insert into battery_systems
-    const capex = body.capex ?? {};
+    // 2. Insert into battery_systems (derived from hardware catalogue)
+    const inverterModel = inverter
+      ? `${inverter.manufacturer} ${inverter.model}`
+      : body.inverterId ?? 'Unknown';
+
     const [system] = await db
       .insert(batterySystems)
       .values({
         homeId: home.id,
-        inverterModel: body.inverterModel ?? 'TBD',
-        batteryModules: body.batteryModules ?? 1,
-        totalCapacityKwh: body.totalCapacityKwh ?? 0,
-        batteryChemistry: body.batteryChemistry ?? 'LFP',
-        solarPvKwp: body.solarPvKwp ?? body.solarKwp ?? null,
-        installCost: capex.totalCapex ?? body.installCost ?? 0,
-        annualMaintenanceCost: body.annualMaintenanceCost ?? 150,
-        warrantyYears: body.warrantyYears ?? 10,
-        degradationRatePercent: body.degradationRatePercent ?? 2.5,
-        maxChargeRateKw: body.maxChargeRateKw ?? 5,
-        maxDischargeRateKw: body.maxDischargeRateKw ?? 5,
-        roundTripEfficiency: body.roundTripEfficiency ?? 0.92,
+        inverterModel: `${inverterCount}x ${inverterModel}`,
+        batteryModules: batteryStacks * (battery?.maxModulesPerString ?? 1),
+        totalCapacityKwh: totalCapKwh,
+        batteryChemistry: battery?.chemistry ?? 'LFP',
+        solarPvKwp: solarKwp,
+        installCost: capex.totalCapex,
+        annualMaintenanceCost: body.maintenanceCostOverride ?? 150,
+        warrantyYears: battery?.warrantyYears ?? 10,
+        degradationRatePercent: battery?.degradationRatePercent ?? 1.5,
+        maxChargeRateKw: Math.min(
+          (battery?.chargeRateKw ?? 7.5) * batteryStacks,
+          totalInverterKw,
+        ),
+        maxDischargeRateKw: Math.min(
+          (battery?.dischargeRateKw ?? 7.5) * batteryStacks,
+          totalInverterKw,
+          body.exportLimitKw ?? 66,
+        ),
+        roundTripEfficiency: efficiency,
       })
       .returning();
 
@@ -102,15 +145,15 @@ export async function POST(request: Request) {
       .insert(leads)
       .values({
         homeId: home.id,
-        name: body.homeownerName ?? 'Unknown',
-        phone: body.phone ?? null,
-        email: body.email ?? null,
+        name: body.homeownerName || 'Unknown',
+        phone: body.homeownerPhone ?? null,
+        email: body.homeownerEmail ?? null,
         source: 'website',
         pipelineStatus: 'new_lead',
       })
       .returning();
 
-    // 4. Update homes.systemId with the created battery system id
+    // 4. Update homes.systemId
     const [updatedHome] = await db
       .update(homes)
       .set({ systemId: system.id })
@@ -118,18 +161,12 @@ export async function POST(request: Request) {
       .returning();
 
     return NextResponse.json(
-      {
-        ...updatedHome,
-        system,
-        lead,
-      },
+      { ...updatedHome, system, lead },
       { status: 201 },
     );
   } catch (err) {
     console.error('[POST /api/projects]', err);
-    return NextResponse.json(
-      { error: 'Failed to create project' },
-      { status: 500 },
-    );
+    const message = err instanceof Error ? err.message : 'Failed to create project';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

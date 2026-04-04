@@ -207,6 +207,7 @@ export function WizardShell() {
             tariffName={tariffName}
             setTariffName={setTariffName}
             capex={capex}
+            property={property}
             systemTotals={systemTotals}
           />
         )}
