@@ -185,6 +185,90 @@ export function estimateDailyConsumption(params: {
   return Math.round(daily);
 }
 
+// ── Property score calculator ────────────────────────────────────────────────
+//
+// Scores a property 0-100 based on suitability for RoseStack installation.
+// Higher = better candidate. Factors:
+//   - Phase (3-phase = ideal for large systems)
+//   - Property type (detached with garden = best access)
+//   - Bedrooms (more = larger house = more consumption)
+//   - Garden access (essential for battery slab)
+//   - EPC rating (worse EPC = higher consumption = more value from battery)
+//   - Solar potential (higher kWp roof = more free charging)
+
+export function calculatePropertyScore(params: {
+  phase: string;
+  propertyType: string;
+  bedrooms: number;
+  gardenAccess: boolean;
+  epcRating: string;
+  solarKwp: number;
+  hasHeatPump: boolean;
+  evCount: number;
+}): number {
+  let score = 0;
+
+  // Phase: 3-phase is essential for large systems (25 pts)
+  score += params.phase === '3-phase' ? 25 : 5;
+
+  // Property type (15 pts)
+  const typeScores: Record<string, number> = {
+    detached: 15, farm: 14, bungalow: 12, semi: 8, terrace: 4, commercial: 10,
+  };
+  score += typeScores[params.propertyType] ?? 8;
+
+  // Bedrooms — proxy for house size and consumption (10 pts)
+  score += Math.min(10, Math.max(2, (params.bedrooms - 1) * 2));
+
+  // Garden access — essential for battery slab (15 pts)
+  score += params.gardenAccess ? 15 : 0;
+
+  // EPC rating — worse insulation = higher consumption = more arbitrage value (10 pts)
+  // D/E properties benefit most from battery + heat pump
+  const epcScores: Record<string, number> = {
+    A: 3, B: 5, C: 7, D: 10, E: 9, F: 6, G: 4,
+  };
+  const epcBand = (params.epcRating || 'D').trim().charAt(0).toUpperCase();
+  score += epcScores[epcBand] ?? 7;
+
+  // Solar potential (10 pts)
+  if (params.solarKwp >= 25) score += 10;
+  else if (params.solarKwp >= 15) score += 7;
+  else if (params.solarKwp >= 5) score += 4;
+  else score += 1;
+
+  // Heat pump — increases consumption and arbitrage value (8 pts)
+  score += params.hasHeatPump ? 8 : 0;
+
+  // EVs — increases off-peak charging value (7 pts)
+  score += Math.min(7, params.evCount * 4);
+
+  return Math.min(100, Math.max(0, score));
+}
+
+// ── Engagement score ────────────────────────────────────────────────────────
+//
+// Scores engagement 0-100 based on pipeline progress.
+// Further along the pipeline = more engaged.
+
+export function calculateEngagementScore(status: string, daysInCurrentStatus: number): number {
+  const statusScores: Record<string, number> = {
+    new_lead: 10, initial_contact: 20, interested: 35, property_assessed: 45,
+    visit_scheduled: 50, visit_complete: 60, proposal_prepared: 65,
+    proposal_sent: 70, proposal_reviewing: 75, verbal_agreement: 80,
+    contract_sent: 85, contracted: 90, g99_submitted: 92, g99_approved: 94,
+    installation_scheduled: 96, installed: 98, commissioned: 99, live: 100,
+    on_hold: 15, lost: 0,
+  };
+  let score = statusScores[status] ?? 10;
+
+  // Decay for stale leads — lose points if sitting too long
+  if (daysInCurrentStatus > 30 && score < 80) score = Math.max(5, score - 10);
+  if (daysInCurrentStatus > 60 && score < 80) score = Math.max(5, score - 10);
+
+  return Math.min(100, Math.max(0, score));
+}
+
 export function getSystemTotals(
   batteryId: string,
   stacks: number,

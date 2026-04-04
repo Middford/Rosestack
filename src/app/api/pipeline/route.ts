@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/shared/db';
 import { homes, batterySystems, leads } from '@/shared/db/schema';
 import { eq } from 'drizzle-orm';
+import { calculatePropertyScore, calculateEngagementScore } from '@/modules/projects/utils';
 
 export async function GET() {
   try {
@@ -23,6 +24,20 @@ export async function GET() {
 
       const createdAt = lead.createdAt ?? new Date();
       const daysAgo = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+      const status = (lead.pipelineStatus ?? 'new_lead') as string;
+
+      const propertyScore = calculatePropertyScore({
+        phase: home?.phase ?? '1-phase',
+        propertyType: home?.propertyType ?? 'detached',
+        bedrooms: home?.bedrooms ?? 3,
+        gardenAccess: home?.gardenAccess ?? false,
+        epcRating: home?.epcRating ?? 'D',
+        solarKwp: home?.solarKwp ?? 0,
+        hasHeatPump: home?.hasHeatPump ?? false,
+        evCount: home?.evCount ?? 0,
+      });
+      const engagementScore = calculateEngagementScore(status, daysAgo);
+      const totalScore = Math.round(propertyScore * 0.6 + engagementScore * 0.4);
 
       return {
         id: lead.id,
@@ -34,10 +49,10 @@ export async function GET() {
         postcode: home?.postcode ?? '',
         source: (lead.source ?? 'website') as 'referral' | 'door-knock' | 'website' | 'club' | 'social' | 'other',
         referredBy: undefined,
-        status: (lead.pipelineStatus ?? 'new_lead') as string,
-        propertyScore: home?.propertyScore ?? 50,
-        engagementScore: 50,
-        totalScore: home?.propertyScore ?? 50,
+        status,
+        propertyScore,
+        engagementScore,
+        totalScore,
         activities: [],
         followUps: [],
         estimatedSystemSize: system ? `${system.totalCapacityKwh} kWh` : 'TBD',
