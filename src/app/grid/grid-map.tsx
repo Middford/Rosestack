@@ -42,6 +42,7 @@ export function GridMap() {
   const [substations, setSubstations] = useState<SubstationMarker[]>([]);
   const [loading, setLoading] = useState(true);
   const [colorBy, setColorBy] = useState<'score' | 'phase' | 'solar'>('score');
+  const [minTier, setMinTier] = useState<1 | 2 | 3 | 4 | 5>(1); // default: show Tier 1 only
 
   useEffect(() => {
     fetch('/api/grid/scoring?type=substations&lat=53.8&lng=-2.4&radius=15&limit=500')
@@ -64,6 +65,10 @@ export function GridMap() {
     return scoreToColor(sub.totalScore);
   }
 
+  // Filter by minimum tier
+  const tierMinScore = minTier === 1 ? 80 : minTier === 2 ? 60 : minTier === 3 ? 45 : minTier === 4 ? 30 : 0;
+  const filtered = substations.filter(s => s.totalScore >= tierMinScore);
+
   function getRadius(sub: SubstationMarker): number {
     if (colorBy === 'solar') return Math.max(3, Math.min(12, sub.solarInstallations));
     return sub.totalScore >= 80 ? 7 : sub.totalScore >= 60 ? 5 : 4;
@@ -73,6 +78,7 @@ export function GridMap() {
     <div className="space-y-4">
       {/* Controls */}
       <div className="flex flex-wrap gap-4 items-center">
+        {/* Color mode */}
         <div className="flex gap-1 rounded-lg border border-border overflow-hidden">
           {(['score', 'phase', 'solar'] as const).map(mode => (
             <button
@@ -86,32 +92,53 @@ export function GridMap() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-4 text-xs text-text-tertiary">
+
+        {/* Tier filter */}
+        <div className="flex gap-1 rounded-lg border border-border overflow-hidden">
+          {([
+            { tier: 1 as const, label: 'T1 only', color: 'emerald' },
+            { tier: 2 as const, label: 'T1-2', color: 'blue' },
+            { tier: 3 as const, label: 'T1-3', color: 'amber' },
+            { tier: 5 as const, label: 'All', color: 'gray' },
+          ]).map(opt => (
+            <button
+              key={opt.tier}
+              onClick={() => setMinTier(opt.tier)}
+              className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                minTier === opt.tier ? 'bg-rose text-white' : 'bg-bg-secondary text-text-tertiary hover:text-text-secondary'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-3 text-xs text-text-tertiary">
           {colorBy === 'score' && (
             <>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Tier 1 (80+)</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Tier 2 (60-79)</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Tier 3 (45-59)</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-violet-500" /> Tier 4 (30-44)</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> T1 (80+)</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> T2 (60-79)</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> T3 (45-59)</span>
             </>
           )}
           {colorBy === 'phase' && (
             <>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> 3-Phase (415V)</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-500" /> Single (240V)</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> 3-Phase</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-500" /> Single</span>
             </>
           )}
           {colorBy === 'solar' && (
             <>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> 10+ solar</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> 3-9 solar</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> 1-2 solar</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-500" /> No solar</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> 10+</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> 3-9</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> 1-2</span>
             </>
           )}
         </div>
+
         <span className="text-xs text-text-tertiary ml-auto">
-          {loading ? 'Loading...' : `${substations.length} substations from ENWL Open Data`}
+          {loading ? 'Loading...' : `${filtered.length} of ${substations.length} substations`}
         </span>
       </div>
 
@@ -129,7 +156,7 @@ export function GridMap() {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
-          {substations.map(sub => (
+          {filtered.map(sub => (
             <CircleMarker
               key={sub.substationNumber}
               center={[sub.latitude, sub.longitude]}
