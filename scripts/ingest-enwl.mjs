@@ -24,11 +24,33 @@ if (!API_KEY) {
 const headers = { Authorization: `Apikey ${API_KEY}` };
 
 async function fetchAllRecords(datasetId, pageSize = 100) {
+  // OpenDataSoft caps offset at ~10,000. For large datasets we use the
+  // /exports/json endpoint which streams all records without offset limits.
+  // First check total count.
+  const countUrl = `${ENWL_API}/catalog/datasets/${datasetId}/records?limit=0`;
+  const countRes = await fetch(countUrl, { headers });
+  const countData = await countRes.json();
+  const total = countData.total_count ?? 0;
+  console.log(`  Total records: ${total}`);
+
+  if (total > 9000) {
+    // Use export endpoint for large datasets (no offset limit)
+    console.log(`  Using export endpoint (large dataset)...`);
+    const exportUrl = `https://electricitynorthwest.opendatasoft.com/api/explore/v2.1/catalog/datasets/${datasetId}/exports/json?limit=-1`;
+    const res = await fetch(exportUrl, { headers });
+    if (!res.ok) {
+      console.error(`  Export ERROR ${res.status}: ${await res.text()}`);
+      return [];
+    }
+    const records = await res.json();
+    console.log(`  ${records.length} records exported`);
+    return records;
+  }
+
+  // Small datasets — use paginated records endpoint
   const records = [];
   let offset = 0;
-  let total = null;
-
-  while (total === null || offset < total) {
+  while (offset < total) {
     const url = `${ENWL_API}/catalog/datasets/${datasetId}/records?limit=${pageSize}&offset=${offset}`;
     const res = await fetch(url, { headers });
     if (!res.ok) {
@@ -36,14 +58,11 @@ async function fetchAllRecords(datasetId, pageSize = 100) {
       break;
     }
     const data = await res.json();
-    if (total === null) total = data.total_count;
     const batch = data.results || [];
     records.push(...batch);
     offset += batch.length;
     if (batch.length === 0) break;
-    if (offset % 1000 === 0 || offset >= total) {
-      process.stdout.write(`\r  ${offset}/${total} records fetched`);
-    }
+    process.stdout.write(`\r  ${offset}/${total}`);
   }
   console.log(`\r  ${records.length}/${total} records fetched — done`);
   return records;
