@@ -11,6 +11,7 @@ import { SubstationDashboard } from './substation-dashboard';
 import { DeploymentPlannerView } from './deployment-planner-view';
 import { SubstationRanking } from '@/modules/grid/components/substation-ranking';
 import { PropertyRanking } from '@/modules/grid/components/property-ranking';
+import { TopProperties } from '@/modules/grid/components/top-properties';
 
 // Leaflet must be loaded client-side only (no SSR)
 const GridMap = dynamic(() => import('./grid-map').then(m => ({ default: m.GridMap })), {
@@ -23,7 +24,8 @@ const GridMap = dynamic(() => import('./grid-map').then(m => ({ default: m.GridM
 });
 
 const tabs = [
-  { id: 'prospecting', label: 'Prospecting' },
+  { id: 'top-properties', label: 'Top 200 Properties' },
+  { id: 'prospecting', label: 'Substation Ranking' },
   { id: 'map', label: 'Grid Map' },
   { id: 'properties', label: 'Property Finder' },
   { id: 'substations', label: 'Substations' },
@@ -33,7 +35,7 @@ const tabs = [
 type TabId = (typeof tabs)[number]['id'];
 
 export default function GridPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('prospecting');
+  const [activeTab, setActiveTab] = useState<TabId>('top-properties');
   const [selectedSubstation, setSelectedSubstation] = useState<string | null>(null);
 
   const scored = scoreAndRankProperties(targetProperties);
@@ -115,6 +117,8 @@ export default function GridPage() {
 
       {/* Tab content */}
       <div>
+        {activeTab === 'top-properties' && <TopProperties />}
+
         {activeTab === 'prospecting' && (
           <div className="space-y-6">
             <SubstationRanking
