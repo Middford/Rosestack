@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Marker } from 'react-leaflet';
+import L from 'leaflet';
 import { Badge } from '@/shared/ui';
 import 'leaflet/dist/leaflet.css';
 
@@ -190,6 +191,35 @@ export function GridMap() {
               </Popup>
             </CircleMarker>
           ))}
+
+          {/* The Beeches — RoseStack flagship property */}
+          <CircleMarker
+            center={[53.785, -2.464]}
+            radius={10}
+            pathOptions={{
+              color: '#B91C4D',
+              fillColor: '#B91C4D',
+              fillOpacity: 1,
+              weight: 3,
+            }}
+          >
+            <Popup>
+              <div className="text-xs space-y-1 min-w-[240px]" style={{ color: '#0F1117' }}>
+                <p className="font-bold text-sm" style={{ color: '#B91C4D' }}>🏠 The Beeches</p>
+                <p className="font-semibold">RoseStack Flagship Property</p>
+                <p>BB2 4LA — Wilpshire</p>
+                <hr />
+                <p>Nearest sub: <strong>#451503 (240V, 25kVA)</strong></p>
+                <p>Phase: <strong style={{ color: '#F59E0B' }}>🟡 Cheap Upgrade</strong></p>
+                <p>415V substation 400m away on same feeder</p>
+                <p>Best TX nearby: #450107 (500kVA, 488kVA headroom)</p>
+                <hr />
+                <p>Primary: Clarendon Rd (400014)</p>
+                <p>Feeder: 27× 3-phase / 28× single-phase</p>
+                <p>Tier: <strong style={{ color: '#F59E0B' }}>3 — Viable</strong> (score ~53)</p>
+              </div>
+            </Popup>
+          </CircleMarker>
         </MapContainer>
       </div>
     </div>
