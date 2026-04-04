@@ -265,17 +265,35 @@ export async function GET(request: Request) {
       }
     }
 
-    // Attach prices to scored results
+    // Attach prices to scored results with estimated current value
+    // North West England average annual house price growth ~4% (HM Land Registry HPI)
+    const ANNUAL_GROWTH_RATE = 0.04;
+    const now = new Date();
+
     const scoredWithPrices = scored.map(s => {
       const priceInfo = priceMap.get(s.postcode);
       const floorArea = (s as any).floorAreaM2 || 0;
-      const valuePerM2 = priceInfo && floorArea > 0
-        ? Math.round(priceInfo.lastSoldPrice / floorArea)
+
+      let estimatedCurrentValue: number | null = null;
+      let yearsSinceSale: number | null = null;
+
+      if (priceInfo?.lastSoldPrice && priceInfo.lastSoldDate) {
+        const saleDate = new Date(priceInfo.lastSoldDate);
+        yearsSinceSale = Math.max(0, (now.getTime() - saleDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+        // Compound growth: currentValue = soldPrice × (1 + rate)^years
+        estimatedCurrentValue = Math.round(priceInfo.lastSoldPrice * Math.pow(1 + ANNUAL_GROWTH_RATE, yearsSinceSale));
+      }
+
+      const valuePerM2 = estimatedCurrentValue && floorArea > 0
+        ? Math.round(estimatedCurrentValue / floorArea)
         : null;
+
       return {
         ...s,
         lastSoldPrice: priceInfo?.lastSoldPrice ?? null,
         lastSoldDate: priceInfo?.lastSoldDate ?? null,
+        estimatedCurrentValue,
+        yearsSinceSale: yearsSinceSale != null ? Math.round(yearsSinceSale * 10) / 10 : null,
         valuePerM2,
       };
     });

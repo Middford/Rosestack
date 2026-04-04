@@ -45,6 +45,8 @@ interface PropertyResult {
   grade: string;
   lastSoldPrice?: number | null;
   lastSoldDate?: string | null;
+  estimatedCurrentValue?: number | null;
+  yearsSinceSale?: number | null;
   valuePerM2?: number | null;
 }
 
@@ -227,7 +229,7 @@ export function TopProperties() {
                 <th className="px-2 py-2 text-left">Connection</th>
                 <th className="px-2 py-2 text-right">Est. Cost</th>
                 <th className="px-2 py-2 text-center">Road</th>
-                <th className="px-2 py-2 text-right">Last Sold</th>
+                <th className="px-2 py-2 text-right">Est. Value</th>
                 <th className="px-2 py-2 text-right">£/m²</th>
               </tr>
             </thead>
@@ -295,8 +297,10 @@ export function TopProperties() {
                     </span>
                   </td>
                   <td className="px-2 py-1.5 text-right text-xs">
-                    {prop.lastSoldPrice ? (
-                      <span className="text-text-primary">£{(prop.lastSoldPrice / 1000).toFixed(0)}k</span>
+                    {prop.estimatedCurrentValue ? (
+                      <span className="text-text-primary" title={`Sold £${((prop.lastSoldPrice ?? 0) / 1000).toFixed(0)}k ${prop.yearsSinceSale?.toFixed(0) ?? '?'}yr ago, +4%/yr NW avg`}>
+                        £{(prop.estimatedCurrentValue / 1000).toFixed(0)}k
+                      </span>
                     ) : <span className="text-text-tertiary">—</span>}
                   </td>
                   <td className="px-2 py-1.5 text-right text-xs">
