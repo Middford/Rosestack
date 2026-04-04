@@ -488,6 +488,100 @@ export const projectCashflowSettings = pgTable('project_cashflow_settings', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// ============================================================
+// ENWL Open Data Tables (live from electricitynorthwest.opendatasoft.com)
+// ============================================================
+
+// ENWL substation hierarchy — primary → secondary mapping with voltages
+export const enwlSubstations = pgTable('enwl_substations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** ENWL 6-digit substation number */
+  substationNumber: varchar('substation_number', { length: 10 }).notNull(),
+  /** DISTRIBUTION | PRIMARY | BSP | GSP */
+  substationGroup: varchar('substation_group', { length: 30 }).notNull(),
+  /** Infeed voltage: 11kV, 33kV, 132kV etc */
+  infeed: varchar('infeed', { length: 10 }),
+  /** Outfeed voltage: 415V (3-phase), 240V (single-phase), 11kV etc */
+  outfeed: varchar('outfeed', { length: 10 }),
+  /** ENWL area code */
+  area: varchar('area', { length: 5 }),
+  /** Primary feeder reference */
+  primaryFeeder: varchar('primary_feeder', { length: 20 }),
+  /** Parent primary substation number */
+  primaryNumberAlias: varchar('primary_number_alias', { length: 10 }),
+  /** Parent BSP number */
+  bspNumberAlias: varchar('bsp_number_alias', { length: 10 }),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
+});
+
+// ENWL 11kV network capacity — headroom per section
+export const enwlCapacity = pgTable('enwl_capacity', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sectionFeatureId: varchar('section_feature_id', { length: 20 }).notNull(),
+  sectionVoltage: varchar('section_voltage', { length: 10 }),
+  sectionCircuitCategory: varchar('section_circuit_category', { length: 30 }),
+  /** Firm capacity in kVA */
+  firmCapacityKva: real('firm_capacity_kva'),
+  /** Estimated maximum load in kVA */
+  estimatedMaxLoadKva: real('estimated_max_load_kva'),
+  /** Available headroom in kVA (firmCapacity - maxLoad) */
+  headroomKva: real('headroom_kva'),
+  /** Load as fraction 0-1 */
+  loadUtilisation: real('load_utilisation'),
+  /** RAG category: Available Capacity / Approaching Capacity / Over Capacity */
+  loadUtilisationCategory: varchar('load_utilisation_category', { length: 30 }),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
+});
+
+// ENWL MCS low carbon technology installations per substation
+export const enwlLct = pgTable('enwl_lct', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** ENWL distribution substation number */
+  distributionSubstation: varchar('distribution_substation', { length: 10 }).notNull(),
+  totalCustomers: integer('total_customers'),
+  // Solar PV
+  solarInstallations: integer('solar_installations'),
+  solarCapacityKw: real('solar_capacity_kw'),
+  // Battery storage
+  batteryInstallations: integer('battery_installations'),
+  batteryCapacityKwh: real('battery_capacity_kwh'),
+  // Heat pumps
+  heatPumpInstallations: integer('heat_pump_installations'),
+  heatPumpCapacityKw: real('heat_pump_capacity_kw'),
+  // Total LCT generation
+  totalLctInstallations: integer('total_lct_installations'),
+  totalLctCapacityKw: real('total_lct_capacity_kw'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
+});
+
+// ENWL flexibility procurement tenders
+export const enwlFlexTenders = pgTable('enwl_flex_tenders', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenderReference: varchar('tender_reference', { length: 200 }),
+  product: varchar('product', { length: 100 }),
+  constraintManagementZone: varchar('constraint_management_zone', { length: 100 }),
+  serviceProvider: varchar('service_provider', { length: 200 }),
+  mainTechnology: varchar('main_technology', { length: 200 }),
+  bidOutcome: varchar('bid_outcome', { length: 100 }),
+  peakFlexCapacityMw: real('peak_flex_capacity_mw'),
+  maxRunTime: varchar('max_run_time', { length: 10 }),
+  connectionVoltageKv: varchar('connection_voltage_kv', { length: 10 }),
+  deliveryYear: varchar('delivery_year', { length: 20 }),
+  deliveryStartDate: varchar('delivery_start_date', { length: 10 }),
+  deliveryEndDate: varchar('delivery_end_date', { length: 10 }),
+  availabilityFee: real('availability_fee'),
+  utilisationPrice: real('utilisation_price'),
+  serviceFee: real('service_fee'),
+  constraintTrigger: varchar('constraint_trigger', { length: 50 }),
+  fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
+});
+
 // 8. Pipeline events (detailed status tracking for prospecting pipeline)
 export const pipelineEvents = pgTable('pipeline_events', {
   id: uuid('id').defaultRandom().primaryKey(),
