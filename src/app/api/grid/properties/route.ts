@@ -1,22 +1,26 @@
 // ============================================================
-// GET /api/grid/properties — Top ranked properties across ALL of Lancashire
+// GET /api/grid/properties — Top ranked properties from DB
 //
-// Scores every EPC property against real ENWL substation data
-// and returns the top N (default 200) as a prioritised door-knock list.
+// Scores EPC properties from epc_properties table against real
+// ENWL substation data. With 122K+ properties, scoring is done
+// in stages:
+// 1. Pre-filter properties by area (lat/lng bounds)
+// 2. Pre-filter to detached houses with solar or large size
+// 3. Find nearest substation per property
+// 4. Score with tiered funnel
+// 5. Return top N
 //
-// Each property gets:
-// - Nearest substation (with voltage, headroom, solar/battery counts)
-// - 3-phase upgrade feasibility from feeder analysis
-// - Tiered score (1-5)
-// - Road crossing risk
-// - Estimated connection cost
+// ?limit=200 — number of results (default 200)
+// ?lat=53.8&lng=-2.4&radius=15 — search area (default East Lancs)
+// ?solarOnly=true — only properties with confirmed solar PV
+// ?detachedOnly=true — only detached (not semi)
+// ?minBedrooms=4 — minimum bedrooms
 // ============================================================
 
 import { NextResponse } from 'next/server';
 import { db } from '@/shared/db';
 import { enwlSubstations, enwlLct, enwlDistTx } from '@/shared/db/schema';
-import { and, gte, lte, eq } from 'drizzle-orm';
-import { EPC_TARGET_PROPERTIES } from '@/modules/grid/epc-seed';
+import { and, gte, lte, eq, desc, sql as dsql } from 'drizzle-orm';
 import {
   scorePropertyTiered,
   determine3PhaseStatus,
@@ -24,14 +28,63 @@ import {
   type DistTxData,
 } from '@/modules/grid/enwl-scoring';
 import { CONNECTION_COSTS } from '@/modules/projects/utils';
+import postgres from 'postgres';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get('limit') ?? '200');
-  const minScore = parseInt(searchParams.get('minScore') ?? '0');
+  const lat = parseFloat(searchParams.get('lat') ?? '53.75');
+  const lng = parseFloat(searchParams.get('lng') ?? '-2.45');
+  const radius = parseFloat(searchParams.get('radius') ?? '20');
+  const solarOnly = searchParams.get('solarOnly') === 'true';
+  const detachedOnly = searchParams.get('detachedOnly') === 'true';
+  const minBedrooms = parseInt(searchParams.get('minBedrooms') ?? '3');
 
   try {
-    // 1. Load all distribution substations in Lancashire with their data
+    const latDelta = radius / 111;
+    const lngDelta = radius / 70;
+
+    // 1. Fetch candidate properties from DB (pre-filtered)
+    const rawSql = postgres(process.env.DATABASE_URL!, { ssl: 'require' });
+
+    let propQuery = `
+      SELECT lmk_key, address, address1, postcode, uprn, local_authority_label,
+             built_form, construction_age, total_floor_area, number_habitable_rooms,
+             current_energy_rating, current_energy_efficiency,
+             photo_supply, solar_water_heating, mains_gas,
+             mainheat_description, latitude, longitude
+      FROM epc_properties
+      WHERE latitude BETWEEN $1 AND $2
+        AND longitude BETWEEN $3 AND $4
+        AND number_habitable_rooms >= $5
+    `;
+    const params: (number | string)[] = [
+      lat - latDelta, lat + latDelta,
+      lng - lngDelta, lng + lngDelta,
+      minBedrooms,
+    ];
+
+    if (solarOnly) {
+      propQuery += ` AND photo_supply > 0`;
+    }
+    if (detachedOnly) {
+      propQuery += ` AND built_form = 'Detached'`;
+    }
+
+    // Order by floor area desc to get the biggest properties first, limit to a manageable set
+    propQuery += ` ORDER BY total_floor_area DESC NULLS LAST LIMIT 2000`;
+
+    const epcRows = await rawSql.unsafe(propQuery, params);
+    await rawSql.end();
+
+    if (epcRows.length === 0) {
+      return NextResponse.json({
+        total: 0, totalSearched: 0, tierCounts: { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0 },
+        avgScore: 0, properties: [],
+      });
+    }
+
+    // 2. Load ENWL substations in the area
     const subs = await db.select({
       substationNumber: enwlSubstations.substationNumber,
       substationGroup: enwlSubstations.substationGroup,
@@ -45,16 +98,13 @@ export async function GET(request: Request) {
       .from(enwlSubstations)
       .where(and(
         eq(enwlSubstations.substationGroup, 'DISTRIBUTION'),
-        gte(enwlSubstations.latitude, 53.6),
-        lte(enwlSubstations.latitude, 54.0),
-        gte(enwlSubstations.longitude, -2.6),
-        lte(enwlSubstations.longitude, -2.1),
+        gte(enwlSubstations.latitude, lat - latDelta),
+        lte(enwlSubstations.latitude, lat + latDelta),
+        gte(enwlSubstations.longitude, lng - lngDelta),
+        lte(enwlSubstations.longitude, lng + lngDelta),
       ));
 
     // Build lookup maps
-    const subsByNumber = new Map(subs.map(s => [s.substationNumber, s]));
-
-    // 2. Load LCT data for solar density check
     const lctRows = await db.select({
       distributionSubstation: enwlLct.distributionSubstation,
       solarInstallations: enwlLct.solarInstallations,
@@ -62,14 +112,13 @@ export async function GET(request: Request) {
     })
       .from(enwlLct)
       .where(and(
-        gte(enwlLct.latitude, 53.6),
-        lte(enwlLct.latitude, 54.0),
-        gte(enwlLct.longitude, -2.6),
-        lte(enwlLct.longitude, -2.1),
+        gte(enwlLct.latitude, lat - latDelta),
+        lte(enwlLct.latitude, lat + latDelta),
+        gte(enwlLct.longitude, lng - lngDelta),
+        lte(enwlLct.longitude, lng + lngDelta),
       ));
     const lctMap = new Map(lctRows.map(l => [l.distributionSubstation, l]));
 
-    // 3. Load distribution TX data for generation headroom
     const txRows = await db.select({
       distributionNumber: enwlDistTx.distributionNumber,
       ratingKva: enwlDistTx.ratingKva,
@@ -80,14 +129,14 @@ export async function GET(request: Request) {
     })
       .from(enwlDistTx)
       .where(and(
-        gte(enwlDistTx.latitude, 53.6),
-        lte(enwlDistTx.latitude, 54.0),
-        gte(enwlDistTx.longitude, -2.6),
-        lte(enwlDistTx.longitude, -2.1),
+        gte(enwlDistTx.latitude, lat - latDelta),
+        lte(enwlDistTx.latitude, lat + latDelta),
+        gte(enwlDistTx.longitude, lng - lngDelta),
+        lte(enwlDistTx.longitude, lng + lngDelta),
       ));
     const txMap = new Map(txRows.map(t => [t.distributionNumber, t]));
 
-    // 4. For each EPC property, find nearest substation and score it
+    // 3. Score each property
     function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -98,57 +147,68 @@ export async function GET(request: Request) {
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    const scored = EPC_TARGET_PROPERTIES.map(prop => {
+    const scored = epcRows.map((prop: Record<string, unknown>) => {
+      const pLat = prop.latitude as number;
+      const pLng = prop.longitude as number;
+      if (!pLat || !pLng) return null;
+
       // Find nearest substation
       let nearestSub: SubstationData | null = null;
       let nearestDist = Infinity;
-
       for (const sub of subs) {
         if (sub.latitude == null || sub.longitude == null) continue;
-        const d = haversineKm(prop.latitude, prop.longitude, sub.latitude, sub.longitude);
-        if (d < nearestDist) {
-          nearestDist = d;
-          nearestSub = sub as SubstationData;
-        }
+        const d = haversineKm(pLat, pLng, sub.latitude, sub.longitude);
+        if (d < nearestDist) { nearestDist = d; nearestSub = sub as SubstationData; }
       }
 
-      // Get LCT and TX data for nearest substation
       const lct = nearestSub ? lctMap.get(nearestSub.substationNumber) : null;
       const isHighSolar = (lct?.solarInstallations ?? 0) >= 5;
       const distTx: DistTxData | null = nearestSub ? (txMap.get(nearestSub.substationNumber) ?? null) : null;
 
-      // Determine 3-phase status from feeder
+      // 3-phase from feeder
       let feederSubs: SubstationData[] = [];
       if (nearestSub?.primaryFeeder) {
         feederSubs = subs.filter(s => s.primaryFeeder === nearestSub!.primaryFeeder) as SubstationData[];
       }
-      const { status: phaseStatus, label: phaseStatusLabel } = determine3PhaseStatus(
-        nearestSub, feederSubs,
-      );
+      const { status: phaseStatus, label: phaseStatusLabel } = determine3PhaseStatus(nearestSub, feederSubs);
 
-      // Score the property
+      // Determine if property has solar from EPC data
+      const photoSupply = parseFloat(String(prop.photo_supply ?? '0')) || 0;
+      const hasSolarEpc = photoSupply > 0 || prop.solar_water_heating === 'Y';
+
+      const rooms = parseInt(String(prop.number_habitable_rooms ?? '3')) || 3;
+      const builtForm = String(prop.built_form ?? 'Detached');
+      const epcRating = String(prop.current_energy_rating ?? 'D');
+      const floorArea = parseFloat(String(prop.total_floor_area ?? '0')) || 0;
+
+      // Infer property type and bedrooms from EPC data
+      const propertyType = builtForm === 'Detached' ? 'detached' : builtForm === 'Semi-Detached' ? 'semi' : 'terrace';
+      const bedrooms = rooms >= 8 ? 5 : rooms >= 6 ? 4 : rooms >= 4 ? 3 : 2;
+      const gardenAccess = propertyType === 'detached' || propertyType === 'semi';
+
       const score = scorePropertyTiered(
         {
-          id: prop.id,
-          address: prop.address,
-          postcode: prop.postcode,
-          latitude: prop.latitude,
-          longitude: prop.longitude,
-          propertyType: prop.propertyType,
-          bedrooms: prop.bedrooms,
-          epcRating: prop.epcRating,
-          gardenAccess: prop.gardenAccess,
-          threePhaseConfirmed: prop.threePhaseConfirmed,
-          threePhaseScore: prop.threePhaseScore,
+          id: String(prop.lmk_key),
+          address: String(prop.address ?? prop.address1 ?? ''),
+          postcode: String(prop.postcode ?? ''),
+          latitude: pLat,
+          longitude: pLng,
+          propertyType,
+          bedrooms,
+          epcRating,
+          gardenAccess,
+          threePhaseConfirmed: false,
+          threePhaseScore: propertyType === 'detached' && floorArea > 150 ? 70 : 40,
+          photoSupply: photoSupply > 0 ? photoSupply : undefined,
+          solarWaterHeating: prop.solar_water_heating === 'Y',
         },
         nearestSub,
         distTx,
         phaseStatus,
         phaseStatusLabel,
-        isHighSolar,
+        isHighSolar || hasSolarEpc,
       );
 
-      // Determine connection type and cost
       const connectionType = phaseStatus === 'already-3-phase' ? 'g99-only'
         : phaseStatus === 'cheap-upgrade' ? (nearestDist > 0.1 ? 'g99-road-crossing' : 'g99-plus-upgrade')
         : 'g99-road-crossing';
@@ -156,32 +216,31 @@ export async function GET(request: Request) {
 
       return {
         ...score,
-        // Property location (from EPC data)
-        latitude: prop.latitude,
-        longitude: prop.longitude,
-        // Substation context
+        latitude: pLat,
+        longitude: pLng,
+        floorAreaM2: floorArea,
+        rooms,
+        builtForm,
+        localAuthority: String(prop.local_authority_label ?? ''),
+        hasSolarEpc,
         nearestSubstationNumber: nearestSub?.substationNumber ?? null,
         nearestSubstationOutfeed: nearestSub?.outfeed ?? null,
         distanceToSubKm: Math.round(nearestDist * 1000) / 1000,
-        // Grid data
         solarNearby: lct?.solarInstallations ?? 0,
         batteriesNearby: lct?.batteryInstallations ?? 0,
         generationHeadroomKva: distTx?.generationHeadroomKva ?? null,
         transformerRatingKva: distTx?.ratingKva ?? null,
-        // Connection assessment
         connectionType,
         connectionLabel: connCosts.label,
         estimatedConnectionCost: connCosts.g99Fee + connCosts.dnoConnectionCost,
         exportLimitKw: connCosts.exportLimitKw,
-        // Road crossing risk
         roadCrossingRisk: nearestDist > 0.1 ? 'likely' : nearestDist > 0.05 ? 'possible' : 'unlikely',
       };
     })
-      .filter(s => s.totalScore >= minScore)
+      .filter((s): s is NonNullable<typeof s> => s !== null)
       .sort((a, b) => b.totalScore - a.totalScore)
       .slice(0, limit);
 
-    // Summary stats
     const tierCounts = { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0 };
     scored.forEach(s => {
       const key = `tier${s.breakdown.tier}` as keyof typeof tierCounts;
@@ -190,9 +249,11 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       total: scored.length,
-      totalEpcProperties: EPC_TARGET_PROPERTIES.length,
+      totalSearched: epcRows.length,
+      totalInDb: 122208,
       tierCounts,
       avgScore: scored.length > 0 ? Math.round(scored.reduce((s, p) => s + p.totalScore, 0) / scored.length) : 0,
+      filters: { lat, lng, radius, solarOnly, detachedOnly, minBedrooms },
       properties: scored,
     }, {
       headers: { 'Cache-Control': 'public, s-maxage=3600' },

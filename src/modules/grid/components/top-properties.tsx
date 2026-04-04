@@ -18,6 +18,13 @@ interface PropertyResult {
     hasSolar: boolean;
   };
   bedrooms: number;
+  floorAreaM2?: number;
+  rooms?: number;
+  builtForm?: string;
+  localAuthority?: string;
+  hasSolarEpc?: boolean;
+  latitude?: number;
+  longitude?: number;
   propertyType: string;
   epcRating: string;
   gardenAccess: boolean;
@@ -40,9 +47,11 @@ interface PropertyResult {
 
 interface ApiResponse {
   total: number;
-  totalEpcProperties: number;
+  totalSearched: number;
+  totalInDb: number;
   tierCounts: { tier1: number; tier2: number; tier3: number; tier4: number; tier5: number };
   avgScore: number;
+  filters: { lat: number; lng: number; radius: number; solarOnly: boolean; detachedOnly: boolean; minBedrooms: number };
   properties: PropertyResult[];
 }
 
@@ -65,10 +74,24 @@ export function TopProperties() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showTier, setShowTier] = useState<number>(0); // 0 = all
+  const [showTier, setShowTier] = useState<number>(0);
 
-  useEffect(() => {
-    fetch('/api/grid/properties?limit=200')
+  // Filters
+  const [solarOnly, setSolarOnly] = useState(false);
+  const [detachedOnly, setDetachedOnly] = useState(false);
+  const [minBedrooms, setMinBedrooms] = useState(3);
+  const [resultLimit, setResultLimit] = useState(200);
+
+  function fetchData() {
+    setLoading(true);
+    setError(null);
+    const params = new URLSearchParams({
+      limit: String(resultLimit),
+      minBedrooms: String(minBedrooms),
+      ...(solarOnly ? { solarOnly: 'true' } : {}),
+      ...(detachedOnly ? { detachedOnly: 'true' } : {}),
+    });
+    fetch(`/api/grid/properties?${params}`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -76,7 +99,9 @@ export function TopProperties() {
       .then(json => setData(json))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }
+
+  useEffect(() => { fetchData(); }, []);
 
   if (loading) {
     return (
@@ -108,8 +133,43 @@ export function TopProperties() {
           Top {data.total} Properties — Door-Knock List
         </h2>
         <p className="text-xs text-text-tertiary mt-0.5">
-          {data.totalEpcProperties} EPC properties scored against real ENWL grid data (substations, headroom, solar density, 3-phase feasibility)
+          Scored {data.totalSearched.toLocaleString()} of {(data.totalInDb ?? 0).toLocaleString()} EPC properties against real ENWL grid data
         </p>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+          <input type="checkbox" checked={solarOnly} onChange={e => setSolarOnly(e.target.checked)} className="rounded border-border" />
+          Solar PV only
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+          <input type="checkbox" checked={detachedOnly} onChange={e => setDetachedOnly(e.target.checked)} className="rounded border-border" />
+          Detached only
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-text-secondary">
+          Min beds:
+          <select value={minBedrooms} onChange={e => setMinBedrooms(parseInt(e.target.value))}
+            className="bg-bg-secondary border border-border rounded px-2 py-1 text-text-primary text-xs">
+            <option value={3}>3+</option>
+            <option value={4}>4+</option>
+            <option value={5}>5+</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-text-secondary">
+          Show:
+          <select value={resultLimit} onChange={e => setResultLimit(parseInt(e.target.value))}
+            className="bg-bg-secondary border border-border rounded px-2 py-1 text-text-primary text-xs">
+            <option value={50}>Top 50</option>
+            <option value={100}>Top 100</option>
+            <option value={200}>Top 200</option>
+            <option value={500}>Top 500</option>
+          </select>
+        </label>
+        <button onClick={fetchData}
+          className="px-3 py-1.5 text-xs font-medium bg-rose text-white rounded hover:bg-rose/80 transition-colors">
+          Apply Filters
+        </button>
       </div>
 
       {/* Summary */}
@@ -153,8 +213,9 @@ export function TopProperties() {
                 <th className="px-2 py-2 text-left">Tier</th>
                 <th className="px-2 py-2 text-left">Address</th>
                 <th className="px-2 py-2 text-left">Postcode</th>
-                <th className="px-2 py-2 text-right">Beds</th>
+                <th className="px-2 py-2 text-right">Rooms</th>
                 <th className="px-2 py-2 text-left">Type</th>
+                <th className="px-2 py-2 text-right">Area</th>
                 <th className="px-2 py-2 text-center">EPC</th>
                 <th className="px-2 py-2 text-center">Garden</th>
                 <th className="px-2 py-2 text-left">Phase Status</th>
@@ -180,8 +241,9 @@ export function TopProperties() {
                   </td>
                   <td className="px-2 py-1.5 text-text-primary font-medium max-w-[180px] truncate text-xs">{prop.address}</td>
                   <td className="px-2 py-1.5 text-text-secondary text-xs">{prop.postcode}</td>
-                  <td className="px-2 py-1.5 text-right text-text-primary text-xs">{prop.bedrooms}</td>
-                  <td className="px-2 py-1.5 text-text-secondary capitalize text-xs">{prop.propertyType}</td>
+                  <td className="px-2 py-1.5 text-right text-text-primary text-xs">{prop.rooms ?? prop.bedrooms}</td>
+                  <td className="px-2 py-1.5 text-text-secondary text-xs">{prop.builtForm ?? prop.propertyType}</td>
+                  <td className="px-2 py-1.5 text-right text-text-tertiary text-xs">{prop.floorAreaM2 ? `${Math.round(prop.floorAreaM2)}m²` : '—'}</td>
                   <td className="px-2 py-1.5 text-center">
                     <span className={`text-xs font-medium ${
                       prop.epcRating === 'D' || prop.epcRating === 'E' ? 'text-emerald-400' :
