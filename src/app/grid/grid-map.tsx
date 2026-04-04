@@ -46,6 +46,7 @@ export function GridMap() {
     bedrooms: number; propertyType: string; phaseStatus: string;
     solarNearby: number; generationHeadroomKva: number | null;
     estimatedConnectionCost: number; epcRating: string;
+    nearestSubstationOutfeed?: string | null;
   }>>([]);
   const [showProperties, setShowProperties] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -55,6 +56,53 @@ export function GridMap() {
   // Infrastructure trace state
   const [trace, setTrace] = useState<Record<string, unknown> | null>(null);
   const [traceLoading, setTraceLoading] = useState(false);
+
+  // Track which properties have been added to pipeline
+  const [addedToPipeline, setAddedToProject] = useState<Set<string>>(new Set());
+  const [adding, setAdding] = useState<string | null>(null);
+
+  async function addToPipeline(prop: typeof properties[0]) {
+    if (!prop.latitude || !prop.longitude) return;
+    setAdding(prop.propertyId);
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: prop.address,
+          postcode: prop.postcode,
+          latitude: prop.latitude,
+          longitude: prop.longitude,
+          phase: prop.nearestSubstationOutfeed === '415V' ? '3-phase' : '1-phase',
+          currentPhase: prop.nearestSubstationOutfeed === '415V' ? '3-phase' : '1-phase',
+          plannedPhase: '3-phase',
+          propertyType: 'detached',
+          bedrooms: prop.bedrooms || 4,
+          gardenAccess: true,
+          epcRating: prop.epcRating || 'D',
+          tariffName: 'flux',
+          solarKwp: 25,
+          exportLimitKw: 66,
+          batteryId: 'bat-fogstar-64',
+          batteryStacks: 4,
+          inverterId: 'inv-solis-30k',
+          inverterCount: 3,
+          dailyConsumptionKwh: 24,
+          hasHeatPump: false,
+          evCount: 0,
+          monthlyHomeownerPayment: 100,
+          homeownerName: 'Homeowner at ' + prop.address,
+        }),
+      });
+      if (res.ok) {
+        setAddedToProject(prev => new Set(prev).add(prop.propertyId));
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setAdding(null);
+    }
+  }
 
   function loadTrace(lat: number, lng: number) {
     setTraceLoading(true);
@@ -326,7 +374,23 @@ export function GridMap() {
                       <p>Gen headroom: {Math.round(prop.generationHeadroomKva)} kVA</p>
                     )}
                     <p>Est. connection: £{prop.estimatedConnectionCost.toLocaleString()}</p>
-                    <p className="text-[10px] italic">Click to trace infrastructure</p>
+                    <hr />
+                    {addedToPipeline.has(prop.propertyId) ? (
+                      <p style={{ color: '#10B981', fontWeight: 'bold' }}>✓ Added to Pipeline</p>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); addToPipeline(prop); }}
+                        disabled={adding === prop.propertyId}
+                        style={{
+                          background: '#B91C4D', color: 'white', border: 'none',
+                          padding: '4px 12px', borderRadius: '4px', cursor: 'pointer',
+                          fontSize: '11px', fontWeight: 'bold', width: '100%',
+                          opacity: adding === prop.propertyId ? 0.6 : 1,
+                        }}
+                      >
+                        {adding === prop.propertyId ? 'Adding...' : '+ Add to Pipeline'}
+                      </button>
+                    )}
                   </div>
                 </Popup>
               </CircleMarker>
