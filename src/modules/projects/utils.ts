@@ -5,16 +5,28 @@
 import { batteries, inverters } from '@/modules/hardware/data';
 import type { ProjectCapex } from './types';
 
-// Installation cost defaults by phase type
+// Installation cost defaults by PLANNED phase type
 const INSTALL_COSTS = {
   '1-phase': { labour: 2000, slab: 800, cabling: 500, metering: 1500, contingencyPct: 0.05 },
   '3-phase': { labour: 4000, slab: 2500, cabling: 1500, metering: 3500, contingencyPct: 0.05 },
 };
 
-export function getDefaultInstallCost(phase: '1-phase' | '3-phase'): number {
-  const c = INSTALL_COSTS[phase];
-  const subtotal = c.labour + c.slab + c.cabling + c.metering;
-  return subtotal;
+// Cost to upgrade from single-phase to three-phase supply
+// Includes DNO application, new meter, consumer unit upgrade, earthing
+// Typical range £2,500–£5,000 depending on distance from transformer
+const PHASE_UPGRADE_COST = 3500;
+
+export function getDefaultInstallCost(plannedPhase: '1-phase' | '3-phase'): number {
+  const c = INSTALL_COSTS[plannedPhase];
+  return c.labour + c.slab + c.cabling + c.metering;
+}
+
+export function getPhaseUpgradeCost(
+  currentPhase: '1-phase' | '3-phase',
+  plannedPhase: '1-phase' | '3-phase',
+): number {
+  if (currentPhase === '1-phase' && plannedPhase === '3-phase') return PHASE_UPGRADE_COST;
+  return 0;
 }
 
 export function calculateProjectCapex(params: {
@@ -23,7 +35,8 @@ export function calculateProjectCapex(params: {
   inverterId: string;
   inverterCount: number;
   solarKwp: number;
-  phase: '1-phase' | '3-phase';
+  currentPhase: '1-phase' | '3-phase';
+  plannedPhase: '1-phase' | '3-phase';
   g99ApplicationCost?: number;
   installationCostOverride?: number | null;
   solarCostOverride?: number | null;
@@ -38,11 +51,12 @@ export function calculateProjectCapex(params: {
   const inverterHardware = (inverter?.priceGbp ?? 0) * params.inverterCount;
   const solarCost = params.solarCostOverride ?? params.solarKwp * 400;
   const installationLabour =
-    params.installationCostOverride ?? getDefaultInstallCost(params.phase);
+    params.installationCostOverride ?? getDefaultInstallCost(params.plannedPhase);
+  const phaseUpgradeCost = getPhaseUpgradeCost(params.currentPhase, params.plannedPhase);
   const g99Application = params.g99ApplicationCost ?? 350;
 
   const subtotal =
-    batteryHardware + inverterHardware + solarCost + installationLabour + g99Application;
+    batteryHardware + inverterHardware + solarCost + installationLabour + phaseUpgradeCost + g99Application;
   const contingency = Math.round(subtotal * 0.05);
 
   return {
@@ -50,6 +64,7 @@ export function calculateProjectCapex(params: {
     inverterHardware,
     solarCost,
     installationLabour,
+    phaseUpgradeCost,
     g99Application,
     contingency,
     totalCapex: subtotal + contingency,

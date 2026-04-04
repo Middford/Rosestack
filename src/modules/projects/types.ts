@@ -66,6 +66,7 @@ export interface ProjectCapex {
   inverterHardware: number;
   solarCost: number;
   installationLabour: number;
+  phaseUpgradeCost: number;
   g99Application: number;
   contingency: number;
   totalCapex: number;

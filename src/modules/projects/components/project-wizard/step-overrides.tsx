@@ -72,7 +72,7 @@ export function StepOverrides({ overrides, setOverrides, capex, property }: Step
   const set = <K extends keyof OverridesState>(key: K, val: OverridesState[K]) =>
     setOverrides((prev) => ({ ...prev, [key]: val }));
 
-  const defaultInstall = getDefaultInstallCost(property.phase);
+  const defaultInstall = getDefaultInstallCost(property.plannedPhase);
 
   return (
     <div className="space-y-6">

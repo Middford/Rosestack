@@ -278,6 +278,9 @@ export function StepHardware({
           <Row label="Inverter" sub={`x${hardware.inverterCount}`} value={capex.inverterHardware} />
           <Row label="Solar" sub={`${hardware.solarKwp} kWp`} value={capex.solarCost} />
           <Row label="Installation" value={capex.installationLabour} />
+          {capex.phaseUpgradeCost > 0 && (
+            <Row label="3-Phase Upgrade" sub="1→3 phase" value={capex.phaseUpgradeCost} />
+          )}
           <Row label="G99 Application" value={capex.g99Application} />
           <Row label="Contingency (5%)" value={capex.contingency} />
           <div className="border-t border-border pt-2 flex justify-between font-bold">

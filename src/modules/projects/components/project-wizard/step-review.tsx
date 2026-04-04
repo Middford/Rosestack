@@ -90,7 +90,8 @@ export function StepReview({
         <SectionTitle>Property</SectionTitle>
         <DetailRow label="Address" value={property.address || '--'} />
         <DetailRow label="Postcode" value={property.postcode || '--'} />
-        <DetailRow label="Phase" value={property.phase} />
+        <DetailRow label="Current Phase" value={property.currentPhase} />
+        <DetailRow label="Planned Phase" value={property.plannedPhase} />
         <DetailRow label="Property Type" value={property.propertyType} />
         <DetailRow label="Target Install Date" value={property.targetInstallDate || 'Not set'} />
         <DetailRow

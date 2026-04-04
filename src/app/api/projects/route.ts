@@ -58,7 +58,8 @@ export async function POST(request: Request) {
     const batteryStacks = body.batteryStacks ?? 4;
     const inverterCount = body.inverterCount ?? 3;
     const solarKwp = body.solarKwp ?? 25;
-    const phase = body.phase ?? '3-phase';
+    const currentPhase = body.currentPhase ?? body.phase ?? '1-phase';
+    const plannedPhase = body.plannedPhase ?? body.phase ?? '3-phase';
 
     const battery = batteries.find(b => b.id === batteryId);
     const inverter = inverters.find(i => i.id === inverterId);
@@ -72,7 +73,8 @@ export async function POST(request: Request) {
       inverterId,
       inverterCount,
       solarKwp,
-      phase,
+      currentPhase,
+      plannedPhase,
       g99ApplicationCost: body.g99ApplicationCost,
       installationCostOverride: body.installationCostOverride,
       solarCostOverride: body.solarCostOverride,
@@ -86,7 +88,7 @@ export async function POST(request: Request) {
         postcode: body.postcode,
         latitude: body.latitude ?? 53.8,
         longitude: body.longitude ?? -2.4,
-        phase,
+        phase: plannedPhase,
         status: 'prospect',
         targetInstallDate: body.targetInstallDate
           ? new Date(body.targetInstallDate.length === 7 ? `${body.targetInstallDate}-01` : body.targetInstallDate)

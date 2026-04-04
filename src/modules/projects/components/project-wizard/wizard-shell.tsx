@@ -23,7 +23,8 @@ export interface PropertyState {
   postcode: string;
   latitude: number;
   longitude: number;
-  phase: '1-phase' | '3-phase';
+  currentPhase: '1-phase' | '3-phase';
+  plannedPhase: '1-phase' | '3-phase';
   propertyType: string;
   bedrooms: number;
   gardenAccess: boolean;
@@ -69,7 +70,8 @@ export function WizardShell() {
     postcode: '',
     latitude: 53.75,
     longitude: -2.48,
-    phase: '3-phase',
+    currentPhase: '1-phase',
+    plannedPhase: '3-phase',
     propertyType: 'detached',
     bedrooms: 3,
     gardenAccess: true,
@@ -112,12 +114,13 @@ export function WizardShell() {
         inverterId: hardware.inverterId,
         inverterCount: hardware.inverterCount,
         solarKwp: hardware.solarKwp,
-        phase: property.phase,
+        currentPhase: property.currentPhase,
+        plannedPhase: property.plannedPhase,
         g99ApplicationCost: overrides.g99ApplicationCost,
         installationCostOverride: overrides.installationCost,
         solarCostOverride: overrides.solarCost,
       }),
-    [hardware, property.phase, overrides.g99ApplicationCost, overrides.installationCost, overrides.solarCost],
+    [hardware, property.currentPhase, property.plannedPhase, overrides.g99ApplicationCost, overrides.installationCost, overrides.solarCost],
   );
 
   const systemTotals = useMemo(

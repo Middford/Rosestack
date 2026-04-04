@@ -124,17 +124,31 @@ export function StepProperty({ property, setProperty }: StepPropertyProps) {
       </div>
 
       {/* Phase / Property Type / Bedrooms */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <div className="space-y-1">
-          <label className={labelClass}>Phase</label>
+          <label className={labelClass}>Current Phase</label>
           <select
             className={inputClass}
-            value={property.phase}
-            onChange={(e) => update(setProperty, 'phase', e.target.value as '1-phase' | '3-phase')}
+            value={property.currentPhase}
+            onChange={(e) => update(setProperty, 'currentPhase', e.target.value as '1-phase' | '3-phase')}
           >
             <option value="1-phase">1-Phase</option>
             <option value="3-phase">3-Phase</option>
           </select>
+        </div>
+        <div className="space-y-1">
+          <label className={labelClass}>Planned Phase</label>
+          <select
+            className={`${inputClass} ${property.currentPhase !== property.plannedPhase ? 'ring-1 ring-amber-500' : ''}`}
+            value={property.plannedPhase}
+            onChange={(e) => update(setProperty, 'plannedPhase', e.target.value as '1-phase' | '3-phase')}
+          >
+            <option value="1-phase">1-Phase</option>
+            <option value="3-phase">3-Phase</option>
+          </select>
+          {property.currentPhase === '1-phase' && property.plannedPhase === '3-phase' && (
+            <p className="text-[10px] text-amber-400">+£3,500 phase upgrade cost</p>
+          )}
         </div>
         <div className="space-y-1">
           <label className={labelClass}>Property Type</label>

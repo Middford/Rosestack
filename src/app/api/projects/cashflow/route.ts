@@ -84,6 +84,7 @@ export async function GET() {
         inverterHardware: 0,
         solarCost: home.solarCostOverride ?? (home.solarKwp ?? 0) * 400,
         installationLabour: home.installationCostOverride ?? (home.phase === '3-phase' ? 11500 : 4800),
+        phaseUpgradeCost: 0, // already included in totalCapex at creation time
         g99Application: home.g99ApplicationCost ?? settings.g99FeeDefault ?? DEFAULT_SETTINGS.g99FeeDefault,
         contingency: 0,
         totalCapex: system?.installCost ?? 0, // stored at creation time
