@@ -194,7 +194,7 @@ export function GridMap() {
 
           {/* The Beeches — RoseStack flagship property */}
           <CircleMarker
-            center={[53.785, -2.464]}
+            center={[53.7223, -2.4855]}
             radius={10}
             pathOptions={{
               color: '#B91C4D',
@@ -204,19 +204,23 @@ export function GridMap() {
             }}
           >
             <Popup>
-              <div className="text-xs space-y-1 min-w-[240px]" style={{ color: '#0F1117' }}>
+              <div className="text-xs space-y-1 min-w-[250px]" style={{ color: '#0F1117' }}>
                 <p className="font-bold text-sm" style={{ color: '#B91C4D' }}>🏠 The Beeches</p>
                 <p className="font-semibold">RoseStack Flagship Property</p>
-                <p>BB2 4LA — Wilpshire</p>
+                <p>BB2 4LA — Ewood, Blackburn</p>
                 <hr />
-                <p>Nearest sub: <strong>#451503 (240V, 25kVA)</strong></p>
-                <p>Phase: <strong style={{ color: '#F59E0B' }}>🟡 Cheap Upgrade</strong></p>
-                <p>415V substation 400m away on same feeder</p>
-                <p>Best TX nearby: #450107 (500kVA, 488kVA headroom)</p>
+                <p>Nearest sub: <strong>#450990 (415V, 500kVA, 40% loaded)</strong></p>
+                <p>Phase: <strong style={{ color: '#10B981' }}>✅ Already 3-phase</strong></p>
+                <p>Gen headroom: <strong>490 kVA</strong> (need 66kVA for G99)</p>
                 <hr />
-                <p>Primary: Clarendon Rd (400014)</p>
-                <p>Feeder: 27× 3-phase / 28× single-phase</p>
-                <p>Tier: <strong style={{ color: '#F59E0B' }}>3 — Viable</strong> (score ~53)</p>
+                <p>ENWL 3-phase quote: <strong>£6,821 ex-VAT</strong> (ref 5500324786/A)</p>
+                <p>Note: crosses busy road → higher construction cost</p>
+                <p>Max standard capacity: 60 kVA</p>
+                <hr />
+                <p>Primary: Albion St (400019)</p>
+                <p>Feeder: 12× 3-phase substations (all 415V)</p>
+                <p>Solar nearby: 38 installations, 0 batteries</p>
+                <p>Tier: <strong style={{ color: '#10B981' }}>1 — Prime</strong></p>
               </div>
             </Popup>
           </CircleMarker>

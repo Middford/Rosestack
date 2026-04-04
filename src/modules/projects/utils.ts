@@ -12,9 +12,11 @@ const INSTALL_COSTS = {
 };
 
 // Cost to upgrade from single-phase to three-phase supply
-// Includes DNO application, new meter, consumer unit upgrade, earthing
-// Typical range £2,500–£5,000 depending on distance from transformer
-const PHASE_UPGRADE_COST = 3500;
+// Based on real ENWL quote for The Beeches (ref 5500324786/A, Oct 2024):
+//   Construction works: £6,502 + Local authority permissions: £319 = £6,821 ex-VAT
+// This was a road-crossing job — simpler installs may be £3,000-4,000
+// Using £5,000 as a realistic average for budgeting
+const PHASE_UPGRADE_COST = 5000;
 
 export function getDefaultInstallCost(plannedPhase: '1-phase' | '3-phase'): number {
   const c = INSTALL_COSTS[plannedPhase];
