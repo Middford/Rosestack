@@ -343,6 +343,9 @@ export function GridMap() {
               fillOpacity: 1,
               weight: 3,
             }}
+            eventHandlers={{
+              click: () => loadTrace(53.7223, -2.4855),
+            }}
           >
             <Popup>
               <div className="text-xs space-y-1 min-w-[250px]" style={{ color: '#0F1117' }}>
@@ -354,14 +357,13 @@ export function GridMap() {
                 <p>Phase: <strong style={{ color: '#10B981' }}>✅ Already 3-phase</strong></p>
                 <p>Gen headroom: <strong>490 kVA</strong> (need 66kVA for G99)</p>
                 <hr />
-                <p>ENWL 3-phase quote: <strong>£6,821 ex-VAT</strong> (ref 5500324786/A)</p>
+                <p>ENWL quote: <strong>£6,821 ex-VAT</strong> (ref 5500324786/A)</p>
                 <p>Note: crosses busy road → higher construction cost</p>
-                <p>Max standard capacity: 60 kVA</p>
                 <hr />
-                <p>Primary: Albion St (400019)</p>
-                <p>Feeder: 12× 3-phase substations (all 415V)</p>
-                <p>Solar nearby: 38 installations, 0 batteries</p>
+                <p>Primary: Albion St (400019) | Feeder: 12× 3-phase</p>
+                <p>Solar nearby: 38 installs, 0 batteries</p>
                 <p>Tier: <strong style={{ color: '#10B981' }}>1 — Prime</strong></p>
+                <p className="text-[10px] italic">Click to trace infrastructure</p>
               </div>
             </Popup>
           </CircleMarker>
