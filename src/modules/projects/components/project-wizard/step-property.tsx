@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { PropertyState } from './wizard-shell';
 
@@ -30,6 +31,34 @@ function update<K extends keyof PropertyState>(
 }
 
 export function StepProperty({ property, setProperty }: StepPropertyProps) {
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Lookup lat/long from postcodes.io when postcode changes
+  const lookupPostcode = useCallback(
+    (postcode: string) => {
+      const trimmed = postcode.trim();
+      if (trimmed.length < 5) return; // too short to be valid
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(trimmed)}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.status === 200 && data.result) {
+            setProperty((prev) => ({
+              ...prev,
+              latitude: data.result.latitude,
+              longitude: data.result.longitude,
+            }));
+          }
+        } catch {
+          // silently fail — user can enter manually
+        }
+      }, 500);
+    },
+    [setProperty],
+  );
+
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-text-primary">Property Details</h2>
@@ -55,15 +84,22 @@ export function StepProperty({ property, setProperty }: StepPropertyProps) {
             className={inputClass}
             placeholder="BB11 1AA"
             value={property.postcode}
-            onChange={(e) => update(setProperty, 'postcode', e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              update(setProperty, 'postcode', val);
+              lookupPostcode(val);
+            }}
           />
         </div>
       </div>
 
-      {/* Lat / Lng */}
+      {/* Lat / Lng — auto-populated from postcode, editable */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1">
-          <label className={labelClass}>Latitude</label>
+          <label className={labelClass}>
+            Latitude
+            {property.latitude !== 0 && <span className="ml-1 text-emerald-400 text-[10px] normal-case">auto</span>}
+          </label>
           <input
             type="number"
             step="0.0001"
@@ -73,7 +109,10 @@ export function StepProperty({ property, setProperty }: StepPropertyProps) {
           />
         </div>
         <div className="space-y-1">
-          <label className={labelClass}>Longitude</label>
+          <label className={labelClass}>
+            Longitude
+            {property.longitude !== 0 && <span className="ml-1 text-emerald-400 text-[10px] normal-case">auto</span>}
+          </label>
           <input
             type="number"
             step="0.0001"
