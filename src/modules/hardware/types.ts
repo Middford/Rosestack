@@ -42,6 +42,12 @@ export interface InverterSpec {
   hybrid: boolean;
   threePhase: boolean;
   g99Compliant: boolean;
+  /** G99 type test certificate status from ENA Connect Direct register */
+  g99TypeTestStatus: 'verified' | 'registered' | 'unverified' | 'not-listed';
+  /** ENA device reference number (needed for G99 application form) */
+  enaDeviceReference?: string;
+  /** Notes on G99 compliance — e.g. "uses Sunsynk registration" */
+  g99Notes?: string;
   iofCompatible: boolean;
   axleVppCompatible: boolean;
   octopusApiIntegration: boolean;

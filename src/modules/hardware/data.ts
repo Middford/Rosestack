@@ -144,11 +144,13 @@ export const inverters: InverterSpec[] = [
     hybrid: true,
     threePhase: true,
     g99Compliant: true,
+    g99TypeTestStatus: 'registered',  // Sigenergy on ENA register, verify specific model on Connect Direct
+    g99Notes: 'Sigenergy registered on ENA. IOF-approved implies grid compliance. Verify M1 HYA model on Connect Direct.',
     iofCompatible: true,
     axleVppCompatible: true,
     octopusApiIntegration: true,    // Native mySigen → Octopus API sync
     homeAssistantCompatible: true,
-    priceGbp: 8000,                 // estimated from Solareon package pricing
+    priceGbp: 8000,
     warrantyYears: 10,
     maxOutputKw: 100,
   },
@@ -159,17 +161,19 @@ export const inverters: InverterSpec[] = [
     manufacturer: 'Deye',
     model: 'SUN-20K-SG05LP3-EU-SM2 20kW 3-Phase Hybrid LV',
     category: 'inverter',
-    maxPvInputKw: 40,               // 2× oversize
-    maxBatteryCapacityKwh: 500,     // LV — limited by BMS, not inverter
+    maxPvInputKw: 40,
+    maxBatteryCapacityKwh: 500,
     mpptTrackers: 2,
     hybrid: true,
     threePhase: true,
     g99Compliant: true,             // VDE 4105, EN 50549, IEC 62109
-    iofCompatible: false,           // Not on Octopus IOF list
-    axleVppCompatible: false,       // Deye listed on Axle homepage but not live yet
+    g99TypeTestStatus: 'registered',  // NingBo Deye on ENA register. May use Sunsynk shared registration.
+    g99Notes: 'Deye (NingBo Deye Inverter Technology) registered on ENA. Shares model lines with Sunsynk — may use Sunsynk certificate. Verify SUN-20K on Connect Direct.',
+    iofCompatible: false,
+    axleVppCompatible: false,
     octopusApiIntegration: false,
-    homeAssistantCompatible: true,  // Via Modbus / SolarAssistant
-    priceGbp: 1748,                 // Alibaba Greensun (1-9 units, European warehouse)
+    homeAssistantCompatible: true,
+    priceGbp: 1748,
     warrantyYears: 10,
     maxOutputKw: 20,
     imageUrl: undefined,
@@ -182,13 +186,15 @@ export const inverters: InverterSpec[] = [
     model: 'H3 12kW 3-Phase Hybrid',
     category: 'inverter',
     maxPvInputKw: 24,
-    maxBatteryCapacityKwh: 41.6,    // 4 × 10.4kWh Fox ESS batteries
+    maxBatteryCapacityKwh: 41.6,
     mpptTrackers: 2,
     hybrid: true,
     threePhase: true,
     g99Compliant: true,
-    iofCompatible: true,            // On Octopus IOF approved list
-    axleVppCompatible: true,        // Fox ESS confirmed Axle VPP partner
+    g99TypeTestStatus: 'registered',  // FOXESS Co., Ltd. on ENA register
+    g99Notes: 'Fox ESS (FOXESS Co., Ltd.) registered on ENA. IOF-approved and Octopus installer partner — strong G99 compliance expectation. Verify H3 model on Connect Direct.',
+    iofCompatible: true,
+    axleVppCompatible: true,
     octopusApiIntegration: false,
     homeAssistantCompatible: true,
     priceGbp: 2800,
@@ -202,14 +208,17 @@ export const inverters: InverterSpec[] = [
     manufacturer: 'Solis',
     model: 'S6-EH3P30K-H-LV 30kW 3-Phase Hybrid',
     category: 'inverter',
-    maxPvInputKw: 60,               // 2× rated PV
-    maxBatteryCapacityKwh: 500,     // LV — limited by batteries, not inverter
+    maxPvInputKw: 60,
+    maxBatteryCapacityKwh: 500,
     mpptTrackers: 3,
     hybrid: true,
     threePhase: true,
     g99Compliant: true,             // EN 50549, G99 compliant
-    iofCompatible: false,           // Not on Octopus IOF list
-    axleVppCompatible: true,        // Solis confirmed Axle VPP partner
+    g99TypeTestStatus: 'registered',  // Solis (Ginlong) on ENA register. Has ENA reference numbers per Solis support.
+    enaDeviceReference: undefined,  // Check https://solis-service.solisinverters.com/en/support/solutions/articles/44002591744
+    g99Notes: 'Solis (Ginlong/Ningbo Ginlong) registered on ENA. Solis support page shows how to find ENA reference numbers. Verify S6-EH3P30K-H-LV on Connect Direct.',
+    iofCompatible: false,
+    axleVppCompatible: true,
     octopusApiIntegration: false,
     homeAssistantCompatible: true,  // Via SolisCloud API
     priceGbp: 3604,                 // Alibaba Greensun (1-19 units). UK wholesale ~£2,611 ex-VAT via Solareon
