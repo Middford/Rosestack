@@ -28,7 +28,6 @@ import {
   type DistTxData,
 } from '@/modules/grid/enwl-scoring';
 import { CONNECTION_COSTS } from '@/modules/projects/utils';
-import postgres from 'postgres';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -44,38 +43,27 @@ export async function GET(request: Request) {
     const latDelta = radius / 111;
     const lngDelta = radius / 70;
 
-    // 1. Fetch candidate properties from DB (pre-filtered)
-    const rawSql = postgres(process.env.DATABASE_URL!, { ssl: 'require' });
+    // 1. Fetch candidate properties from DB using Drizzle raw SQL
+    // Build conditions array
+    const conditions = [
+      dsql`latitude BETWEEN ${lat - latDelta} AND ${lat + latDelta}`,
+      dsql`longitude BETWEEN ${lng - lngDelta} AND ${lng + lngDelta}`,
+      dsql`number_habitable_rooms >= ${minBedrooms}`,
+    ];
+    if (solarOnly) conditions.push(dsql`photo_supply > 0`);
+    if (detachedOnly) conditions.push(dsql`built_form = 'Detached'`);
 
-    let propQuery = `
+    const epcRows = await db.execute(dsql`
       SELECT lmk_key, address, address1, postcode, uprn, local_authority_label,
              built_form, construction_age, total_floor_area, number_habitable_rooms,
              current_energy_rating, current_energy_efficiency,
              photo_supply, solar_water_heating, mains_gas,
              mainheat_description, latitude, longitude
       FROM epc_properties
-      WHERE latitude BETWEEN $1 AND $2
-        AND longitude BETWEEN $3 AND $4
-        AND number_habitable_rooms >= $5
-    `;
-    const params: (number | string)[] = [
-      lat - latDelta, lat + latDelta,
-      lng - lngDelta, lng + lngDelta,
-      minBedrooms,
-    ];
-
-    if (solarOnly) {
-      propQuery += ` AND photo_supply > 0`;
-    }
-    if (detachedOnly) {
-      propQuery += ` AND built_form = 'Detached'`;
-    }
-
-    // Order by floor area desc to get the biggest properties first, limit to a manageable set
-    propQuery += ` ORDER BY total_floor_area DESC NULLS LAST LIMIT 2000`;
-
-    const epcRows = await rawSql.unsafe(propQuery, params);
-    await rawSql.end();
+      WHERE ${dsql.join(conditions, dsql` AND `)}
+      ORDER BY total_floor_area DESC NULLS LAST
+      LIMIT 2000
+    `) as unknown as Record<string, unknown>[];
 
     if (epcRows.length === 0) {
       return NextResponse.json({
