@@ -191,6 +191,41 @@ async function ingestFlexTenders() {
   console.log(`  Inserted ${inserted} flex tender records`);
 }
 
+// ── 5. Distribution Transformer Capacity ─────────────────────
+async function ingestDistTx() {
+  console.log('\n5. Distribution TX Capacity...');
+  const records = await fetchAllRecords('sp-enw-capacity-distribution-tx', 100);
+
+  await sql`DELETE FROM enwl_dist_tx`;
+
+  const batchSize = 500;
+  let inserted = 0;
+  for (let i = 0; i < records.length; i += batchSize) {
+    const batch = records.slice(i, i + batchSize).map(r => ({
+      distribution_number: r.distribution_number || '',
+      tx_number: r.distribution_tx_number || null,
+      voltage_kv: r.voltage_kv || null,
+      rating_kva: parseFloat(r.distribution_tx_rating_kva) || null,
+      load_kva: r.distribution_tx_load_kva ?? null,
+      generation_kva: r.distribution_tx_generation_kva ?? null,
+      utilisation_percent: r.distribution_tx_utilisation ?? null,
+      demand_headroom_kva: r.distribution_tx_demand_headroom_kva ?? null,
+      generation_headroom_kva: r.distribution_tx_generation_headroom_kva ?? null,
+      load_source: r.distribution_tx_load_source || null,
+      primary_number: r.primary_number || null,
+      primary_feeder: r.primary_feeder || null,
+      utilisation_category: r.distribution_tx_utilisation_category || null,
+      local_authority: r.local_authority || null,
+      latitude: r.geo_point_2d?.lat ?? null,
+      longitude: r.geo_point_2d?.lon ?? null,
+    }));
+    await sql`INSERT INTO enwl_dist_tx ${sql(batch, 'distribution_number', 'tx_number', 'voltage_kv', 'rating_kva', 'load_kva', 'generation_kva', 'utilisation_percent', 'demand_headroom_kva', 'generation_headroom_kva', 'load_source', 'primary_number', 'primary_feeder', 'utilisation_category', 'local_authority', 'latitude', 'longitude')}`;
+    inserted += batch.length;
+    if (inserted % 5000 === 0) process.stdout.write(`\r  ${inserted} inserted`);
+  }
+  console.log(`\r  Inserted ${inserted} distribution TX records`);
+}
+
 // ── Main ─────────────────────────────────────────────────────
 async function main() {
   console.log('ENWL Open Data Ingestion');
@@ -201,6 +236,7 @@ async function main() {
   await ingestSubstations();
   await ingestLct();
   await ingestFlexTenders();
+  await ingestDistTx();
   // Capacity is the big one (111K) — do last
   await ingestCapacity();
 

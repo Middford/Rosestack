@@ -4,18 +4,27 @@
 // ?type=substations — ranked substations for deployment strategy
 // ?type=substations&lat=53.8&lng=-2.4&radius=15 — within radius (km)
 // ?type=properties&substationNumber=451200 — properties near a substation
+//
+// Property scoring uses TIERED FUNNEL:
+//   Tier 1: Already 3-phase + solar + large → Score 85-100
+//   Tier 2: Already 3-phase + solar/large  → Score 60-79
+//   Tier 3: Cheap upgrade + solar          → Score 45-59
+//   Tier 4: Cheap upgrade, smaller         → Score 30-44
+//   Tier 5: Complex upgrade                → Score <30
 // ============================================================
 
 import { NextResponse } from 'next/server';
 import { db } from '@/shared/db';
-import { enwlSubstations, enwlLct, enwlCapacity, enwlFlexTenders } from '@/shared/db/schema';
-import { eq, and, gte, lte, sql } from 'drizzle-orm';
+import { enwlSubstations, enwlLct, enwlCapacity, enwlFlexTenders, enwlDistTx } from '@/shared/db/schema';
+import { eq, and, gte, lte, sql as dsql } from 'drizzle-orm';
 import {
   rankSubstations,
-  scorePropertyWithEnwl,
+  scorePropertyTiered,
+  determine3PhaseStatus,
   type SubstationData,
   type LctData,
   type CapacityData,
+  type DistTxData,
 } from '@/modules/grid/enwl-scoring';
 import { EPC_TARGET_PROPERTIES } from '@/modules/grid/epc-seed';
 
@@ -29,7 +38,7 @@ export async function GET(request: Request) {
     } else if (type === 'properties') {
       return await handleProperties(searchParams);
     } else {
-      return NextResponse.json({ error: 'Invalid type. Use substations or properties.' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
     }
   } catch (err) {
     console.error('[GET /api/grid/scoring]', err);
@@ -40,10 +49,9 @@ export async function GET(request: Request) {
 async function handleSubstations(params: URLSearchParams) {
   const lat = parseFloat(params.get('lat') ?? '53.8');
   const lng = parseFloat(params.get('lng') ?? '-2.4');
-  const radius = parseFloat(params.get('radius') ?? '15'); // km
+  const radius = parseFloat(params.get('radius') ?? '15');
   const limit = parseInt(params.get('limit') ?? '100');
 
-  // Rough bounding box from radius (1 degree lat ≈ 111km, 1 degree lng ≈ 70km at 54°N)
   const latDelta = radius / 111;
   const lngDelta = radius / 70;
 
@@ -53,6 +61,7 @@ async function handleSubstations(params: URLSearchParams) {
     substationGroup: enwlSubstations.substationGroup,
     outfeed: enwlSubstations.outfeed,
     area: enwlSubstations.area,
+    primaryFeeder: enwlSubstations.primaryFeeder,
     primaryNumberAlias: enwlSubstations.primaryNumberAlias,
     latitude: enwlSubstations.latitude,
     longitude: enwlSubstations.longitude,
@@ -66,14 +75,12 @@ async function handleSubstations(params: URLSearchParams) {
       lte(enwlSubstations.longitude, lng + lngDelta),
     ));
 
-  // Fetch LCT data for these substations
   const subNumbers = subs.map(s => s.substationNumber);
-  const lctRows = subNumbers.length > 0
-    ? await db.select().from(enwlLct).where(
-        sql`${enwlLct.distributionSubstation} = ANY(${subNumbers})`,
-      )
-    : [];
 
+  // Fetch LCT data
+  const lctRows = subNumbers.length > 0
+    ? await db.select().from(enwlLct).where(dsql`${enwlLct.distributionSubstation} = ANY(${subNumbers})`)
+    : [];
   const lctMap = new Map<string, LctData>();
   for (const r of lctRows) {
     lctMap.set(r.distributionSubstation, {
@@ -88,11 +95,9 @@ async function handleSubstations(params: URLSearchParams) {
     });
   }
 
-  // Fetch capacity data — get one representative section per substation area
-  // (average load utilisation for sections near each substation)
+  // Fetch capacity data — nearest section per substation
   const capacityMap = new Map<string, CapacityData>();
   if (subs.length > 0) {
-    // For efficiency, get all capacity sections in the bounding box
     const capRows = await db.select({
       loadUtilisation: enwlCapacity.loadUtilisation,
       loadUtilisationCategory: enwlCapacity.loadUtilisationCategory,
@@ -111,7 +116,6 @@ async function handleSubstations(params: URLSearchParams) {
       ))
       .limit(5000);
 
-    // For each substation, find nearest capacity section
     for (const sub of subs) {
       if (sub.latitude == null || sub.longitude == null) continue;
       let bestDist = Infinity;
@@ -119,36 +123,37 @@ async function handleSubstations(params: URLSearchParams) {
       for (const cap of capRows) {
         if (cap.latitude == null || cap.longitude == null) continue;
         const d = Math.abs(cap.latitude - sub.latitude) + Math.abs(cap.longitude - sub.longitude);
-        if (d < bestDist) {
-          bestDist = d;
-          bestCap = {
-            firmCapacityKva: cap.firmCapacityKva,
-            estimatedMaxLoadKva: cap.estimatedMaxLoadKva,
-            headroomKva: cap.headroomKva,
-            loadUtilisation: cap.loadUtilisation,
-            loadUtilisationCategory: cap.loadUtilisationCategory,
-          };
-        }
+        if (d < bestDist) { bestDist = d; bestCap = cap; }
       }
       if (bestCap) capacityMap.set(sub.substationNumber, bestCap);
     }
   }
 
-  // Fetch flex tender zones
-  const flexRows = await db.select({
-    constraintManagementZone: enwlFlexTenders.constraintManagementZone,
-  }).from(enwlFlexTenders);
+  // Fetch Distribution TX data — generation headroom per substation
+  const distTxMap = new Map<string, DistTxData>();
+  if (subNumbers.length > 0) {
+    const txRows = await db.select({
+      distributionNumber: enwlDistTx.distributionNumber,
+      ratingKva: enwlDistTx.ratingKva,
+      loadKva: enwlDistTx.loadKva,
+      generationHeadroomKva: enwlDistTx.generationHeadroomKva,
+      utilisationPercent: enwlDistTx.utilisationPercent,
+      primaryFeeder: enwlDistTx.primaryFeeder,
+    })
+      .from(enwlDistTx)
+      .where(dsql`${enwlDistTx.distributionNumber} = ANY(${subNumbers})`);
+    for (const r of txRows) {
+      distTxMap.set(r.distributionNumber, r);
+    }
+  }
+
+  // Flex tender zones
+  const flexRows = await db.select({ constraintManagementZone: enwlFlexTenders.constraintManagementZone }).from(enwlFlexTenders);
   const flexZones = new Set(flexRows.map(r => r.constraintManagementZone ?? ''));
 
   // Score and rank
-  const ranked = rankSubstations(
-    subs as SubstationData[],
-    lctMap,
-    capacityMap,
-    flexZones,
-  ).slice(0, limit);
+  const ranked = rankSubstations(subs as SubstationData[], lctMap, capacityMap, distTxMap, flexZones).slice(0, limit);
 
-  // Summary stats
   const totalSolar = ranked.reduce((s, r) => s + r.solarInstallations, 0);
   const totalBatteries = ranked.reduce((s, r) => s + r.batteryInstallations, 0);
   const threePhaseCount = ranked.filter(r => r.outfeed === '415V').length;
@@ -165,76 +170,75 @@ async function handleSubstations(params: URLSearchParams) {
       threePhaseCount,
       threePhasePercent: ranked.length > 0 ? Math.round(threePhaseCount / ranked.length * 100) : 0,
       avgScore: ranked.length > 0 ? Math.round(ranked.reduce((s, r) => s + r.totalScore, 0) / ranked.length) : 0,
-      excellentCount: ranked.filter(r => r.totalScore >= 75).length,
-      goodCount: ranked.filter(r => r.totalScore >= 55 && r.totalScore < 75).length,
+      excellentCount: ranked.filter(r => r.totalScore >= 80).length,
+      goodCount: ranked.filter(r => r.totalScore >= 60 && r.totalScore < 80).length,
     },
     substations: ranked,
-  }, {
-    headers: { 'Cache-Control': 'public, s-maxage=3600' },
-  });
+  }, { headers: { 'Cache-Control': 'public, s-maxage=3600' } });
 }
 
 async function handleProperties(params: URLSearchParams) {
   const substationNumber = params.get('substationNumber');
   if (!substationNumber) {
-    return NextResponse.json({ error: 'substationNumber parameter required' }, { status: 400 });
+    return NextResponse.json({ error: 'substationNumber required' }, { status: 400 });
   }
 
-  // Fetch the target substation
+  // Fetch target substation
   const subRows = await db.select().from(enwlSubstations)
-    .where(eq(enwlSubstations.substationNumber, substationNumber))
-    .limit(1);
+    .where(eq(enwlSubstations.substationNumber, substationNumber)).limit(1);
   const sub = subRows[0] ?? null;
-  if (!sub) {
-    return NextResponse.json({ error: 'Substation not found' }, { status: 404 });
-  }
+  if (!sub) return NextResponse.json({ error: 'Substation not found' }, { status: 404 });
 
-  // Get LCT data for this substation
+  // Get LCT data
   const lctRows = await db.select().from(enwlLct)
-    .where(eq(enwlLct.distributionSubstation, substationNumber))
-    .limit(1);
+    .where(eq(enwlLct.distributionSubstation, substationNumber)).limit(1);
   const isHighSolar = (lctRows[0]?.solarInstallations ?? 0) >= 5;
 
-  // Get nearest capacity section
-  let nearestCapacity: CapacityData | null = null;
-  if (sub.latitude != null && sub.longitude != null) {
-    const capRows = await db.select({
-      firmCapacityKva: enwlCapacity.firmCapacityKva,
-      estimatedMaxLoadKva: enwlCapacity.estimatedMaxLoadKva,
-      headroomKva: enwlCapacity.headroomKva,
-      loadUtilisation: enwlCapacity.loadUtilisation,
-      loadUtilisationCategory: enwlCapacity.loadUtilisationCategory,
-    })
-      .from(enwlCapacity)
-      .where(and(
-        gte(enwlCapacity.latitude, (sub.latitude ?? 0) - 0.01),
-        lte(enwlCapacity.latitude, (sub.latitude ?? 0) + 0.01),
-        gte(enwlCapacity.longitude, (sub.longitude ?? 0) - 0.015),
-        lte(enwlCapacity.longitude, (sub.longitude ?? 0) + 0.015),
-      ))
-      .limit(1);
-    nearestCapacity = capRows[0] ?? null;
+  // Get Distribution TX for this substation (generation headroom)
+  const txRows = await db.select({
+    distributionNumber: enwlDistTx.distributionNumber,
+    ratingKva: enwlDistTx.ratingKva,
+    loadKva: enwlDistTx.loadKva,
+    generationHeadroomKva: enwlDistTx.generationHeadroomKva,
+    utilisationPercent: enwlDistTx.utilisationPercent,
+    primaryFeeder: enwlDistTx.primaryFeeder,
+  }).from(enwlDistTx)
+    .where(eq(enwlDistTx.distributionNumber, substationNumber)).limit(1);
+  const distTx: DistTxData | null = txRows[0] ?? null;
+
+  // Get ALL substations on the same primary feeder (for 3-phase upgrade check)
+  const feeder = sub.primaryFeeder;
+  let feederSubstations: SubstationData[] = [];
+  if (feeder) {
+    const feederRows = await db.select({
+      substationNumber: enwlSubstations.substationNumber,
+      substationGroup: enwlSubstations.substationGroup,
+      outfeed: enwlSubstations.outfeed,
+      area: enwlSubstations.area,
+      primaryFeeder: enwlSubstations.primaryFeeder,
+      primaryNumberAlias: enwlSubstations.primaryNumberAlias,
+      latitude: enwlSubstations.latitude,
+      longitude: enwlSubstations.longitude,
+    }).from(enwlSubstations)
+      .where(eq(enwlSubstations.primaryFeeder, feeder));
+    feederSubstations = feederRows as SubstationData[];
   }
 
-  // Find EPC properties near this substation (within ~2km)
+  // Determine 3-phase upgrade feasibility from real feeder data
+  const { status: phaseStatus, label: phaseStatusLabel } = determine3PhaseStatus(
+    sub as SubstationData, feederSubstations,
+  );
+
+  // Find EPC properties near this substation
   const subLat = sub.latitude ?? 53.8;
   const subLng = sub.longitude ?? -2.4;
   const nearbyProps = EPC_TARGET_PROPERTIES.filter(p => {
-    const dLat = Math.abs(p.latitude - subLat);
-    const dLng = Math.abs(p.longitude - subLng);
-    return dLat < 0.02 && dLng < 0.03; // ~2km box
+    return Math.abs(p.latitude - subLat) < 0.02 && Math.abs(p.longitude - subLng) < 0.03;
   });
 
-  // Score each property
+  // Score each property with the tiered funnel
   const scored = nearbyProps.map(prop => {
-    // Count nearby properties for cluster score
-    const nearbyCount = nearbyProps.filter(other => {
-      if (other.id === prop.id) return false;
-      const d = Math.abs(other.latitude - prop.latitude) + Math.abs(other.longitude - prop.longitude);
-      return d < 0.005; // ~500m
-    }).length;
-
-    return scorePropertyWithEnwl(
+    return scorePropertyTiered(
       {
         id: prop.id,
         address: prop.address,
@@ -247,28 +251,35 @@ async function handleProperties(params: URLSearchParams) {
         gardenAccess: prop.gardenAccess,
         threePhaseConfirmed: prop.threePhaseConfirmed,
         threePhaseScore: prop.threePhaseScore,
-        photoSupply: undefined, // Not yet in EPC seed data
-        solarWaterHeating: undefined,
       },
       sub as SubstationData,
-      nearestCapacity,
+      distTx,
+      phaseStatus,
+      phaseStatusLabel,
       isHighSolar,
-      nearbyCount,
     );
   }).sort((a, b) => b.totalScore - a.totalScore);
+
+  // Count tiers
+  const tierCounts = [0, 0, 0, 0, 0, 0]; // index 0 unused, 1-5
+  scored.forEach(s => { tierCounts[s.breakdown.tier] = (tierCounts[s.breakdown.tier] ?? 0) + 1; });
 
   return NextResponse.json({
     type: 'properties',
     substationNumber,
     substationOutfeed: sub.outfeed,
+    phaseStatus,
+    phaseStatusLabel,
     substationLat: sub.latitude,
     substationLng: sub.longitude,
     solar: lctRows[0]?.solarInstallations ?? 0,
     batteries: lctRows[0]?.batteryInstallations ?? 0,
     heatPumps: lctRows[0]?.heatPumpInstallations ?? 0,
+    generationHeadroomKva: distTx?.generationHeadroomKva ?? null,
+    transformerRatingKva: distTx?.ratingKva ?? null,
+    feederHas3Phase: feederSubstations.some(s => s.outfeed === '415V'),
     total: scored.length,
+    tierCounts: { tier1: tierCounts[1], tier2: tierCounts[2], tier3: tierCounts[3], tier4: tierCounts[4], tier5: tierCounts[5] },
     properties: scored,
-  }, {
-    headers: { 'Cache-Control': 'public, s-maxage=3600' },
-  });
+  }, { headers: { 'Cache-Control': 'public, s-maxage=3600' } });
 }

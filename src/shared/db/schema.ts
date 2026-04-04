@@ -582,6 +582,42 @@ export const enwlFlexTenders = pgTable('enwl_flex_tenders', {
   fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
 });
 
+// ENWL Distribution Transformer capacity — links substations to properties
+export const enwlDistTx = pgTable('enwl_dist_tx', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  /** Distribution substation number (matches enwl_substations.substationNumber) */
+  distributionNumber: text('distribution_number').notNull(),
+  /** Transformer identifier */
+  txNumber: text('tx_number'),
+  /** Voltage (typically 11kV) */
+  voltageKv: text('voltage_kv'),
+  /** Transformer rating in kVA */
+  ratingKva: real('rating_kva'),
+  /** Current load in kVA */
+  loadKva: real('load_kva'),
+  /** Generation currently connected in kVA */
+  generationKva: real('generation_kva'),
+  /** Load as percentage of rating */
+  utilisationPercent: real('utilisation_percent'),
+  /** Spare capacity for new demand (kVA) */
+  demandHeadroomKva: real('demand_headroom_kva'),
+  /** Spare capacity for new generation/export — KEY FOR G99 */
+  generationHeadroomKva: real('generation_headroom_kva'),
+  /** How load was estimated */
+  loadSource: text('load_source'),
+  /** Parent primary substation (e.g. "WHALLEY (400074)") */
+  primaryNumber: text('primary_number'),
+  /** Primary feeder circuit — shared with enwl_substations.primaryFeeder */
+  primaryFeeder: text('primary_feeder'),
+  /** RAG category: Available Capacity / Approaching Capacity / Over Capacity */
+  utilisationCategory: text('utilisation_category'),
+  /** Local authority name */
+  localAuthority: text('local_authority'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
+});
+
 // 8. Pipeline events (detailed status tracking for prospecting pipeline)
 export const pipelineEvents = pgTable('pipeline_events', {
   id: uuid('id').defaultRandom().primaryKey(),

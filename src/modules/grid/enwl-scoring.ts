@@ -1,15 +1,25 @@
 // ============================================================
-// ENWL Real-Data Scoring Engine
+// ENWL Real-Data Scoring Engine — Tiered Funnel Approach
 //
-// Two-level scoring matrix using live ENWL Open Data:
-//   Level 1: Substation Score (0-100) — "Where to deploy"
-//   Level 2: Property Score (0-100) — "Which doors to knock"
+// Properties are scored in a PRIORITY ORDER (not weighted average):
 //
-// Data sources:
-//   enwl_substations (41,868) — voltage, hierarchy, location
-//   enwl_capacity (111,015) — headroom per 11kV section
-//   enwl_lct (13,996) — MCS solar/battery/HP per substation
-//   enwl_flex_tenders (476) — active flexibility tenders
+// Tier 1 (80-100): Already 3-phase + has solar + large property
+//   → Walk up and knock. Best possible target.
+//
+// Tier 2 (60-79): Already 3-phase + has solar + smaller property
+//   → Still great. Solar + 3-phase is the hard part.
+//
+// Tier 3 (45-59): Cheap 3-phase upgrade (415V on same feeder) + solar + large
+//   → Viable with ~£2,500 upgrade. Check feeder data.
+//
+// Tier 4 (30-44): Cheap upgrade + smaller or no solar
+//   → Needs more investment but still feasible.
+//
+// Tier 5 (<30): Complex upgrade needed or no solar nearby
+//   → Deprioritise.
+//
+// Within each tier, properties are ranked by: generation headroom,
+// property size, EPC rating, garden access, distance to substation.
 // ============================================================
 
 // ── Types ────────────────────────────────────────────────────
@@ -19,6 +29,7 @@ export interface SubstationData {
   substationGroup: string;
   outfeed: string | null;
   area: string | null;
+  primaryFeeder: string | null;
   primaryNumberAlias: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -43,21 +54,25 @@ export interface CapacityData {
   loadUtilisationCategory: string | null;
 }
 
-export interface FlexTenderData {
-  constraintManagementZone: string | null;
-  utilisationPrice: number | null;
-  bidOutcome: string | null;
-  deliveryYear: string | null;
+export interface DistTxData {
+  distributionNumber: string;
+  ratingKva: number | null;
+  loadKva: number | null;
+  generationHeadroomKva: number | null;
+  utilisationPercent: number | null;
+  primaryFeeder: string | null;
 }
 
+export type PhaseStatus = 'already-3-phase' | 'cheap-upgrade' | 'complex-upgrade' | 'unknown';
+
 export interface SubstationScoreBreakdown {
-  solarDensity: number;       // 0-30
-  batteryGap: number;         // 0-10
-  threePhase: number;         // 0-15
-  gridHeadroom: number;       // 0-20
-  customerDensity: number;    // 0-10
-  flexTender: number;         // 0-10
-  heatPumpDensity: number;    // 0-5
+  solarDensity: number;
+  batteryGap: number;
+  threePhase: number;
+  gridHeadroom: number;
+  customerDensity: number;
+  flexTender: number;
+  heatPumpDensity: number;
 }
 
 export interface SubstationScore {
@@ -67,7 +82,6 @@ export interface SubstationScore {
   outfeed: string;
   totalScore: number;
   breakdown: SubstationScoreBreakdown;
-  // Context data for display
   solarInstallations: number;
   batteryInstallations: number;
   heatPumpInstallations: number;
@@ -75,20 +89,23 @@ export interface SubstationScore {
   headroomKva: number | null;
   loadUtilisation: number | null;
   loadCategory: string | null;
+  generationHeadroomKva: number | null;
   hasFlexTender: boolean;
   grade: string;
   gradeColor: string;
 }
 
 export interface PropertyScoreBreakdown {
-  threePhaseSubstation: number; // 0-20
-  solarPresence: number;       // 0-20
-  substationHeadroom: number;  // 0-15
-  gardenAccess: number;        // 0-10
-  propertySize: number;        // 0-10
-  epcRating: number;           // 0-10
-  distanceToSubstation: number; // 0-10
-  clusterPotential: number;    // 0-5
+  tier: number;
+  tierLabel: string;
+  phaseStatus: PhaseStatus;
+  phaseStatusLabel: string;
+  hasSolar: boolean;
+  propertySize: number;    // 0-15 within-tier ranking
+  epcRating: number;       // 0-10
+  gardenAccess: number;    // 0-10
+  generationHeadroom: number; // 0-10
+  distanceToSub: number;   // 0-5
 }
 
 export interface PropertyScore {
@@ -97,14 +114,16 @@ export interface PropertyScore {
   postcode: string;
   totalScore: number;
   breakdown: PropertyScoreBreakdown;
-  // Context
   bedrooms: number;
   propertyType: string;
   epcRating: string;
-  threePhaseScore: number;
   gardenAccess: boolean;
+  phaseStatus: PhaseStatus;
+  phaseStatusLabel: string;
   nearestSubstationNumber: string | null;
+  nearestSubstationOutfeed: string | null;
   distanceKm: number;
+  generationHeadroomKva: number | null;
   grade: string;
   gradeColor: string;
 }
@@ -122,18 +141,20 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 }
 
 function getGrade(score: number): { grade: string; gradeColor: string } {
-  if (score >= 75) return { grade: 'Excellent', gradeColor: 'success' };
-  if (score >= 55) return { grade: 'Good', gradeColor: 'info' };
-  if (score >= 35) return { grade: 'Fair', gradeColor: 'warning' };
-  return { grade: 'Low', gradeColor: 'danger' };
+  if (score >= 80) return { grade: 'Tier 1 — Prime', gradeColor: 'success' };
+  if (score >= 60) return { grade: 'Tier 2 — Strong', gradeColor: 'info' };
+  if (score >= 45) return { grade: 'Tier 3 — Viable', gradeColor: 'warning' };
+  if (score >= 30) return { grade: 'Tier 4 — Possible', gradeColor: 'default' };
+  return { grade: 'Tier 5 — Deprioritise', gradeColor: 'danger' };
 }
 
-// ── Level 1: Substation Scoring ─────────────────────────────
+// ── Level 1: Substation Scoring (unchanged — balanced weighting) ─────
 
 export function scoreSubstation(
   sub: SubstationData,
   lct: LctData | null,
   capacity: CapacityData | null,
+  distTx: DistTxData | null,
   hasFlexTender: boolean,
 ): SubstationScore {
   const solar = lct?.solarInstallations ?? 0;
@@ -142,7 +163,6 @@ export function scoreSubstation(
   const heatPumps = lct?.heatPumpInstallations ?? 0;
   const loadUtil = capacity?.loadUtilisation ?? 0.5;
 
-  // Solar density (30 pts)
   let solarDensity: number;
   if (solar >= 20) solarDensity = 30;
   else if (solar >= 10) solarDensity = 22;
@@ -150,16 +170,9 @@ export function scoreSubstation(
   else if (solar >= 1) solarDensity = 8;
   else solarDensity = 2;
 
-  // Battery gap (10 pts) — fewer batteries = bigger opportunity
-  let batteryGap: number;
-  if (batteries === 0) batteryGap = 10;
-  else if (batteries <= 3) batteryGap = 7;
-  else batteryGap = 3;
-
-  // 3-phase supply (15 pts)
+  let batteryGap = batteries === 0 ? 10 : batteries <= 3 ? 7 : 3;
   const threePhase = sub.outfeed === '415V' ? 15 : 3;
 
-  // Grid headroom (20 pts)
   let gridHeadroom: number;
   if (loadUtil < 0.3) gridHeadroom = 20;
   else if (loadUtil < 0.5) gridHeadroom = 16;
@@ -167,21 +180,9 @@ export function scoreSubstation(
   else if (loadUtil < 0.85) gridHeadroom = 5;
   else gridHeadroom = 1;
 
-  // Customer density (10 pts)
-  let customerDensity: number;
-  if (customers >= 200) customerDensity = 10;
-  else if (customers >= 100) customerDensity = 7;
-  else if (customers >= 50) customerDensity = 4;
-  else customerDensity = 2;
-
-  // Flex tender (10 pts)
+  let customerDensity = customers >= 200 ? 10 : customers >= 100 ? 7 : customers >= 50 ? 4 : 2;
   const flexTender = hasFlexTender ? 10 : 2;
-
-  // Heat pump density (5 pts)
-  let heatPumpDensity: number;
-  if (heatPumps >= 5) heatPumpDensity = 5;
-  else if (heatPumps >= 1) heatPumpDensity = 3;
-  else heatPumpDensity = 1;
+  let heatPumpDensity = heatPumps >= 5 ? 5 : heatPumps >= 1 ? 3 : 1;
 
   const breakdown: SubstationScoreBreakdown = {
     solarDensity, batteryGap, threePhase, gridHeadroom,
@@ -204,6 +205,7 @@ export function scoreSubstation(
     headroomKva: capacity?.headroomKva ?? null,
     loadUtilisation: loadUtil,
     loadCategory: capacity?.loadUtilisationCategory ?? null,
+    generationHeadroomKva: distTx?.generationHeadroomKva ?? null,
     hasFlexTender,
     grade,
     gradeColor,
@@ -214,20 +216,65 @@ export function rankSubstations(
   substations: SubstationData[],
   lctMap: Map<string, LctData>,
   capacityMap: Map<string, CapacityData>,
+  distTxMap: Map<string, DistTxData>,
   flexZones: Set<string>,
 ): SubstationScore[] {
   return substations
     .map(sub => {
       const lct = lctMap.get(sub.substationNumber) ?? null;
       const capacity = capacityMap.get(sub.substationNumber) ?? null;
-      // Check if any flex tender is in this substation's primary group area
+      const distTx = distTxMap.get(sub.substationNumber) ?? null;
       const hasFlexTender = flexZones.has(sub.primaryNumberAlias ?? '') || flexZones.has(sub.area ?? '');
-      return scoreSubstation(sub, lct, capacity, hasFlexTender);
+      return scoreSubstation(sub, lct, capacity, distTx, hasFlexTender);
     })
     .sort((a, b) => b.totalScore - a.totalScore);
 }
 
-// ── Level 2: Property Scoring ───────────────────────────────
+// ── Level 2: Property Scoring — Tiered Funnel ───────────────
+
+/** Determine 3-phase status from real ENWL infrastructure data */
+export function determine3PhaseStatus(
+  nearestSub: SubstationData | null,
+  /** All substations on the same primary feeder */
+  feederSubstations: SubstationData[],
+): { status: PhaseStatus; label: string } {
+  if (!nearestSub) return { status: 'unknown', label: 'No substation data' };
+
+  // Already 3-phase — substation serves 415V
+  if (nearestSub.outfeed === '415V') {
+    return { status: 'already-3-phase', label: 'Already 3-phase (415V substation)' };
+  }
+
+  // Check if same feeder has 415V substations nearby
+  const feeder = nearestSub.primaryFeeder;
+  if (feeder) {
+    const threePhaseOnFeeder = feederSubstations.filter(
+      s => s.primaryFeeder === feeder && s.outfeed === '415V',
+    );
+    if (threePhaseOnFeeder.length > 0) {
+      // Check distance to nearest 415V substation on same feeder
+      if (nearestSub.latitude != null && nearestSub.longitude != null) {
+        let minDist = Infinity;
+        for (const s3p of threePhaseOnFeeder) {
+          if (s3p.latitude != null && s3p.longitude != null) {
+            const d = haversineKm(nearestSub.latitude, nearestSub.longitude, s3p.latitude, s3p.longitude);
+            if (d < minDist) minDist = d;
+          }
+        }
+        if (minDist < 0.5) {
+          return { status: 'cheap-upgrade', label: `Upgrade feasible (415V ${Math.round(minDist * 1000)}m away on same feeder)` };
+        }
+        if (minDist < 2) {
+          return { status: 'cheap-upgrade', label: `Upgrade possible (415V ${minDist.toFixed(1)}km away on same feeder)` };
+        }
+      }
+      return { status: 'cheap-upgrade', label: '415V exists on same feeder' };
+    }
+  }
+
+  // No 415V on the same feeder — complex upgrade
+  return { status: 'complex-upgrade', label: 'No 3-phase on feeder — requires TX upgrade' };
+}
 
 interface PropertyInput {
   id: string;
@@ -245,72 +292,92 @@ interface PropertyInput {
   solarWaterHeating?: boolean;
 }
 
-export function scorePropertyWithEnwl(
+export function scorePropertyTiered(
   prop: PropertyInput,
   nearestSub: SubstationData | null,
-  nearestCapacity: CapacityData | null,
+  distTx: DistTxData | null,
+  phaseStatus: PhaseStatus,
+  phaseStatusLabel: string,
   isHighSolarSubstation: boolean,
-  nearbyPropertyCount: number,
 ): PropertyScore {
   const distKm = nearestSub?.latitude != null && nearestSub?.longitude != null
     ? haversineKm(prop.latitude, prop.longitude, nearestSub.latitude, nearestSub.longitude)
     : 5;
 
-  // 3-phase substation (20 pts)
-  const threePhaseSubstation = nearestSub?.outfeed === '415V' ? 20 : 5;
+  // ── Determine if property has solar ──
+  const hasSolar = (prop.photoSupply ?? 0) > 0
+    || prop.solarWaterHeating === true
+    || isHighSolarSubstation; // substation has 5+ solar = neighbourhood likely has panels
 
-  // Solar presence (20 pts)
-  let solarPresence: number;
-  if ((prop.photoSupply ?? 0) > 0) solarPresence = 20;
-  else if (prop.solarWaterHeating) solarPresence = 12;
-  else if (isHighSolarSubstation) solarPresence = 12; // substation has lots of solar = likely neighbourhood
-  else if (prop.propertyType === 'detached' || prop.propertyType === 'farm') solarPresence = 5;
-  else solarPresence = 2;
+  // ── Determine property size category ──
+  const isLarge = prop.bedrooms >= 4 && (prop.propertyType === 'detached' || prop.propertyType === 'farm');
+  const isMedium = prop.bedrooms >= 3;
 
-  // Substation headroom (15 pts)
-  const loadUtil = nearestCapacity?.loadUtilisation ?? 0.5;
-  let substationHeadroom: number;
-  if (loadUtil < 0.3) substationHeadroom = 15;
-  else if (loadUtil < 0.5) substationHeadroom = 12;
-  else if (loadUtil < 0.7) substationHeadroom = 8;
-  else if (loadUtil < 0.85) substationHeadroom = 4;
-  else substationHeadroom = 1;
+  // ── Assign TIER (determines base score range) ──
+  let tier: number;
+  let tierLabel: string;
+  let baseScore: number;
 
-  // Garden access (10 pts)
-  const gardenAccess = prop.gardenAccess ? 10 : 0;
+  if (phaseStatus === 'already-3-phase' && hasSolar && isLarge) {
+    tier = 1; tierLabel = 'Prime — 3-phase + solar + large'; baseScore = 85;
+  } else if (phaseStatus === 'already-3-phase' && hasSolar) {
+    tier = 2; tierLabel = 'Strong — 3-phase + solar'; baseScore = 68;
+  } else if (phaseStatus === 'already-3-phase' && isLarge) {
+    tier = 2; tierLabel = 'Strong — 3-phase + large (no solar)'; baseScore = 65;
+  } else if (phaseStatus === 'cheap-upgrade' && hasSolar && isLarge) {
+    tier = 3; tierLabel = 'Viable — cheap upgrade + solar + large'; baseScore = 52;
+  } else if (phaseStatus === 'cheap-upgrade' && hasSolar) {
+    tier = 3; tierLabel = 'Viable — cheap upgrade + solar'; baseScore = 48;
+  } else if (phaseStatus === 'already-3-phase') {
+    tier = 3; tierLabel = 'Viable — 3-phase but small/no solar'; baseScore = 46;
+  } else if (phaseStatus === 'cheap-upgrade' && isLarge) {
+    tier = 4; tierLabel = 'Possible — cheap upgrade + large'; baseScore = 38;
+  } else if (phaseStatus === 'cheap-upgrade') {
+    tier = 4; tierLabel = 'Possible — cheap upgrade'; baseScore = 32;
+  } else {
+    tier = 5; tierLabel = 'Deprioritise — complex upgrade'; baseScore = 15;
+  }
 
-  // Property size (10 pts)
+  // ── Within-tier ranking (adds up to 15 points) ──
+
+  // Property size (0-5)
   let propertySize = 0;
-  if (prop.bedrooms >= 5) propertySize += 6;
-  else if (prop.bedrooms >= 4) propertySize += 4;
-  else if (prop.bedrooms >= 3) propertySize += 2;
-  else propertySize += 1;
-  if (prop.propertyType === 'detached' || prop.propertyType === 'farm') propertySize += 4;
-  else if (prop.propertyType === 'bungalow' || prop.propertyType === 'semi') propertySize += 2;
-  propertySize = Math.min(10, propertySize);
+  if (prop.bedrooms >= 5 && (prop.propertyType === 'detached' || prop.propertyType === 'farm')) propertySize = 5;
+  else if (prop.bedrooms >= 4) propertySize = 3;
+  else if (prop.bedrooms >= 3) propertySize = 2;
+  else propertySize = 1;
 
-  // EPC rating (10 pts)
-  const epcScores: Record<string, number> = { A: 3, B: 5, C: 7, D: 10, E: 8, F: 4, G: 2 };
-  const epcRating = epcScores[prop.epcRating?.charAt(0)?.toUpperCase() ?? 'D'] ?? 5;
+  // EPC rating (0-4) — D/E = best for arbitrage
+  const epcScores: Record<string, number> = { A: 1, B: 2, C: 3, D: 4, E: 3, F: 2, G: 1 };
+  const epcRating = epcScores[prop.epcRating?.charAt(0)?.toUpperCase() ?? 'D'] ?? 2;
 
-  // Distance to substation (10 pts)
-  let distanceToSubstation: number;
-  if (distKm < 0.5) distanceToSubstation = 10;
-  else if (distKm < 1) distanceToSubstation = 7;
-  else if (distKm < 2) distanceToSubstation = 4;
-  else distanceToSubstation = 2;
+  // Garden access (0-3)
+  const gardenAccess = prop.gardenAccess ? 3 : 0;
 
-  // Cluster potential (5 pts)
-  let clusterPotential: number;
-  if (nearbyPropertyCount >= 5) clusterPotential = 5;
-  else if (nearbyPropertyCount >= 2) clusterPotential = 3;
-  else clusterPotential = 1;
+  // Generation headroom at the transformer (0-2)
+  const genHeadroom = distTx?.generationHeadroomKva;
+  let generationHeadroom = 1;
+  if (genHeadroom != null && genHeadroom >= 66) generationHeadroom = 2; // enough for full G99 export
+  else if (genHeadroom != null && genHeadroom < 20) generationHeadroom = 0; // tight
+
+  // Distance (0-1)
+  const distanceToSub = distKm < 1 ? 1 : 0;
+
+  const withinTierBonus = propertySize + epcRating + gardenAccess + generationHeadroom + distanceToSub;
+  const totalScore = Math.min(100, baseScore + withinTierBonus);
 
   const breakdown: PropertyScoreBreakdown = {
-    threePhaseSubstation, solarPresence, substationHeadroom,
-    gardenAccess, propertySize, epcRating, distanceToSubstation, clusterPotential,
+    tier,
+    tierLabel,
+    phaseStatus,
+    phaseStatusLabel,
+    hasSolar,
+    propertySize,
+    epcRating,
+    gardenAccess,
+    generationHeadroom,
+    distanceToSub,
   };
-  const totalScore = Object.values(breakdown).reduce((s, v) => s + v, 0);
   const { grade, gradeColor } = getGrade(totalScore);
 
   return {
@@ -322,10 +389,13 @@ export function scorePropertyWithEnwl(
     bedrooms: prop.bedrooms,
     propertyType: prop.propertyType,
     epcRating: prop.epcRating,
-    threePhaseScore: prop.threePhaseConfirmed ? 100 : prop.threePhaseScore,
     gardenAccess: prop.gardenAccess,
+    phaseStatus,
+    phaseStatusLabel,
     nearestSubstationNumber: nearestSub?.substationNumber ?? null,
+    nearestSubstationOutfeed: nearestSub?.outfeed ?? null,
     distanceKm: Math.round(distKm * 100) / 100,
+    generationHeadroomKva: genHeadroom ?? null,
     grade,
     gradeColor,
   };
