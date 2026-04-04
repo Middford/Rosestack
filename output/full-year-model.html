@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoseStack — Full Year Tariff Model — RS-300</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',system-ui,sans-serif; background:#0f0f1a; color:#e0e0e0; padding:24px; }
+h1 { color:#fff; font-size:24px; margin-bottom:4px; }
+h2 { color:#fff; font-size:18px; margin:32px 0 16px; }
+.sub { color:#888; font-size:13px; margin-bottom:24px; }
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:32px; }
+.card { background:#1a1a2e; border-radius:10px; padding:14px; border:1px solid #2a2a4a; }
+.card .lbl { color:#888; font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+.card .val { color:#fff; font-size:26px; font-weight:700; margin-top:2px; }
+.card .det { color:#666; font-size:11px; margin-top:2px; }
+.card.green .val { color:#10b981; }
+.card.red .val { color:#ef4444; }
+.card.amber .val { color:#f59e0b; }
+.card.blue .val { color:#3b82f6; }
+table { width:100%; border-collapse:collapse; background:#1a1a2e; border-radius:10px; overflow:hidden; margin-bottom:24px; }
+thead th { background:#12122a; color:#888; font-size:11px; text-transform:uppercase; padding:10px 12px; text-align:right; border-bottom:2px solid #2a2a4a; position:sticky; top:0; }
+thead th:first-child { text-align:left; }
+tbody td { padding:8px 12px; border-bottom:1px solid #1f1f3a; font-size:13px; text-align:right; font-variant-numeric:tabular-nums; }
+tbody td:first-child { text-align:left; color:#ccc; font-weight:500; }
+tbody tr:hover { background:#1f1f3a; }
+.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+.tag-agile { background:#10b98120; color:#10b981; }
+.tag-iof { background:#3b82f620; color:#3b82f6; }
+.neg { color:#10b981; }
+.pos { color:#ef4444; }
+.win { background:#10b98110; }
+.chart-box { background:#1a1a2e; border-radius:10px; padding:20px; border:1px solid #2a2a4a; margin-bottom:24px; }
+canvas { width:100%!important; }
+.legend { display:flex; gap:20px; margin-top:8px; justify-content:center; }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:#888; }
+.legend-dot { width:10px; height:10px; border-radius:2px; }
+.scroll-table { max-height:600px; overflow-y:auto; border-radius:10px; }
+.note { background:#1a1a2e; border-left:4px solid #f59e0b; padding:14px; border-radius:0 8px 8px 0; margin:24px 0; }
+.note p { color:#ccc; font-size:12px; line-height:1.6; }
+.note strong { color:#f59e0b; }
+.switch-cal { display:flex; gap:4px; margin:16px 0; }
+.switch-cal .mo { flex:1; padding:10px 4px; border-radius:6px; text-align:center; font-size:12px; font-weight:600; }
+.switch-cal .mo.agile { background:#10b98130; color:#10b981; }
+.switch-cal .mo.iof { background:#3b82f630; color:#3b82f6; }
+.switch-cal .mo .mlbl { font-size:10px; color:#888; display:block; margin-bottom:2px; }
+</style>
+</head>
+<body>
+
+<h1>⚡ RoseStack Full Year Tariff Model</h1>
+<p class="sub">RS-300 (322kWh, 66kW export, 25kWp solar, 2×EV) · 565 days analysed · IOF at 70% Kraken utilisation · Region N (ENWL)</p>
+
+<div class="cards">
+  <div class="card green"><div class="lbl">Agile Annual</div><div class="val">£1992</div><div class="det">£5.46/day avg</div></div>
+  <div class="card blue"><div class="lbl">IOF Annual</div><div class="val">£5982</div><div class="det">£16.39/day avg</div></div>
+  <div class="card amber"><div class="lbl">Optimal Switching</div><div class="val">£5982</div><div class="det">Best tariff each month</div></div>
+  <div class="card"><div class="lbl">Agile Win Days</div><div class="val">84</div><div class="det">15% of days</div></div>
+  <div class="card"><div class="lbl">IOF Win Days</div><div class="val">481</div><div class="det">85% of days</div></div>
+  <div class="card"><div class="lbl">Days Analysed</div><div class="val">565</div><div class="det">2024-09-16 → 2026-04-03</div></div>
+</div>
+
+<h2>Optimal Monthly Switching Calendar</h2>
+<div class="switch-cal">
+  <div class="mo iof"><span class="mlbl">Jan</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Feb</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Mar</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Apr</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">May</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Jun</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Jul</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Aug</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Sep</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Oct</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Nov</span>IOF<br>£16.39/d</div>
+  <div class="mo iof"><span class="mlbl">Dec</span>IOF<br>£16.39/d</div>
+</div>
+
+<h2>Monthly Comparison</h2>
+<div class="chart-box">
+  <canvas id="monthlyChart" height="300"></canvas>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Agile</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>IOF (70% Kraken)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Winner</div>
+  </div>
+</div>
+
+<table>
+<thead><tr><th>Month</th><th>Days</th><th>Agile avg/day</th><th>IOF avg/day</th><th>Delta</th><th>Winner</th><th>Best £/month</th></tr></thead>
+<tbody>
+<tr><td>Jan</td><td>62</td><td>£6.02</td><td>£16.39</td><td class="pos">-10.37</td><td><span class="tag tag-iof">IOF</span></td><td>£508</td></tr>
+<tr><td>Feb</td><td>56</td><td>£1.98</td><td>£16.39</td><td class="pos">-14.41</td><td><span class="tag tag-iof">IOF</span></td><td>£459</td></tr>
+<tr><td>Mar</td><td>62</td><td>£6.12</td><td>£16.39</td><td class="pos">-10.27</td><td><span class="tag tag-iof">IOF</span></td><td>£508</td></tr>
+<tr><td>Apr</td><td>33</td><td>£3.80</td><td>£16.39</td><td class="pos">-12.59</td><td><span class="tag tag-iof">IOF</span></td><td>£492</td></tr>
+<tr><td>May</td><td>31</td><td>£5.37</td><td>£16.39</td><td class="pos">-11.02</td><td><span class="tag tag-iof">IOF</span></td><td>£508</td></tr>
+<tr><td>Jun</td><td>30</td><td>£7.96</td><td>£16.39</td><td class="pos">-8.43</td><td><span class="tag tag-iof">IOF</span></td><td>£492</td></tr>
+<tr><td>Jul</td><td>31</td><td>£1.88</td><td>£16.39</td><td class="pos">-14.51</td><td><span class="tag tag-iof">IOF</span></td><td>£508</td></tr>
+<tr><td>Aug</td><td>31</td><td>£3.36</td><td>£16.39</td><td class="pos">-13.03</td><td><span class="tag tag-iof">IOF</span></td><td>£508</td></tr>
+<tr><td>Sep</td><td>45</td><td>£7.71</td><td>£16.39</td><td class="pos">-8.68</td><td><span class="tag tag-iof">IOF</span></td><td>£492</td></tr>
+<tr><td>Oct</td><td>62</td><td>£7.02</td><td>£16.39</td><td class="pos">-9.37</td><td><span class="tag tag-iof">IOF</span></td><td>£508</td></tr>
+<tr><td>Nov</td><td>60</td><td>£4.67</td><td>£16.39</td><td class="pos">-11.72</td><td><span class="tag tag-iof">IOF</span></td><td>£492</td></tr>
+<tr><td>Dec</td><td>62</td><td>£7.48</td><td>£16.39</td><td class="pos">-8.91</td><td><span class="tag tag-iof">IOF</span></td><td>£508</td></tr>
+</tbody>
+</table>
+
+<h2>Daily Revenue Timeline</h2>
+<div class="chart-box">
+  <canvas id="dailyChart" height="250"></canvas>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Agile daily</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>IOF daily</div>
+  </div>
+</div>
+
+<h2>Best 5 Days (Agile)</h2>
+<table>
+<thead><tr><th>Date</th><th>Agile</th><th>IOF</th><th>Winner</th><th>Neg slots</th><th>Cheapest imp</th><th>Peak imp</th></tr></thead>
+<tbody>
+<tr><td>2025-01-10</td><td class="neg">£60.64</td><td>£16.39</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>13.87p</td><td>99.99p</td></tr>
+<tr><td>2025-01-22</td><td class="neg">£57.66</td><td>£16.39</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>21.29p</td><td>99.99p</td></tr>
+<tr><td>2024-12-12</td><td class="neg">£49.86</td><td>£16.39</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>18.66p</td><td>99.99p</td></tr>
+<tr><td>2025-01-08</td><td class="neg">£45.04</td><td>£16.39</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>12.65p</td><td>99.99p</td></tr>
+<tr><td>2026-03-25</td><td class="neg">£42.58</td><td>£16.39</td><td><span class="tag tag-agile">AGILE</span></td><td>5</td><td>-0.22p</td><td>42.76p</td></tr>
+</tbody>
+</table>
+
+<h2>Worst 5 Days (Agile)</h2>
+<table>
+<thead><tr><th>Date</th><th>Agile</th><th>IOF</th><th>Winner</th><th>Neg slots</th><th>Cheapest imp</th><th>Peak imp</th></tr></thead>
+<tbody>
+<tr><td>2025-10-30</td><td class="pos">£-1.39</td><td>£16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>1.68p</td><td>35.1p</td></tr>
+<tr><td>2024-12-05</td><td class="pos">£-1.12</td><td>£16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>1.32p</td><td>38.33p</td></tr>
+<tr><td>2025-09-28</td><td class="pos">£-0.40</td><td>£16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.8p</td><td>41.96p</td></tr>
+<tr><td>2024-12-04</td><td class="pos">£-0.36</td><td>£16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.75p</td><td>49.83p</td></tr>
+<tr><td>2025-04-14</td><td class="pos">£-0.34</td><td>£16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>39.05p</td></tr>
+</tbody>
+</table>
+
+<h2>All 565 Days</h2>
+<div class="scroll-table">
+<table>
+<thead><tr><th>Date</th><th>Agile</th><th>IOF</th><th>Delta</th><th>Winner</th><th>Neg slots</th><th>Min imp</th><th>Peak imp</th><th>Peak exp</th></tr></thead>
+<tbody>
+<tr><td>2024-09-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.99p</td><td>37.91p</td><td>15.42p</td></tr>
+<tr><td>2024-09-17</td><td>£-0.06</td><td>£16.39</td><td class="pos">-16.45</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>39p</td><td>15.9p</td></tr>
+<tr><td>2024-09-18</td><td>£0.12</td><td>£16.39</td><td class="pos">-16.27</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.67p</td><td>38.52p</td><td>15.69p</td></tr>
+<tr><td>2024-09-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.47p</td><td>37.64p</td><td>15.3p</td></tr>
+<tr><td>2024-09-20</td><td>£0.91</td><td>£16.39</td><td class="pos">-15.48</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.35p</td><td>39.01p</td><td>15.9p</td></tr>
+<tr><td>2024-09-21</td><td>£-0.02</td><td>£16.39</td><td class="pos">-16.41</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.61p</td><td>38.3p</td><td>15.6p</td></tr>
+<tr><td>2024-09-22</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.21p</td><td>37.91p</td><td>15.42p</td></tr>
+<tr><td>2024-09-23</td><td>£0.86</td><td>£16.39</td><td class="pos">-15.53</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>43.64p</td><td>17.94p</td></tr>
+<tr><td>2024-09-24</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.34p</td><td>37.64p</td><td>15.3p</td></tr>
+<tr><td>2024-09-25</td><td>£-0.03</td><td>£16.39</td><td class="pos">-16.42</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.02p</td><td>40.99p</td><td>16.78p</td></tr>
+<tr><td>2024-09-26</td><td>£0.76</td><td>£16.39</td><td class="pos">-15.63</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>1.24p</td><td>33.94p</td><td>13.67p</td></tr>
+<tr class="win"><td>2024-09-27</td><td>£19.70</td><td>£16.39</td><td class="neg">+3.31</td><td><span class="tag tag-agile">AGILE</span></td><td>10</td><td>-1.74p</td><td>35.6p</td><td>14.4p</td></tr>
+<tr><td>2024-09-28</td><td>£1.68</td><td>£16.39</td><td class="pos">-14.71</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.24p</td><td>40.11p</td><td>16.39p</td></tr>
+<tr><td>2024-09-29</td><td>£0.42</td><td>£16.39</td><td class="pos">-15.97</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>2.21p</td><td>39.01p</td><td>15.9p</td></tr>
+<tr class="win"><td>2024-09-30</td><td>£32.39</td><td>£16.39</td><td class="neg">+16.00</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.51p</td><td>37.91p</td><td>15.42p</td></tr>
+<tr class="win"><td>2024-10-01</td><td>£21.10</td><td>£16.39</td><td class="neg">+4.71</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.3p</td><td>39.21p</td><td>15.99p</td></tr>
+<tr><td>2024-10-02</td><td>£-0.20</td><td>£16.39</td><td class="pos">-16.59</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.89p</td><td>39.14p</td><td>15.96p</td></tr>
+<tr><td>2024-10-03</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.1p</td><td>42.14p</td><td>17.28p</td></tr>
+<tr><td>2024-10-04</td><td>£1.86</td><td>£16.39</td><td class="pos">-14.53</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.07p</td><td>40.11p</td><td>16.39p</td></tr>
+<tr><td>2024-10-05</td><td>£8.82</td><td>£16.39</td><td class="pos">-7.57</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>5.29p</td><td>38.57p</td><td>15.71p</td></tr>
+<tr><td>2024-10-06</td><td>£9.54</td><td>£16.39</td><td class="pos">-6.85</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.62p</td><td>38.53p</td><td>15.7p</td></tr>
+<tr><td>2024-10-07</td><td>£7.62</td><td>£16.39</td><td class="pos">-8.77</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.31p</td><td>50.03p</td><td>20.76p</td></tr>
+<tr><td>2024-10-08</td><td>£0.19</td><td>£16.39</td><td class="pos">-16.20</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.3p</td><td>41.43p</td><td>16.97p</td></tr>
+<tr><td>2024-10-09</td><td>£4.09</td><td>£16.39</td><td class="pos">-12.30</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.09p</td><td>37.68p</td><td>15.32p</td></tr>
+<tr class="win"><td>2024-10-10</td><td>£18.67</td><td>£16.39</td><td class="neg">+2.28</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>4.76p</td><td>41.12p</td><td>16.83p</td></tr>
+<tr><td>2024-10-11</td><td>£0.58</td><td>£16.39</td><td class="pos">-15.81</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.15p</td><td>44.36p</td><td>18.26p</td></tr>
+<tr><td>2024-10-12</td><td>£1.97</td><td>£16.39</td><td class="pos">-14.42</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>-1.1p</td><td>38.26p</td><td>15.58p</td></tr>
+<tr class="win"><td>2024-10-13</td><td>£18.45</td><td>£16.39</td><td class="neg">+2.06</td><td><span class="tag tag-agile">AGILE</span></td><td>7</td><td>-1.1p</td><td>42.37p</td><td>17.38p</td></tr>
+<tr><td>2024-10-14</td><td>£15.36</td><td>£16.39</td><td class="pos">-1.03</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>69p</td><td>29.1p</td></tr>
+<tr><td>2024-10-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>2.21p</td><td>39.01p</td><td>15.9p</td></tr>
+<tr class="win"><td>2024-10-16</td><td>£26.87</td><td>£16.39</td><td class="neg">+10.48</td><td><span class="tag tag-agile">AGILE</span></td><td>2</td><td>-1.46p</td><td>38.01p</td><td>15.47p</td></tr>
+<tr><td>2024-10-17</td><td>£1.10</td><td>£16.39</td><td class="pos">-15.29</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.66p</td><td>48.43p</td><td>20.05p</td></tr>
+<tr><td>2024-10-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.92p</td><td>39.89p</td><td>16.29p</td></tr>
+<tr><td>2024-10-19</td><td>£1.28</td><td>£16.39</td><td class="pos">-15.11</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.23p</td><td>40.99p</td><td>16.78p</td></tr>
+<tr class="win"><td>2024-10-20</td><td>£24.89</td><td>£16.39</td><td class="neg">+8.50</td><td><span class="tag tag-agile">AGILE</span></td><td>8</td><td>-1.61p</td><td>31.29p</td><td>12.51p</td></tr>
+<tr class="win"><td>2024-10-21</td><td>£19.52</td><td>£16.39</td><td class="neg">+3.13</td><td><span class="tag tag-agile">AGILE</span></td><td>11</td><td>-1.61p</td><td>43.64p</td><td>17.94p</td></tr>
+<tr><td>2024-10-22</td><td>£1.10</td><td>£16.39</td><td class="pos">-15.29</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>45.62p</td><td>18.82p</td></tr>
+<tr><td>2024-10-23</td><td>£-0.22</td><td>£16.39</td><td class="pos">-16.61</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.18p</td><td>43.51p</td><td>17.89p</td></tr>
+<tr><td>2024-10-24</td><td>£5.41</td><td>£16.39</td><td class="pos">-10.98</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.48p</td><td>40.47p</td><td>16.55p</td></tr>
+<tr><td>2024-10-25</td><td>£0.58</td><td>£16.39</td><td class="pos">-15.81</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.64p</td><td>51.64p</td><td>21.46p</td></tr>
+<tr><td>2024-10-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.54p</td><td>40.83p</td><td>16.71p</td></tr>
+<tr><td>2024-10-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.8p</td><td>40.47p</td><td>16.55p</td></tr>
+<tr><td>2024-10-28</td><td>£3.20</td><td>£16.39</td><td class="pos">-13.19</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.04p</td><td>44.3p</td><td>18.23p</td></tr>
+<tr><td>2024-10-29</td><td>£1.86</td><td>£16.39</td><td class="pos">-14.53</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.64p</td><td>57.27p</td><td>23.94p</td></tr>
+<tr><td>2024-10-30</td><td>£0.99</td><td>£16.39</td><td class="pos">-15.40</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.88p</td><td>49.31p</td><td>20.43p</td></tr>
+<tr><td>2024-10-31</td><td>£0.47</td><td>£16.39</td><td class="pos">-15.92</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>43.09p</td><td>17.7p</td></tr>
+<tr><td>2024-11-01</td><td>£0.44</td><td>£16.39</td><td class="pos">-15.95</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.66p</td><td>43.2p</td><td>17.75p</td></tr>
+<tr><td>2024-11-02</td><td>£-0.07</td><td>£16.39</td><td class="pos">-16.46</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.66p</td><td>42.32p</td><td>17.36p</td></tr>
+<tr><td>2024-11-03</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.54p</td><td>43.2p</td><td>17.75p</td></tr>
+<tr><td>2024-11-04</td><td>£8.48</td><td>£16.39</td><td class="pos">-7.91</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.23p</td><td>64.2p</td><td>26.99p</td></tr>
+<tr class="win"><td>2024-11-05</td><td>£25.82</td><td>£16.39</td><td class="neg">+9.43</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>16.85p</td><td>86.19p</td><td>36.66p</td></tr>
+<tr><td>2024-11-06</td><td>£12.37</td><td>£16.39</td><td class="pos">-4.02</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.27p</td><td>69.42p</td><td>29.28p</td></tr>
+<tr><td>2024-11-07</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.3p</td><td>40.97p</td><td>16.77p</td></tr>
+<tr><td>2024-11-08</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.86p</td><td>40.76p</td><td>16.68p</td></tr>
+<tr><td>2024-11-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.14p</td><td>44.7p</td><td>18.41p</td></tr>
+<tr><td>2024-11-10</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.72p</td><td>41.21p</td><td>16.88p</td></tr>
+<tr><td>2024-11-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.54p</td><td>42.15p</td><td>17.29p</td></tr>
+<tr><td>2024-11-12</td><td>£0.57</td><td>£16.39</td><td class="pos">-15.82</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.64p</td><td>51.06p</td><td>21.21p</td></tr>
+<tr><td>2024-11-13</td><td>£-0.16</td><td>£16.39</td><td class="pos">-16.55</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.08p</td><td>48.05p</td><td>19.88p</td></tr>
+<tr><td>2024-11-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.08p</td><td>44.74p</td><td>18.43p</td></tr>
+<tr><td>2024-11-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.52p</td><td>38.57p</td><td>15.71p</td></tr>
+<tr><td>2024-11-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>40.99p</td><td>16.78p</td></tr>
+<tr><td>2024-11-17</td><td>£9.08</td><td>£16.39</td><td class="pos">-7.31</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.04p</td><td>42.98p</td><td>17.65p</td></tr>
+<tr><td>2024-11-18</td><td>£0.21</td><td>£16.39</td><td class="pos">-16.18</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.61p</td><td>44.96p</td><td>18.52p</td></tr>
+<tr><td>2024-11-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.72p</td><td>40.99p</td><td>16.78p</td></tr>
+<tr><td>2024-11-20</td><td>£-0.03</td><td>£16.39</td><td class="pos">-16.42</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>41.08p</td><td>16.82p</td></tr>
+<tr><td>2024-11-21</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.83p</td><td>40.55p</td><td>16.58p</td></tr>
+<tr><td>2024-11-22</td><td>£1.03</td><td>£16.39</td><td class="pos">-15.36</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.9p</td><td>46.4p</td><td>19.16p</td></tr>
+<tr><td>2024-11-23</td><td>£2.30</td><td>£16.39</td><td class="pos">-14.09</td><td><span class="tag tag-iof">IOF</span></td><td>2</td><td>-3.97p</td><td>40.99p</td><td>16.78p</td></tr>
+<tr class="win"><td>2024-11-24</td><td>£34.69</td><td>£16.39</td><td class="neg">+18.30</td><td><span class="tag tag-agile">AGILE</span></td><td>17</td><td>-2.56p</td><td>36.42p</td><td>14.77p</td></tr>
+<tr class="win"><td>2024-11-25</td><td>£19.75</td><td>£16.39</td><td class="neg">+3.36</td><td><span class="tag tag-agile">AGILE</span></td><td>10</td><td>-2.2p</td><td>40.55p</td><td>16.58p</td></tr>
+<tr><td>2024-11-26</td><td>£6.30</td><td>£16.39</td><td class="pos">-10.09</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.67p</td><td>54.44p</td><td>22.7p</td></tr>
+<tr><td>2024-11-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.86p</td><td>40.99p</td><td>16.78p</td></tr>
+<tr><td>2024-11-28</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.4p</td><td>42.58p</td><td>17.48p</td></tr>
+<tr><td>2024-11-29</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.64p</td><td>41.87p</td><td>17.17p</td></tr>
+<tr><td>2024-11-30</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.1p</td><td>39.61p</td><td>16.17p</td></tr>
+<tr><td>2024-12-01</td><td>£6.59</td><td>£16.39</td><td class="pos">-9.80</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.06p</td><td>42.65p</td><td>17.51p</td></tr>
+<tr><td>2024-12-02</td><td>£12.22</td><td>£16.39</td><td class="pos">-4.17</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>7.46p</td><td>44p</td><td>18.1p</td></tr>
+<tr><td>2024-12-03</td><td>£1.00</td><td>£16.39</td><td class="pos">-15.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.3p</td><td>54.26p</td><td>22.62p</td></tr>
+<tr><td>2024-12-04</td><td>£-0.36</td><td>£16.39</td><td class="pos">-16.75</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.75p</td><td>49.83p</td><td>20.67p</td></tr>
+<tr><td>2024-12-05</td><td>£-1.12</td><td>£16.39</td><td class="pos">-17.51</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>1.32p</td><td>38.33p</td><td>15.6p</td></tr>
+<tr class="win"><td>2024-12-06</td><td>£28.12</td><td>£16.39</td><td class="neg">+11.73</td><td><span class="tag tag-agile">AGILE</span></td><td>1</td><td>0p</td><td>41.52p</td><td>17.01p</td></tr>
+<tr><td>2024-12-07</td><td>£9.89</td><td>£16.39</td><td class="pos">-6.50</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>6.17p</td><td>35.06p</td><td>14.17p</td></tr>
+<tr class="win"><td>2024-12-08</td><td>£18.48</td><td>£16.39</td><td class="neg">+2.09</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.65p</td><td>40.77p</td><td>16.68p</td></tr>
+<tr><td>2024-12-09</td><td>£3.58</td><td>£16.39</td><td class="pos">-12.81</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.35p</td><td>41.65p</td><td>17.07p</td></tr>
+<tr><td>2024-12-10</td><td>£0.44</td><td>£16.39</td><td class="pos">-15.95</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.64p</td><td>51.41p</td><td>21.36p</td></tr>
+<tr class="win"><td>2024-12-11</td><td>£30.11</td><td>£16.39</td><td class="neg">+13.72</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>17.2p</td><td>94.77p</td><td>40.44p</td></tr>
+<tr class="win"><td>2024-12-12</td><td>£49.86</td><td>£16.39</td><td class="neg">+33.47</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>18.66p</td><td>99.99p</td><td>53.89p</td></tr>
+<tr><td>2024-12-13</td><td>£11.60</td><td>£16.39</td><td class="pos">-4.79</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.08p</td><td>71.48p</td><td>30.19p</td></tr>
+<tr><td>2024-12-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.66p</td><td>38.78p</td><td>15.8p</td></tr>
+<tr><td>2024-12-15</td><td>£10.96</td><td>£16.39</td><td class="pos">-5.43</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>0p</td><td>35.5p</td><td>14.36p</td></tr>
+<tr><td>2024-12-16</td><td>£14.21</td><td>£16.39</td><td class="pos">-2.18</td><td><span class="tag tag-iof">IOF</span></td><td>2</td><td>-0.6p</td><td>38.35p</td><td>15.61p</td></tr>
+<tr><td>2024-12-17</td><td>£2.08</td><td>£16.39</td><td class="pos">-14.31</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>5.93p</td><td>35.92p</td><td>14.55p</td></tr>
+<tr class="win"><td>2024-12-18</td><td>£25.99</td><td>£16.39</td><td class="neg">+9.60</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.91p</td><td>36.8p</td><td>14.94p</td></tr>
+<tr class="win"><td>2024-12-19</td><td>£30.01</td><td>£16.39</td><td class="neg">+13.62</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.7p</td><td>37.46p</td><td>15.23p</td></tr>
+<tr><td>2024-12-20</td><td>£15.99</td><td>£16.39</td><td class="pos">-0.40</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>3.69p</td><td>36.93p</td><td>14.99p</td></tr>
+<tr><td>2024-12-21</td><td>£15.70</td><td>£16.39</td><td class="pos">-0.69</td><td><span class="tag tag-iof">IOF</span></td><td>3</td><td>-0.55p</td><td>27.76p</td><td>10.96p</td></tr>
+<tr class="win"><td>2024-12-22</td><td>£31.39</td><td>£16.39</td><td class="neg">+15.00</td><td><span class="tag tag-agile">AGILE</span></td><td>13</td><td>-1.46p</td><td>31.73p</td><td>12.7p</td></tr>
+<tr class="win"><td>2024-12-23</td><td>£24.76</td><td>£16.39</td><td class="neg">+8.37</td><td><span class="tag tag-agile">AGILE</span></td><td>1</td><td>0p</td><td>39.67p</td><td>16.2p</td></tr>
+<tr><td>2024-12-24</td><td>£1.76</td><td>£16.39</td><td class="pos">-14.63</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.58p</td><td>38.35p</td><td>15.61p</td></tr>
+<tr><td>2024-12-25</td><td>£0.36</td><td>£16.39</td><td class="pos">-16.03</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.74p</td><td>36.84p</td><td>14.95p</td></tr>
+<tr><td>2024-12-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.34p</td><td>40.99p</td><td>16.78p</td></tr>
+<tr><td>2024-12-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.13p</td><td>45.4p</td><td>18.72p</td></tr>
+<tr><td>2024-12-28</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.74p</td><td>41.35p</td><td>16.93p</td></tr>
+<tr><td>2024-12-29</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.51p</td><td>40.15p</td><td>16.41p</td></tr>
+<tr><td>2024-12-30</td><td>£12.23</td><td>£16.39</td><td class="pos">-4.16</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>7.1p</td><td>41.17p</td><td>16.86p</td></tr>
+<tr class="win"><td>2024-12-31</td><td>£18.14</td><td>£16.39</td><td class="neg">+1.75</td><td><span class="tag tag-agile">AGILE</span></td><td>2</td><td>-4.41p</td><td>34.83p</td><td>14.07p</td></tr>
+<tr class="win"><td>2025-01-01</td><td>£42.27</td><td>£16.39</td><td class="neg">+25.88</td><td><span class="tag tag-agile">AGILE</span></td><td>12</td><td>-1.43p</td><td>41.04p</td><td>16.8p</td></tr>
+<tr><td>2025-01-02</td><td>£-0.08</td><td>£16.39</td><td class="pos">-16.47</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.54p</td><td>44.52p</td><td>18.33p</td></tr>
+<tr><td>2025-01-03</td><td>£-0.12</td><td>£16.39</td><td class="pos">-16.51</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.54p</td><td>45.4p</td><td>18.72p</td></tr>
+<tr><td>2025-01-04</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.51p</td><td>45.4p</td><td>18.72p</td></tr>
+<tr><td>2025-01-05</td><td>£-0.32</td><td>£16.39</td><td class="pos">-16.71</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.03p</td><td>41.87p</td><td>17.17p</td></tr>
+<tr class="win"><td>2025-01-06</td><td>£21.13</td><td>£16.39</td><td class="neg">+4.74</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.98p</td><td>41.33p</td><td>16.92p</td></tr>
+<tr><td>2025-01-07</td><td>£0.82</td><td>£16.39</td><td class="pos">-15.57</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.07p</td><td>41.65p</td><td>17.07p</td></tr>
+<tr class="win"><td>2025-01-08</td><td>£45.04</td><td>£16.39</td><td class="neg">+28.65</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>12.65p</td><td>99.99p</td><td>43.55p</td></tr>
+<tr><td>2025-01-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.42p</td><td>40.99p</td><td>16.78p</td></tr>
+<tr class="win"><td>2025-01-10</td><td>£60.64</td><td>£16.39</td><td class="neg">+44.25</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>13.87p</td><td>99.99p</td><td>67.8p</td></tr>
+<tr><td>2025-01-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.74p</td><td>46.11p</td><td>19.03p</td></tr>
+<tr><td>2025-01-12</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.3p</td><td>41.87p</td><td>17.17p</td></tr>
+<tr><td>2025-01-13</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.64p</td><td>42.6p</td><td>17.49p</td></tr>
+<tr><td>2025-01-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.62p</td><td>47.43p</td><td>19.61p</td></tr>
+<tr><td>2025-01-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.13p</td><td>53.78p</td><td>22.4p</td></tr>
+<tr><td>2025-01-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.18p</td><td>45.4p</td><td>18.72p</td></tr>
+<tr><td>2025-01-17</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.96p</td><td>46.76p</td><td>19.31p</td></tr>
+<tr><td>2025-01-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.91p</td><td>44.42p</td><td>18.28p</td></tr>
+<tr><td>2025-01-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.29p</td><td>48.47p</td><td>20.07p</td></tr>
+<tr class="win"><td>2025-01-20</td><td>£29.99</td><td>£16.39</td><td class="neg">+13.60</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>19.85p</td><td>99.99p</td><td>50.14p</td></tr>
+<tr class="win"><td>2025-01-21</td><td>£17.77</td><td>£16.39</td><td class="neg">+1.38</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>20.81p</td><td>85.62p</td><td>36.41p</td></tr>
+<tr class="win"><td>2025-01-22</td><td>£57.66</td><td>£16.39</td><td class="neg">+41.27</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>21.29p</td><td>99.99p</td><td>92.43p</td></tr>
+<tr><td>2025-01-23</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.41p</td><td>41.42p</td><td>16.97p</td></tr>
+<tr><td>2025-01-24</td><td>£10.52</td><td>£16.39</td><td class="pos">-5.87</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>6.62p</td><td>40.25p</td><td>16.45p</td></tr>
+<tr><td>2025-01-25</td><td>£4.78</td><td>£16.39</td><td class="pos">-11.61</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.47p</td><td>44.12p</td><td>18.16p</td></tr>
+<tr><td>2025-01-26</td><td>£0.86</td><td>£16.39</td><td class="pos">-15.53</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>2.65p</td><td>41.35p</td><td>16.93p</td></tr>
+<tr><td>2025-01-27</td><td>£12.39</td><td>£16.39</td><td class="pos">-4.00</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.2p</td><td>41.12p</td><td>16.83p</td></tr>
+<tr><td>2025-01-28</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.32p</td><td>41.43p</td><td>16.97p</td></tr>
+<tr><td>2025-01-29</td><td>£1.33</td><td>£16.39</td><td class="pos">-15.06</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.46p</td><td>42.98p</td><td>17.65p</td></tr>
+<tr><td>2025-01-30</td><td>£0.40</td><td>£16.39</td><td class="pos">-15.99</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.74p</td><td>53.34p</td><td>22.21p</td></tr>
+<tr><td>2025-01-31</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>22.04p</td><td>51.98p</td><td>21.61p</td></tr>
+<tr><td>2025-02-01</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>21.35p</td><td>44.01p</td><td>18.1p</td></tr>
+<tr><td>2025-02-02</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>21.61p</td><td>48.05p</td><td>19.88p</td></tr>
+<tr><td>2025-02-03</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.74p</td><td>44.74p</td><td>18.43p</td></tr>
+<tr><td>2025-02-04</td><td>£0.09</td><td>£16.39</td><td class="pos">-16.30</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.54p</td><td>45.62p</td><td>18.82p</td></tr>
+<tr><td>2025-02-05</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.85p</td><td>49.63p</td><td>20.58p</td></tr>
+<tr><td>2025-02-06</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>22.27p</td><td>47.87p</td><td>19.8p</td></tr>
+<tr><td>2025-02-07</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.85p</td><td>43.2p</td><td>17.75p</td></tr>
+<tr><td>2025-02-08</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.06p</td><td>47.47p</td><td>19.63p</td></tr>
+<tr><td>2025-02-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>22.05p</td><td>46.86p</td><td>19.36p</td></tr>
+<tr><td>2025-02-10</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>21.17p</td><td>48.86p</td><td>20.24p</td></tr>
+<tr><td>2025-02-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>21.61p</td><td>49.1p</td><td>20.34p</td></tr>
+<tr><td>2025-02-12</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>23.37p</td><td>48.35p</td><td>20.02p</td></tr>
+<tr><td>2025-02-13</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>22.71p</td><td>47.6p</td><td>19.69p</td></tr>
+<tr><td>2025-02-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>21.89p</td><td>50.05p</td><td>20.76p</td></tr>
+<tr><td>2025-02-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>21.61p</td><td>44.43p</td><td>18.29p</td></tr>
+<tr><td>2025-02-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>21.07p</td><td>44.52p</td><td>18.33p</td></tr>
+<tr><td>2025-02-17</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.55p</td><td>49.8p</td><td>20.65p</td></tr>
+<tr><td>2025-02-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.83p</td><td>43.97p</td><td>18.09p</td></tr>
+<tr><td>2025-02-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.64p</td><td>41.72p</td><td>17.1p</td></tr>
+<tr><td>2025-02-20</td><td>£-0.19</td><td>£16.39</td><td class="pos">-16.58</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.51p</td><td>39.01p</td><td>15.9p</td></tr>
+<tr><td>2025-02-21</td><td>£9.12</td><td>£16.39</td><td class="pos">-7.27</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>6.46p</td><td>35.9p</td><td>14.54p</td></tr>
+<tr><td>2025-02-22</td><td>£13.87</td><td>£16.39</td><td class="pos">-2.52</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>7.06p</td><td>44.08p</td><td>18.14p</td></tr>
+<tr><td>2025-02-23</td><td>£10.95</td><td>£16.39</td><td class="pos">-5.44</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>2.65p</td><td>37.53p</td><td>15.25p</td></tr>
+<tr class="win"><td>2025-02-24</td><td>£31.19</td><td>£16.39</td><td class="neg">+14.80</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.63p</td><td>42.76p</td><td>17.55p</td></tr>
+<tr><td>2025-02-25</td><td>£0.22</td><td>£16.39</td><td class="pos">-16.17</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.33p</td><td>44.52p</td><td>18.33p</td></tr>
+<tr><td>2025-02-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.3p</td><td>43.42p</td><td>17.84p</td></tr>
+<tr><td>2025-02-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.98p</td><td>41.9p</td><td>17.18p</td></tr>
+<tr><td>2025-02-28</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.75p</td><td>43.38p</td><td>17.83p</td></tr>
+<tr><td>2025-03-01</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.48p</td><td>42.32p</td><td>17.36p</td></tr>
+<tr><td>2025-03-02</td><td>£-0.15</td><td>£16.39</td><td class="pos">-16.54</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>41.21p</td><td>16.88p</td></tr>
+<tr><td>2025-03-03</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.56p</td><td>45.18p</td><td>18.62p</td></tr>
+<tr><td>2025-03-04</td><td>£1.05</td><td>£16.39</td><td class="pos">-15.34</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.11p</td><td>43.04p</td><td>17.68p</td></tr>
+<tr class="win"><td>2025-03-05</td><td>£16.87</td><td>£16.39</td><td class="neg">+0.48</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>5.01p</td><td>41.52p</td><td>17.01p</td></tr>
+<tr><td>2025-03-06</td><td>£12.25</td><td>£16.39</td><td class="pos">-4.14</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>5.87p</td><td>41.52p</td><td>17.01p</td></tr>
+<tr><td>2025-03-07</td><td>£0.19</td><td>£16.39</td><td class="pos">-16.20</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>41.21p</td><td>16.88p</td></tr>
+<tr><td>2025-03-08</td><td>£-0.15</td><td>£16.39</td><td class="pos">-16.54</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.99p</td><td>40.07p</td><td>16.37p</td></tr>
+<tr><td>2025-03-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.52p</td><td>41.52p</td><td>17.01p</td></tr>
+<tr><td>2025-03-10</td><td>£1.11</td><td>£16.39</td><td class="pos">-15.28</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.79p</td><td>40.57p</td><td>16.59p</td></tr>
+<tr><td>2025-03-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.54p</td><td>41.63p</td><td>17.06p</td></tr>
+<tr><td>2025-03-12</td><td>£-0.07</td><td>£16.39</td><td class="pos">-16.46</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.98p</td><td>45.73p</td><td>18.86p</td></tr>
+<tr><td>2025-03-13</td><td>£-0.16</td><td>£16.39</td><td class="pos">-16.55</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.82p</td><td>47.26p</td><td>19.54p</td></tr>
+<tr><td>2025-03-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.86p</td><td>42.55p</td><td>17.46p</td></tr>
+<tr><td>2025-03-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.42p</td><td>41.65p</td><td>17.07p</td></tr>
+<tr><td>2025-03-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.19p</td><td>41.71p</td><td>17.09p</td></tr>
+<tr><td>2025-03-17</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.19p</td><td>44.5p</td><td>18.32p</td></tr>
+<tr><td>2025-03-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.76p</td><td>42.58p</td><td>17.48p</td></tr>
+<tr><td>2025-03-19</td><td>£0.10</td><td>£16.39</td><td class="pos">-16.29</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.2p</td><td>49.34p</td><td>20.45p</td></tr>
+<tr><td>2025-03-20</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.08p</td><td>42.44p</td><td>17.41p</td></tr>
+<tr class="win"><td>2025-03-21</td><td>£20.01</td><td>£16.39</td><td class="neg">+3.62</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>3.84p</td><td>39.23p</td><td>16p</td></tr>
+<tr class="win"><td>2025-03-22</td><td>£22.79</td><td>£16.39</td><td class="neg">+6.40</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.3p</td><td>41.34p</td><td>16.93p</td></tr>
+<tr><td>2025-03-23</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.76p</td><td>41.21p</td><td>16.88p</td></tr>
+<tr><td>2025-03-24</td><td>£0.22</td><td>£16.39</td><td class="pos">-16.17</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.04p</td><td>45.22p</td><td>18.64p</td></tr>
+<tr><td>2025-03-25</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.86p</td><td>44.21p</td><td>18.19p</td></tr>
+<tr><td>2025-03-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.04p</td><td>41.87p</td><td>17.17p</td></tr>
+<tr><td>2025-03-27</td><td>£0.73</td><td>£16.39</td><td class="pos">-15.66</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.69p</td><td>40.64p</td><td>16.62p</td></tr>
+<tr class="win"><td>2025-03-28</td><td>£21.13</td><td>£16.39</td><td class="neg">+4.74</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>5.16p</td><td>40.05p</td><td>16.36p</td></tr>
+<tr><td>2025-03-29</td><td>£12.63</td><td>£16.39</td><td class="pos">-3.76</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>0.47p</td><td>32.39p</td><td>13p</td></tr>
+<tr class="win"><td>2025-03-30</td><td>£29.69</td><td>£16.39</td><td class="neg">+13.30</td><td><span class="tag tag-agile">AGILE</span></td><td>22</td><td>-5.33p</td><td>36.23p</td><td>14.68p</td></tr>
+<tr><td>2025-03-31</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>42.83p</td><td>17.58p</td></tr>
+<tr><td>2025-04-01</td><td>£0.94</td><td>£16.39</td><td class="pos">-15.45</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.7p</td><td>40.47p</td><td>16.55p</td></tr>
+<tr class="win"><td>2025-04-02</td><td>£17.83</td><td>£16.39</td><td class="neg">+1.44</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>4.19p</td><td>38.01p</td><td>15.47p</td></tr>
+<tr><td>2025-04-03</td><td>£14.84</td><td>£16.39</td><td class="pos">-1.55</td><td><span class="tag tag-iof">IOF</span></td><td>3</td><td>-0.06p</td><td>39.89p</td><td>16.29p</td></tr>
+<tr class="win"><td>2025-04-04</td><td>£16.97</td><td>£16.39</td><td class="neg">+0.58</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>3.15p</td><td>38.48p</td><td>15.68p</td></tr>
+<tr><td>2025-04-05</td><td>£9.36</td><td>£16.39</td><td class="pos">-7.03</td><td><span class="tag tag-iof">IOF</span></td><td>9</td><td>-3.95p</td><td>36.12p</td><td>14.63p</td></tr>
+<tr class="win"><td>2025-04-06</td><td>£16.66</td><td>£16.39</td><td class="neg">+0.27</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>3.11p</td><td>38.45p</td><td>15.66p</td></tr>
+<tr><td>2025-04-07</td><td>£0.43</td><td>£16.39</td><td class="pos">-15.96</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>42.09p</td><td>17.26p</td></tr>
+<tr><td>2025-04-08</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.58p</td><td>40.11p</td><td>16.39p</td></tr>
+<tr><td>2025-04-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.88p</td><td>38.27p</td><td>15.58p</td></tr>
+<tr><td>2025-04-10</td><td>£-0.24</td><td>£16.39</td><td class="pos">-16.63</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.11p</td><td>39.45p</td><td>16.1p</td></tr>
+<tr><td>2025-04-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.91p</td><td>36.76p</td><td>14.92p</td></tr>
+<tr><td>2025-04-12</td><td>£4.94</td><td>£16.39</td><td class="pos">-11.45</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.82p</td><td>38.03p</td><td>15.47p</td></tr>
+<tr><td>2025-04-13</td><td>£2.19</td><td>£16.39</td><td class="pos">-14.20</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.7p</td><td>35.06p</td><td>14.17p</td></tr>
+<tr><td>2025-04-14</td><td>£-0.34</td><td>£16.39</td><td class="pos">-16.73</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>39.05p</td><td>15.92p</td></tr>
+<tr><td>2025-04-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.95p</td><td>37.22p</td><td>15.12p</td></tr>
+<tr><td>2025-04-16</td><td>£7.68</td><td>£16.39</td><td class="pos">-8.71</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>4.96p</td><td>34.36p</td><td>13.86p</td></tr>
+<tr><td>2025-04-17</td><td>£-0.07</td><td>£16.39</td><td class="pos">-16.46</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>39.47p</td><td>16.11p</td></tr>
+<tr><td>2025-04-18</td><td>£2.87</td><td>£16.39</td><td class="pos">-13.52</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.35p</td><td>34.76p</td><td>14.03p</td></tr>
+<tr><td>2025-04-19</td><td>£0.51</td><td>£16.39</td><td class="pos">-15.88</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.54p</td><td>35.27p</td><td>14.26p</td></tr>
+<tr><td>2025-04-20</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.5p</td><td>37.34p</td><td>15.17p</td></tr>
+<tr><td>2025-04-21</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.88p</td><td>37.53p</td><td>15.26p</td></tr>
+<tr><td>2025-04-22</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.77p</td><td>38.03p</td><td>15.47p</td></tr>
+<tr><td>2025-04-23</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.77p</td><td>37.82p</td><td>15.38p</td></tr>
+<tr><td>2025-04-24</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.59p</td><td>34.16p</td><td>13.77p</td></tr>
+<tr><td>2025-04-25</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.66p</td><td>35.7p</td><td>14.45p</td></tr>
+<tr><td>2025-04-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.85p</td><td>32.61p</td><td>13.09p</td></tr>
+<tr><td>2025-04-27</td><td>£15.50</td><td>£16.39</td><td class="pos">-0.89</td><td><span class="tag tag-iof">IOF</span></td><td>9</td><td>-1.98p</td><td>33.49p</td><td>13.48p</td></tr>
+<tr><td>2025-04-28</td><td>£0.21</td><td>£16.39</td><td class="pos">-16.18</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.45p</td><td>36.16p</td><td>14.65p</td></tr>
+<tr><td>2025-04-29</td><td>£-0.07</td><td>£16.39</td><td class="pos">-16.46</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.23p</td><td>36.58p</td><td>14.84p</td></tr>
+<tr><td>2025-04-30</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.01p</td><td>35.08p</td><td>14.18p</td></tr>
+<tr><td>2025-05-01</td><td>£0.05</td><td>£16.39</td><td class="pos">-16.34</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.01p</td><td>36.34p</td><td>14.73p</td></tr>
+<tr><td>2025-05-02</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.23p</td><td>33.39p</td><td>13.43p</td></tr>
+<tr><td>2025-05-03</td><td>£3.18</td><td>£16.39</td><td class="pos">-13.21</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>0.02p</td><td>28.64p</td><td>11.35p</td></tr>
+<tr class="win"><td>2025-05-04</td><td>£22.37</td><td>£16.39</td><td class="neg">+5.98</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.58p</td><td>31.86p</td><td>12.76p</td></tr>
+<tr><td>2025-05-05</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.11p</td><td>33.49p</td><td>13.48p</td></tr>
+<tr><td>2025-05-06</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>36.77p</td><td>14.92p</td></tr>
+<tr><td>2025-05-07</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.1p</td><td>37.82p</td><td>15.38p</td></tr>
+<tr><td>2025-05-08</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.13p</td><td>36.58p</td><td>14.84p</td></tr>
+<tr><td>2025-05-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.89p</td><td>35p</td><td>14.14p</td></tr>
+<tr class="win"><td>2025-05-10</td><td>£18.36</td><td>£16.39</td><td class="neg">+1.97</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.21p</td><td>33.67p</td><td>13.56p</td></tr>
+<tr class="win"><td>2025-05-11</td><td>£17.28</td><td>£16.39</td><td class="neg">+0.89</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>3.17p</td><td>34.16p</td><td>13.77p</td></tr>
+<tr><td>2025-05-12</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.11p</td><td>35.42p</td><td>14.32p</td></tr>
+<tr><td>2025-05-13</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>34.29p</td><td>13.83p</td></tr>
+<tr><td>2025-05-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.04p</td><td>32.01p</td><td>12.83p</td></tr>
+<tr><td>2025-05-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.92p</td><td>33.94p</td><td>13.67p</td></tr>
+<tr><td>2025-05-16</td><td>£2.49</td><td>£16.39</td><td class="pos">-13.90</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.32p</td><td>30.63p</td><td>12.22p</td></tr>
+<tr><td>2025-05-17</td><td>£10.06</td><td>£16.39</td><td class="pos">-6.33</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>4.41p</td><td>30.29p</td><td>12.07p</td></tr>
+<tr><td>2025-05-18</td><td>£5.06</td><td>£16.39</td><td class="pos">-11.33</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>7.39p</td><td>33.49p</td><td>13.48p</td></tr>
+<tr><td>2025-05-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.99p</td><td>38.04p</td><td>15.48p</td></tr>
+<tr><td>2025-05-20</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>36.61p</td><td>14.85p</td></tr>
+<tr><td>2025-05-21</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.07p</td><td>37.46p</td><td>15.23p</td></tr>
+<tr><td>2025-05-22</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.21p</td><td>34.38p</td><td>13.87p</td></tr>
+<tr><td>2025-05-23</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.77p</td><td>36.23p</td><td>14.68p</td></tr>
+<tr><td>2025-05-24</td><td>£16.35</td><td>£16.39</td><td class="pos">-0.04</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>-1.32p</td><td>34.2p</td><td>13.79p</td></tr>
+<tr><td>2025-05-25</td><td>£5.29</td><td>£16.39</td><td class="pos">-11.10</td><td><span class="tag tag-iof">IOF</span></td><td>31</td><td>-8.38p</td><td>20.27p</td><td>7.66p</td></tr>
+<tr class="win"><td>2025-05-26</td><td>£18.44</td><td>£16.39</td><td class="neg">+2.05</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.17p</td><td>32.35p</td><td>12.98p</td></tr>
+<tr class="win"><td>2025-05-27</td><td>£19.27</td><td>£16.39</td><td class="neg">+2.88</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>3.16p</td><td>37.47p</td><td>15.23p</td></tr>
+<tr><td>2025-05-28</td><td>£0.30</td><td>£16.39</td><td class="pos">-16.09</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.75p</td><td>37.46p</td><td>15.23p</td></tr>
+<tr><td>2025-05-29</td><td>£2.11</td><td>£16.39</td><td class="pos">-14.28</td><td><span class="tag tag-iof">IOF</span></td><td>5</td><td>-0.64p</td><td>26.33p</td><td>10.33p</td></tr>
+<tr><td>2025-05-30</td><td>£16.33</td><td>£16.39</td><td class="pos">-0.06</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>5.51p</td><td>33.76p</td><td>13.6p</td></tr>
+<tr><td>2025-05-31</td><td>£9.51</td><td>£16.39</td><td class="pos">-6.88</td><td><span class="tag tag-iof">IOF</span></td><td>10</td><td>-3.31p</td><td>32.35p</td><td>12.98p</td></tr>
+<tr><td>2025-06-01</td><td>£12.36</td><td>£16.39</td><td class="pos">-4.03</td><td><span class="tag tag-iof">IOF</span></td><td>8</td><td>-2.12p</td><td>28.64p</td><td>11.35p</td></tr>
+<tr><td>2025-06-02</td><td>£8.44</td><td>£16.39</td><td class="pos">-7.95</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>0.66p</td><td>31.31p</td><td>12.52p</td></tr>
+<tr class="win"><td>2025-06-03</td><td>£21.71</td><td>£16.39</td><td class="neg">+5.32</td><td><span class="tag tag-agile">AGILE</span></td><td>18</td><td>-1.96p</td><td>30.39p</td><td>12.11p</td></tr>
+<tr class="win"><td>2025-06-04</td><td>£18.85</td><td>£16.39</td><td class="neg">+2.46</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.21p</td><td>32.59p</td><td>13.08p</td></tr>
+<tr><td>2025-06-05</td><td>£1.08</td><td>£16.39</td><td class="pos">-15.31</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.84p</td><td>34.38p</td><td>13.87p</td></tr>
+<tr><td>2025-06-06</td><td>£0.09</td><td>£16.39</td><td class="pos">-16.30</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.03p</td><td>33.49p</td><td>13.48p</td></tr>
+<tr><td>2025-06-07</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.99p</td><td>33.27p</td><td>13.38p</td></tr>
+<tr class="win"><td>2025-06-08</td><td>£23.25</td><td>£16.39</td><td class="neg">+6.86</td><td><span class="tag tag-agile">AGILE</span></td><td>2</td><td>-0.02p</td><td>33.49p</td><td>13.48p</td></tr>
+<tr><td>2025-06-09</td><td>£-0.20</td><td>£16.39</td><td class="pos">-16.59</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.89p</td><td>34.4p</td><td>13.88p</td></tr>
+<tr><td>2025-06-10</td><td>£2.30</td><td>£16.39</td><td class="pos">-14.09</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.44p</td><td>37.11p</td><td>15.07p</td></tr>
+<tr><td>2025-06-11</td><td>£0.68</td><td>£16.39</td><td class="pos">-15.71</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.47p</td><td>35.58p</td><td>14.4p</td></tr>
+<tr class="win"><td>2025-06-12</td><td>£23.90</td><td>£16.39</td><td class="neg">+7.51</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.21p</td><td>33.39p</td><td>13.43p</td></tr>
+<tr><td>2025-06-13</td><td>£-0.16</td><td>£16.39</td><td class="pos">-16.55</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.79p</td><td>34.4p</td><td>13.88p</td></tr>
+<tr class="win"><td>2025-06-14</td><td>£17.05</td><td>£16.39</td><td class="neg">+0.66</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.76p</td><td>33.76p</td><td>13.6p</td></tr>
+<tr class="win"><td>2025-06-15</td><td>£17.97</td><td>£16.39</td><td class="neg">+1.58</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>3.31p</td><td>33.32p</td><td>13.4p</td></tr>
+<tr><td>2025-06-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.88p</td><td>35.92p</td><td>14.55p</td></tr>
+<tr><td>2025-06-17</td><td>£1.16</td><td>£16.39</td><td class="pos">-15.23</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.36p</td><td>37.26p</td><td>15.14p</td></tr>
+<tr><td>2025-06-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.21p</td><td>35.26p</td><td>14.26p</td></tr>
+<tr><td>2025-06-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.92p</td><td>35.84p</td><td>14.51p</td></tr>
+<tr><td>2025-06-20</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>38.62p</td><td>15.73p</td></tr>
+<tr><td>2025-06-21</td><td>£3.92</td><td>£16.39</td><td class="pos">-12.47</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.91p</td><td>37.68p</td><td>15.32p</td></tr>
+<tr><td>2025-06-22</td><td>£7.71</td><td>£16.39</td><td class="pos">-8.68</td><td><span class="tag tag-iof">IOF</span></td><td>15</td><td>-5.19p</td><td>30.65p</td><td>12.23p</td></tr>
+<tr class="win"><td>2025-06-23</td><td>£19.94</td><td>£16.39</td><td class="neg">+3.55</td><td><span class="tag tag-agile">AGILE</span></td><td>13</td><td>-4.41p</td><td>27.32p</td><td>10.76p</td></tr>
+<tr class="win"><td>2025-06-24</td><td>£19.94</td><td>£16.39</td><td class="neg">+3.55</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.36p</td><td>33.72p</td><td>13.58p</td></tr>
+<tr><td>2025-06-25</td><td>£0.15</td><td>£16.39</td><td class="pos">-16.24</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.67p</td><td>38.52p</td><td>15.69p</td></tr>
+<tr><td>2025-06-26</td><td>£1.56</td><td>£16.39</td><td class="pos">-14.83</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.38p</td><td>32.35p</td><td>12.98p</td></tr>
+<tr class="win"><td>2025-06-27</td><td>£16.70</td><td>£16.39</td><td class="neg">+0.31</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.34p</td><td>31.74p</td><td>12.71p</td></tr>
+<tr><td>2025-06-28</td><td>£16.27</td><td>£16.39</td><td class="pos">-0.12</td><td><span class="tag tag-iof">IOF</span></td><td>8</td><td>-1.1p</td><td>33.94p</td><td>13.67p</td></tr>
+<tr><td>2025-06-29</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.63p</td><td>33.05p</td><td>13.29p</td></tr>
+<tr><td>2025-06-30</td><td>£4.00</td><td>£16.39</td><td class="pos">-12.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.58p</td><td>38.79p</td><td>15.81p</td></tr>
+<tr><td>2025-07-01</td><td>£13.70</td><td>£16.39</td><td class="pos">-2.69</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.22p</td><td>58.5p</td><td>24.48p</td></tr>
+<tr><td>2025-07-02</td><td>£0.21</td><td>£16.39</td><td class="pos">-16.18</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.93p</td><td>39.81p</td><td>16.25p</td></tr>
+<tr><td>2025-07-03</td><td>£2.10</td><td>£16.39</td><td class="pos">-14.29</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.66p</td><td>33.16p</td><td>13.33p</td></tr>
+<tr class="win"><td>2025-07-04</td><td>£16.54</td><td>£16.39</td><td class="neg">+0.15</td><td><span class="tag tag-agile">AGILE</span></td><td>1</td><td>-0.52p</td><td>31.51p</td><td>12.61p</td></tr>
+<tr><td>2025-07-05</td><td>£13.36</td><td>£16.39</td><td class="pos">-3.03</td><td><span class="tag tag-iof">IOF</span></td><td>5</td><td>-1.1p</td><td>30.41p</td><td>12.12p</td></tr>
+<tr><td>2025-07-06</td><td>£-0.04</td><td>£16.39</td><td class="pos">-16.43</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.55p</td><td>34.56p</td><td>13.95p</td></tr>
+<tr><td>2025-07-07</td><td>£12.07</td><td>£16.39</td><td class="pos">-4.32</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>1.03p</td><td>30.85p</td><td>12.32p</td></tr>
+<tr><td>2025-07-08</td><td>£0.12</td><td>£16.39</td><td class="pos">-16.27</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.47p</td><td>33.25p</td><td>13.37p</td></tr>
+<tr><td>2025-07-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.45p</td><td>35.36p</td><td>14.3p</td></tr>
+<tr><td>2025-07-10</td><td>£-0.14</td><td>£16.39</td><td class="pos">-16.53</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.69p</td><td>36.8p</td><td>14.94p</td></tr>
+<tr><td>2025-07-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.99p</td><td>34.6p</td><td>13.96p</td></tr>
+<tr><td>2025-07-12</td><td>£0.22</td><td>£16.39</td><td class="pos">-16.17</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.82p</td><td>34.46p</td><td>13.91p</td></tr>
+<tr><td>2025-07-13</td><td>£-0.21</td><td>£16.39</td><td class="pos">-16.60</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.34p</td><td>35.48p</td><td>14.35p</td></tr>
+<tr><td>2025-07-14</td><td>£0.39</td><td>£16.39</td><td class="pos">-16.00</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.1p</td><td>31.92p</td><td>12.79p</td></tr>
+<tr><td>2025-07-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>31.73p</td><td>12.7p</td></tr>
+<tr><td>2025-07-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.75p</td><td>37.02p</td><td>15.03p</td></tr>
+<tr><td>2025-07-17</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.99p</td><td>35.11p</td><td>14.19p</td></tr>
+<tr><td>2025-07-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.21p</td><td>36.8p</td><td>14.94p</td></tr>
+<tr><td>2025-07-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.45p</td><td>33.94p</td><td>13.67p</td></tr>
+<tr><td>2025-07-20</td><td>£-0.01</td><td>£16.39</td><td class="pos">-16.40</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.35p</td><td>34.65p</td><td>13.99p</td></tr>
+<tr><td>2025-07-21</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.87p</td><td>37.24p</td><td>15.13p</td></tr>
+<tr><td>2025-07-22</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.17p</td><td>34.2p</td><td>13.79p</td></tr>
+<tr><td>2025-07-23</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.28p</td><td>35.1p</td><td>14.19p</td></tr>
+<tr><td>2025-07-24</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>33.94p</td><td>13.67p</td></tr>
+<tr><td>2025-07-25</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.57p</td><td>32.38p</td><td>12.99p</td></tr>
+<tr><td>2025-07-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.45p</td><td>32.14p</td><td>12.88p</td></tr>
+<tr><td>2025-07-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.77p</td><td>33.94p</td><td>13.67p</td></tr>
+<tr><td>2025-07-28</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>34.6p</td><td>13.96p</td></tr>
+<tr><td>2025-07-29</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.48p</td><td>37.18p</td><td>15.1p</td></tr>
+<tr><td>2025-07-30</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>34.66p</td><td>13.99p</td></tr>
+<tr><td>2025-07-31</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.99p</td><td>34.23p</td><td>13.8p</td></tr>
+<tr><td>2025-08-01</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.35p</td><td>32.39p</td><td>13p</td></tr>
+<tr><td>2025-08-02</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.11p</td><td>34.46p</td><td>13.91p</td></tr>
+<tr><td>2025-08-03</td><td>£10.09</td><td>£16.39</td><td class="pos">-6.30</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>5.83p</td><td>32.85p</td><td>13.2p</td></tr>
+<tr><td>2025-08-04</td><td>£7.18</td><td>£16.39</td><td class="pos">-9.21</td><td><span class="tag tag-iof">IOF</span></td><td>4</td><td>-1.59p</td><td>25.83p</td><td>10.11p</td></tr>
+<tr><td>2025-08-05</td><td>£2.95</td><td>£16.39</td><td class="pos">-13.44</td><td><span class="tag tag-iof">IOF</span></td><td>26</td><td>-4.41p</td><td>27.31p</td><td>10.76p</td></tr>
+<tr><td>2025-08-06</td><td>£12.47</td><td>£16.39</td><td class="pos">-3.92</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>6.79p</td><td>35.92p</td><td>14.55p</td></tr>
+<tr><td>2025-08-07</td><td>£12.66</td><td>£16.39</td><td class="pos">-3.73</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>0p</td><td>32.35p</td><td>12.98p</td></tr>
+<tr><td>2025-08-08</td><td>£13.76</td><td>£16.39</td><td class="pos">-2.63</td><td><span class="tag tag-iof">IOF</span></td><td>4</td><td>-0.52p</td><td>32.61p</td><td>13.09p</td></tr>
+<tr><td>2025-08-09</td><td>£11.26</td><td>£16.39</td><td class="pos">-5.13</td><td><span class="tag tag-iof">IOF</span></td><td>6</td><td>-1.08p</td><td>30.51p</td><td>12.17p</td></tr>
+<tr><td>2025-08-10</td><td>£2.22</td><td>£16.39</td><td class="pos">-14.17</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.51p</td><td>34.8p</td><td>14.05p</td></tr>
+<tr><td>2025-08-11</td><td>£0.07</td><td>£16.39</td><td class="pos">-16.32</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.77p</td><td>41.14p</td><td>16.84p</td></tr>
+<tr><td>2025-08-12</td><td>£-0.03</td><td>£16.39</td><td class="pos">-16.42</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.17p</td><td>41.98p</td><td>17.21p</td></tr>
+<tr><td>2025-08-13</td><td>£0.50</td><td>£16.39</td><td class="pos">-15.89</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.21p</td><td>43.44p</td><td>17.85p</td></tr>
+<tr><td>2025-08-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.39p</td><td>40.33p</td><td>16.49p</td></tr>
+<tr><td>2025-08-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.21p</td><td>35.15p</td><td>14.21p</td></tr>
+<tr><td>2025-08-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.34p</td><td>34.16p</td><td>13.77p</td></tr>
+<tr><td>2025-08-17</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.01p</td><td>35.11p</td><td>14.19p</td></tr>
+<tr><td>2025-08-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.48p</td><td>39.01p</td><td>15.9p</td></tr>
+<tr><td>2025-08-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.57p</td><td>34.46p</td><td>13.91p</td></tr>
+<tr><td>2025-08-20</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.46p</td><td>35.48p</td><td>14.35p</td></tr>
+<tr><td>2025-08-21</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.19p</td><td>34.38p</td><td>13.87p</td></tr>
+<tr><td>2025-08-22</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.54p</td><td>37.02p</td><td>15.03p</td></tr>
+<tr><td>2025-08-23</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.1p</td><td>36.76p</td><td>14.92p</td></tr>
+<tr><td>2025-08-24</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.04p</td><td>35.19p</td><td>14.22p</td></tr>
+<tr class="win"><td>2025-08-25</td><td>£20.53</td><td>£16.39</td><td class="neg">+4.14</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.93p</td><td>35.7p</td><td>14.45p</td></tr>
+<tr><td>2025-08-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.96p</td><td>37.3p</td><td>15.15p</td></tr>
+<tr><td>2025-08-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.11p</td><td>35.43p</td><td>14.33p</td></tr>
+<tr><td>2025-08-28</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.99p</td><td>33.49p</td><td>13.48p</td></tr>
+<tr><td>2025-08-29</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.55p</td><td>36.02p</td><td>14.59p</td></tr>
+<tr><td>2025-08-30</td><td>£10.10</td><td>£16.39</td><td class="pos">-6.29</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>0.88p</td><td>28.12p</td><td>11.11p</td></tr>
+<tr><td>2025-08-31</td><td>£0.52</td><td>£16.39</td><td class="pos">-15.87</td><td><span class="tag tag-iof">IOF</span></td><td>7</td><td>-0.97p</td><td>23.57p</td><td>9.12p</td></tr>
+<tr class="win"><td>2025-09-01</td><td>£22.99</td><td>£16.39</td><td class="neg">+6.60</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.21p</td><td>35.48p</td><td>14.35p</td></tr>
+<tr><td>2025-09-02</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>36.58p</td><td>14.84p</td></tr>
+<tr><td>2025-09-03</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>7.94p</td><td>35.4p</td><td>14.31p</td></tr>
+<tr><td>2025-09-04</td><td>£10.20</td><td>£16.39</td><td class="pos">-6.19</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>7.6p</td><td>38.16p</td><td>15.53p</td></tr>
+<tr><td>2025-09-05</td><td>£-0.19</td><td>£16.39</td><td class="pos">-16.58</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.66p</td><td>39.01p</td><td>15.9p</td></tr>
+<tr><td>2025-09-06</td><td>£15.51</td><td>£16.39</td><td class="pos">-0.88</td><td><span class="tag tag-iof">IOF</span></td><td>3</td><td>-0.5p</td><td>29.53p</td><td>11.73p</td></tr>
+<tr class="win"><td>2025-09-07</td><td>£28.05</td><td>£16.39</td><td class="neg">+11.66</td><td><span class="tag tag-agile">AGILE</span></td><td>13</td><td>-4.59p</td><td>35.88p</td><td>14.53p</td></tr>
+<tr><td>2025-09-08</td><td>£3.41</td><td>£16.39</td><td class="pos">-12.98</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.91p</td><td>42.32p</td><td>17.36p</td></tr>
+<tr><td>2025-09-09</td><td>£3.41</td><td>£16.39</td><td class="pos">-12.98</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.58p</td><td>42.32p</td><td>17.36p</td></tr>
+<tr><td>2025-09-10</td><td>£3.95</td><td>£16.39</td><td class="pos">-12.44</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>-1.32p</td><td>38.01p</td><td>15.46p</td></tr>
+<tr class="win"><td>2025-09-11</td><td>£31.81</td><td>£16.39</td><td class="neg">+15.42</td><td><span class="tag tag-agile">AGILE</span></td><td>4</td><td>-3.09p</td><td>38.22p</td><td>15.56p</td></tr>
+<tr class="win"><td>2025-09-12</td><td>£26.87</td><td>£16.39</td><td class="neg">+10.48</td><td><span class="tag tag-agile">AGILE</span></td><td>16</td><td>-2.2p</td><td>39.08p</td><td>15.94p</td></tr>
+<tr class="win"><td>2025-09-13</td><td>£23.06</td><td>£16.39</td><td class="neg">+6.67</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.08p</td><td>37.68p</td><td>15.32p</td></tr>
+<tr><td>2025-09-14</td><td>£1.66</td><td>£16.39</td><td class="pos">-14.73</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>1.1p</td><td>30.85p</td><td>12.32p</td></tr>
+<tr><td>2025-09-15</td><td>£10.44</td><td>£16.39</td><td class="pos">-5.95</td><td><span class="tag tag-iof">IOF</span></td><td>2</td><td>-0.48p</td><td>21.81p</td><td>8.34p</td></tr>
+<tr class="win"><td>2025-09-16</td><td>£31.06</td><td>£16.39</td><td class="neg">+14.67</td><td><span class="tag tag-agile">AGILE</span></td><td>9</td><td>-0.46p</td><td>36.3p</td><td>14.71p</td></tr>
+<tr><td>2025-09-17</td><td>£1.87</td><td>£16.39</td><td class="pos">-14.52</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>3.93p</td><td>35.09p</td><td>14.18p</td></tr>
+<tr class="win"><td>2025-09-18</td><td>£25.86</td><td>£16.39</td><td class="neg">+9.47</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.76p</td><td>37.24p</td><td>15.13p</td></tr>
+<tr><td>2025-09-19</td><td>£11.87</td><td>£16.39</td><td class="pos">-4.52</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>5.75p</td><td>40.86p</td><td>16.72p</td></tr>
+<tr><td>2025-09-20</td><td>£0.17</td><td>£16.39</td><td class="pos">-16.22</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>-2.2p</td><td>34.19p</td><td>13.79p</td></tr>
+<tr class="win"><td>2025-09-21</td><td>£32.97</td><td>£16.39</td><td class="neg">+16.58</td><td><span class="tag tag-agile">AGILE</span></td><td>9</td><td>-1.1p</td><td>33.69p</td><td>13.57p</td></tr>
+<tr><td>2025-09-22</td><td>£2.05</td><td>£16.39</td><td class="pos">-14.34</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.19p</td><td>40.81p</td><td>16.7p</td></tr>
+<tr><td>2025-09-23</td><td>£0.14</td><td>£16.39</td><td class="pos">-16.25</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.61p</td><td>44.52p</td><td>18.33p</td></tr>
+<tr><td>2025-09-24</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>40.11p</td><td>16.39p</td></tr>
+<tr><td>2025-09-25</td><td>£-0.22</td><td>£16.39</td><td class="pos">-16.61</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>37.91p</td><td>15.42p</td></tr>
+<tr><td>2025-09-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.27p</td><td>37.46p</td><td>15.23p</td></tr>
+<tr><td>2025-09-27</td><td>£-0.14</td><td>£16.39</td><td class="pos">-16.53</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>38.47p</td><td>15.67p</td></tr>
+<tr><td>2025-09-28</td><td>£-0.40</td><td>£16.39</td><td class="pos">-16.79</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.8p</td><td>41.96p</td><td>17.2p</td></tr>
+<tr><td>2025-09-29</td><td>£3.48</td><td>£16.39</td><td class="pos">-12.91</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.34p</td><td>51.07p</td><td>21.21p</td></tr>
+<tr><td>2025-09-30</td><td>£0.51</td><td>£16.39</td><td class="pos">-15.88</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.26p</td><td>40.75p</td><td>16.67p</td></tr>
+<tr><td>2025-10-01</td><td>£0.05</td><td>£16.39</td><td class="pos">-16.34</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.72p</td><td>38.79p</td><td>15.81p</td></tr>
+<tr><td>2025-10-02</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>5.51p</td><td>35.73p</td><td>14.46p</td></tr>
+<tr><td>2025-10-03</td><td>£9.40</td><td>£16.39</td><td class="pos">-6.99</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>-0.15p</td><td>27.09p</td><td>10.66p</td></tr>
+<tr><td>2025-10-04</td><td>£7.23</td><td>£16.39</td><td class="pos">-9.16</td><td><span class="tag tag-iof">IOF</span></td><td>20</td><td>-0.46p</td><td>17.72p</td><td>6.54p</td></tr>
+<tr><td>2025-10-05</td><td>£6.06</td><td>£16.39</td><td class="pos">-10.33</td><td><span class="tag tag-iof">IOF</span></td><td>16</td><td>-1.34p</td><td>29.68p</td><td>11.8p</td></tr>
+<tr class="win"><td>2025-10-06</td><td>£28.37</td><td>£16.39</td><td class="neg">+11.98</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.45p</td><td>40.92p</td><td>16.74p</td></tr>
+<tr><td>2025-10-07</td><td>£1.00</td><td>£16.39</td><td class="pos">-15.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.24p</td><td>44.7p</td><td>18.41p</td></tr>
+<tr><td>2025-10-08</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.21p</td><td>41.43p</td><td>16.97p</td></tr>
+<tr><td>2025-10-09</td><td>£-0.18</td><td>£16.39</td><td class="pos">-16.57</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.95p</td><td>39.89p</td><td>16.29p</td></tr>
+<tr><td>2025-10-10</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.54p</td><td>39.67p</td><td>16.2p</td></tr>
+<tr><td>2025-10-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.27p</td><td>39.56p</td><td>16.15p</td></tr>
+<tr><td>2025-10-12</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.25p</td><td>39.67p</td><td>16.2p</td></tr>
+<tr><td>2025-10-13</td><td>£9.68</td><td>£16.39</td><td class="pos">-6.71</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.88p</td><td>61.91p</td><td>25.98p</td></tr>
+<tr><td>2025-10-14</td><td>£6.22</td><td>£16.39</td><td class="pos">-10.17</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.15p</td><td>60.95p</td><td>25.56p</td></tr>
+<tr><td>2025-10-15</td><td>£7.47</td><td>£16.39</td><td class="pos">-8.92</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.32p</td><td>62.6p</td><td>26.28p</td></tr>
+<tr><td>2025-10-16</td><td>£0.19</td><td>£16.39</td><td class="pos">-16.20</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.66p</td><td>44.08p</td><td>18.14p</td></tr>
+<tr><td>2025-10-17</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.1p</td><td>39.82p</td><td>16.26p</td></tr>
+<tr><td>2025-10-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.75p</td><td>37.68p</td><td>15.32p</td></tr>
+<tr><td>2025-10-19</td><td>£5.50</td><td>£16.39</td><td class="pos">-10.89</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.78p</td><td>35.92p</td><td>14.55p</td></tr>
+<tr><td>2025-10-20</td><td>£4.87</td><td>£16.39</td><td class="pos">-11.52</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.68p</td><td>38.34p</td><td>15.61p</td></tr>
+<tr><td>2025-10-21</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.13p</td><td>36.58p</td><td>14.84p</td></tr>
+<tr><td>2025-10-22</td><td>£12.85</td><td>£16.39</td><td class="pos">-3.54</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.35p</td><td>59.07p</td><td>24.73p</td></tr>
+<tr><td>2025-10-23</td><td>£0.04</td><td>£16.39</td><td class="pos">-16.35</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>2.6p</td><td>35.26p</td><td>14.26p</td></tr>
+<tr class="win"><td>2025-10-24</td><td>£21.77</td><td>£16.39</td><td class="neg">+5.38</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.86p</td><td>35.55p</td><td>14.39p</td></tr>
+<tr class="win"><td>2025-10-25</td><td>£26.26</td><td>£16.39</td><td class="neg">+9.87</td><td><span class="tag tag-agile">AGILE</span></td><td>10</td><td>-0.44p</td><td>30.72p</td><td>12.26p</td></tr>
+<tr class="win"><td>2025-10-26</td><td>£30.86</td><td>£16.39</td><td class="neg">+14.47</td><td><span class="tag tag-agile">AGILE</span></td><td>11</td><td>-4.41p</td><td>37.33p</td><td>15.17p</td></tr>
+<tr><td>2025-10-27</td><td>£9.71</td><td>£16.39</td><td class="pos">-6.68</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>-0.9p</td><td>39.01p</td><td>15.9p</td></tr>
+<tr class="win"><td>2025-10-28</td><td>£23.35</td><td>£16.39</td><td class="neg">+6.96</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>3.16p</td><td>36.55p</td><td>14.82p</td></tr>
+<tr><td>2025-10-29</td><td>£5.44</td><td>£16.39</td><td class="pos">-10.95</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.8p</td><td>39.57p</td><td>16.15p</td></tr>
+<tr><td>2025-10-30</td><td>£-1.39</td><td>£16.39</td><td class="pos">-17.78</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>1.68p</td><td>35.1p</td><td>14.19p</td></tr>
+<tr class="win"><td>2025-10-31</td><td>£25.23</td><td>£16.39</td><td class="neg">+8.84</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.68p</td><td>33.05p</td><td>13.29p</td></tr>
+<tr class="win"><td>2025-11-01</td><td>£25.23</td><td>£16.39</td><td class="neg">+8.84</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.76p</td><td>35.92p</td><td>14.55p</td></tr>
+<tr><td>2025-11-02</td><td>£4.99</td><td>£16.39</td><td class="pos">-11.40</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>7.01p</td><td>37.38p</td><td>15.19p</td></tr>
+<tr class="win"><td>2025-11-03</td><td>£17.70</td><td>£16.39</td><td class="neg">+1.31</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.22p</td><td>36.14p</td><td>14.64p</td></tr>
+<tr class="win"><td>2025-11-04</td><td>£28.85</td><td>£16.39</td><td class="neg">+12.46</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.32p</td><td>36.12p</td><td>14.63p</td></tr>
+<tr><td>2025-11-05</td><td>£-0.06</td><td>£16.39</td><td class="pos">-16.45</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.9p</td><td>36.72p</td><td>14.9p</td></tr>
+<tr><td>2025-11-06</td><td>£-0.18</td><td>£16.39</td><td class="pos">-16.57</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>42.33p</td><td>17.36p</td></tr>
+<tr><td>2025-11-07</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.19p</td><td>37.24p</td><td>15.13p</td></tr>
+<tr><td>2025-11-08</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>37.68p</td><td>15.32p</td></tr>
+<tr><td>2025-11-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.08p</td><td>37.68p</td><td>15.32p</td></tr>
+<tr><td>2025-11-10</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.16p</td><td>36.74p</td><td>14.91p</td></tr>
+<tr><td>2025-11-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.95p</td><td>35.78p</td><td>14.49p</td></tr>
+<tr><td>2025-11-12</td><td>£7.27</td><td>£16.39</td><td class="pos">-9.12</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>3.86p</td><td>35.04p</td><td>14.16p</td></tr>
+<tr class="win"><td>2025-11-13</td><td>£28.20</td><td>£16.39</td><td class="neg">+11.81</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.44p</td><td>37.24p</td><td>15.13p</td></tr>
+<tr><td>2025-11-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.6p</td><td>30.85p</td><td>12.32p</td></tr>
+<tr><td>2025-11-15</td><td>£9.93</td><td>£16.39</td><td class="pos">-6.46</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>7.5p</td><td>37.68p</td><td>15.32p</td></tr>
+<tr><td>2025-11-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.89p</td><td>36.21p</td><td>14.68p</td></tr>
+<tr><td>2025-11-17</td><td>£2.63</td><td>£16.39</td><td class="pos">-13.76</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.91p</td><td>38.37p</td><td>15.62p</td></tr>
+<tr><td>2025-11-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.17p</td><td>39.01p</td><td>15.9p</td></tr>
+<tr><td>2025-11-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.87p</td><td>37.91p</td><td>15.42p</td></tr>
+<tr><td>2025-11-20</td><td>£-0.27</td><td>£16.39</td><td class="pos">-16.66</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.66p</td><td>42.88p</td><td>17.61p</td></tr>
+<tr><td>2025-11-21</td><td>£3.37</td><td>£16.39</td><td class="pos">-13.02</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.1p</td><td>51.37p</td><td>21.34p</td></tr>
+<tr><td>2025-11-22</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.88p</td><td>36.45p</td><td>14.78p</td></tr>
+<tr><td>2025-11-23</td><td>£-0.07</td><td>£16.39</td><td class="pos">-16.46</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.08p</td><td>36.51p</td><td>14.81p</td></tr>
+<tr><td>2025-11-24</td><td>£1.16</td><td>£16.39</td><td class="pos">-15.23</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.69p</td><td>37.56p</td><td>15.27p</td></tr>
+<tr><td>2025-11-25</td><td>£14.02</td><td>£16.39</td><td class="pos">-2.37</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.52p</td><td>62.01p</td><td>26.02p</td></tr>
+<tr><td>2025-11-26</td><td>£2.07</td><td>£16.39</td><td class="pos">-14.32</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.68p</td><td>48.53p</td><td>20.1p</td></tr>
+<tr><td>2025-11-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>7.63p</td><td>32.8p</td><td>13.18p</td></tr>
+<tr><td>2025-11-28</td><td>£9.57</td><td>£16.39</td><td class="pos">-6.82</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>6.49p</td><td>33.74p</td><td>13.59p</td></tr>
+<tr><td>2025-11-29</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.58p</td><td>34.86p</td><td>14.08p</td></tr>
+<tr><td>2025-11-30</td><td>£5.12</td><td>£16.39</td><td class="pos">-11.27</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.64p</td><td>36.14p</td><td>14.64p</td></tr>
+<tr><td>2025-12-01</td><td>£2.30</td><td>£16.39</td><td class="pos">-14.09</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.72p</td><td>35p</td><td>14.14p</td></tr>
+<tr><td>2025-12-02</td><td>£4.92</td><td>£16.39</td><td class="pos">-11.47</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.5p</td><td>38.89p</td><td>15.86p</td></tr>
+<tr><td>2025-12-03</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>39.77p</td><td>16.24p</td></tr>
+<tr><td>2025-12-04</td><td>£-0.09</td><td>£16.39</td><td class="pos">-16.48</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>38.79p</td><td>15.81p</td></tr>
+<tr><td>2025-12-05</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.23p</td><td>31.54p</td><td>12.62p</td></tr>
+<tr><td>2025-12-06</td><td>£0.21</td><td>£16.39</td><td class="pos">-16.18</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.49p</td><td>33.33p</td><td>13.41p</td></tr>
+<tr><td>2025-12-07</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>4.49p</td><td>35.33p</td><td>14.29p</td></tr>
+<tr class="win"><td>2025-12-08</td><td>£26.29</td><td>£16.39</td><td class="neg">+9.90</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.98p</td><td>34.38p</td><td>13.87p</td></tr>
+<tr><td>2025-12-09</td><td>£-0.01</td><td>£16.39</td><td class="pos">-16.40</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>5.7p</td><td>32.39p</td><td>13p</td></tr>
+<tr class="win"><td>2025-12-10</td><td>£18.65</td><td>£16.39</td><td class="neg">+2.26</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>3.65p</td><td>33.94p</td><td>13.67p</td></tr>
+<tr><td>2025-12-11</td><td>£5.11</td><td>£16.39</td><td class="pos">-11.28</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.31p</td><td>34.6p</td><td>13.96p</td></tr>
+<tr><td>2025-12-12</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.11p</td><td>36.14p</td><td>14.64p</td></tr>
+<tr><td>2025-12-13</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.04p</td><td>34.24p</td><td>13.81p</td></tr>
+<tr><td>2025-12-14</td><td>£10.28</td><td>£16.39</td><td class="pos">-6.11</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>6.26p</td><td>31.29p</td><td>12.51p</td></tr>
+<tr><td>2025-12-15</td><td>£0.04</td><td>£16.39</td><td class="pos">-16.35</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.04p</td><td>35.04p</td><td>14.16p</td></tr>
+<tr><td>2025-12-16</td><td>£0.32</td><td>£16.39</td><td class="pos">-16.07</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.13p</td><td>41.66p</td><td>17.07p</td></tr>
+<tr><td>2025-12-17</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.01p</td><td>33.39p</td><td>13.43p</td></tr>
+<tr><td>2025-12-18</td><td>£7.80</td><td>£16.39</td><td class="pos">-8.59</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>0p</td><td>32.39p</td><td>13p</td></tr>
+<tr><td>2025-12-19</td><td>£10.60</td><td>£16.39</td><td class="pos">-5.79</td><td><span class="tag tag-iof">IOF</span></td><td>3</td><td>-0.22p</td><td>35.26p</td><td>14.26p</td></tr>
+<tr><td>2025-12-20</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.9p</td><td>35.04p</td><td>14.16p</td></tr>
+<tr><td>2025-12-21</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.89p</td><td>34.64p</td><td>13.98p</td></tr>
+<tr><td>2025-12-22</td><td>£1.55</td><td>£16.39</td><td class="pos">-14.84</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.58p</td><td>35.53p</td><td>14.38p</td></tr>
+<tr><td>2025-12-23</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.35p</td><td>34.29p</td><td>13.83p</td></tr>
+<tr><td>2025-12-24</td><td>£-0.17</td><td>£16.39</td><td class="pos">-16.56</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.13p</td><td>33.72p</td><td>13.58p</td></tr>
+<tr><td>2025-12-25</td><td>£1.74</td><td>£16.39</td><td class="pos">-14.65</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.95p</td><td>33.03p</td><td>13.28p</td></tr>
+<tr><td>2025-12-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>35.04p</td><td>14.16p</td></tr>
+<tr><td>2025-12-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.62p</td><td>34.81p</td><td>14.06p</td></tr>
+<tr><td>2025-12-28</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.88p</td><td>37.02p</td><td>15.03p</td></tr>
+<tr><td>2025-12-29</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>34.68p</td><td>14p</td></tr>
+<tr><td>2025-12-30</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.5p</td><td>36.16p</td><td>14.65p</td></tr>
+<tr><td>2025-12-31</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.54p</td><td>34.6p</td><td>13.97p</td></tr>
+<tr class="win"><td>2026-01-01</td><td>£19.08</td><td>£16.39</td><td class="neg">+2.69</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>2.43p</td><td>33.27p</td><td>13.38p</td></tr>
+<tr class="win"><td>2026-01-02</td><td>£18.82</td><td>£16.39</td><td class="neg">+2.43</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>3.53p</td><td>36.18p</td><td>14.66p</td></tr>
+<tr><td>2026-01-03</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.25p</td><td>36.3p</td><td>14.71p</td></tr>
+<tr><td>2026-01-04</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.76p</td><td>36.73p</td><td>14.9p</td></tr>
+<tr><td>2026-01-05</td><td>£6.44</td><td>£16.39</td><td class="pos">-9.95</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.32p</td><td>56.57p</td><td>23.63p</td></tr>
+<tr><td>2026-01-06</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.76p</td><td>41.52p</td><td>17.01p</td></tr>
+<tr><td>2026-01-07</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.54p</td><td>39.89p</td><td>16.29p</td></tr>
+<tr class="win"><td>2026-01-08</td><td>£21.87</td><td>£16.39</td><td class="neg">+5.48</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>15.44p</td><td>67.45p</td><td>28.42p</td></tr>
+<tr><td>2026-01-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.32p</td><td>36.36p</td><td>14.74p</td></tr>
+<tr><td>2026-01-10</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.1p</td><td>40.37p</td><td>16.51p</td></tr>
+<tr><td>2026-01-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.27p</td><td>34.83p</td><td>14.07p</td></tr>
+<tr><td>2026-01-12</td><td>£-0.10</td><td>£16.39</td><td class="pos">-16.49</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>12.93p</td><td>35.7p</td><td>14.45p</td></tr>
+<tr><td>2026-01-13</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.76p</td><td>37.2p</td><td>15.11p</td></tr>
+<tr><td>2026-01-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.3p</td><td>44.3p</td><td>18.23p</td></tr>
+<tr><td>2026-01-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.75p</td><td>40.77p</td><td>16.68p</td></tr>
+<tr><td>2026-01-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.3p</td><td>44.46p</td><td>18.3p</td></tr>
+<tr><td>2026-01-17</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.96p</td><td>42.98p</td><td>17.65p</td></tr>
+<tr><td>2026-01-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.32p</td><td>42.05p</td><td>17.24p</td></tr>
+<tr><td>2026-01-19</td><td>£-0.30</td><td>£16.39</td><td class="pos">-16.69</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.04p</td><td>50.91p</td><td>21.14p</td></tr>
+<tr><td>2026-01-20</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.14p</td><td>39.67p</td><td>16.2p</td></tr>
+<tr><td>2026-01-21</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.99p</td><td>38.3p</td><td>15.59p</td></tr>
+<tr><td>2026-01-22</td><td>£2.48</td><td>£16.39</td><td class="pos">-13.91</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.31p</td><td>38.79p</td><td>15.81p</td></tr>
+<tr><td>2026-01-23</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.13p</td><td>39.26p</td><td>16.02p</td></tr>
+<tr><td>2026-01-24</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.92p</td><td>39.85p</td><td>16.27p</td></tr>
+<tr><td>2026-01-25</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.63p</td><td>40.32p</td><td>16.48p</td></tr>
+<tr><td>2026-01-26</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.31p</td><td>42.39p</td><td>17.39p</td></tr>
+<tr><td>2026-01-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>40.55p</td><td>16.58p</td></tr>
+<tr><td>2026-01-28</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.74p</td><td>46.11p</td><td>19.03p</td></tr>
+<tr><td>2026-01-29</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.14p</td><td>40.11p</td><td>16.39p</td></tr>
+<tr><td>2026-01-30</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.24p</td><td>39.26p</td><td>16.02p</td></tr>
+<tr><td>2026-01-31</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.34p</td><td>40.73p</td><td>16.66p</td></tr>
+<tr><td>2026-02-01</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.96p</td><td>40.82p</td><td>16.7p</td></tr>
+<tr><td>2026-02-02</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.59p</td><td>37.68p</td><td>15.32p</td></tr>
+<tr><td>2026-02-03</td><td>£2.31</td><td>£16.39</td><td class="pos">-14.08</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.07p</td><td>37.18p</td><td>15.1p</td></tr>
+<tr><td>2026-02-04</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.9p</td><td>35.49p</td><td>14.36p</td></tr>
+<tr><td>2026-02-05</td><td>£-0.27</td><td>£16.39</td><td class="pos">-16.66</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.53p</td><td>36.78p</td><td>14.92p</td></tr>
+<tr><td>2026-02-06</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.59p</td><td>37.02p</td><td>15.03p</td></tr>
+<tr><td>2026-02-07</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.24p</td><td>38.35p</td><td>15.61p</td></tr>
+<tr><td>2026-02-08</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.2p</td><td>39.45p</td><td>16.1p</td></tr>
+<tr><td>2026-02-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.88p</td><td>39.89p</td><td>16.29p</td></tr>
+<tr><td>2026-02-10</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.17p</td><td>37.24p</td><td>15.13p</td></tr>
+<tr><td>2026-02-11</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.65p</td><td>35.12p</td><td>14.19p</td></tr>
+<tr><td>2026-02-12</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.54p</td><td>35.91p</td><td>14.54p</td></tr>
+<tr><td>2026-02-13</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.66p</td><td>37.46p</td><td>15.23p</td></tr>
+<tr><td>2026-02-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.44p</td><td>37.53p</td><td>15.25p</td></tr>
+<tr><td>2026-02-15</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.33p</td><td>35.58p</td><td>14.4p</td></tr>
+<tr><td>2026-02-16</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.42p</td><td>35.48p</td><td>14.35p</td></tr>
+<tr><td>2026-02-17</td><td>£-0.11</td><td>£16.39</td><td class="pos">-16.50</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.2p</td><td>38.35p</td><td>15.61p</td></tr>
+<tr><td>2026-02-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.11p</td><td>33.49p</td><td>13.48p</td></tr>
+<tr><td>2026-02-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.11p</td><td>35.45p</td><td>14.34p</td></tr>
+<tr><td>2026-02-20</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>10.83p</td><td>32.09p</td><td>12.86p</td></tr>
+<tr><td>2026-02-21</td><td>£0.09</td><td>£16.39</td><td class="pos">-16.30</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.8p</td><td>33.72p</td><td>13.58p</td></tr>
+<tr class="win"><td>2026-02-22</td><td>£18.10</td><td>£16.39</td><td class="neg">+1.71</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>4.19p</td><td>33.49p</td><td>13.48p</td></tr>
+<tr class="win"><td>2026-02-23</td><td>£18.14</td><td>£16.39</td><td class="neg">+1.75</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>4.43p</td><td>35.48p</td><td>14.35p</td></tr>
+<tr><td>2026-02-24</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.26p</td><td>35.67p</td><td>14.43p</td></tr>
+<tr><td>2026-02-25</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.35p</td><td>35.92p</td><td>14.55p</td></tr>
+<tr><td>2026-02-26</td><td>£-0.30</td><td>£16.39</td><td class="pos">-16.69</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>9.7p</td><td>34.6p</td><td>13.96p</td></tr>
+<tr><td>2026-02-27</td><td>£7.44</td><td>£16.39</td><td class="pos">-8.95</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>8.52p</td><td>34.82p</td><td>14.06p</td></tr>
+<tr><td>2026-02-28</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.77p</td><td>36.28p</td><td>14.71p</td></tr>
+<tr><td>2026-03-01</td><td>£5.52</td><td>£16.39</td><td class="pos">-10.87</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>6.39p</td><td>32.7p</td><td>13.13p</td></tr>
+<tr class="win"><td>2026-03-02</td><td>£21.30</td><td>£16.39</td><td class="neg">+4.91</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>6.12p</td><td>45.7p</td><td>18.85p</td></tr>
+<tr><td>2026-03-03</td><td>£0.17</td><td>£16.39</td><td class="pos">-16.22</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.64p</td><td>53.56p</td><td>22.31p</td></tr>
+<tr><td>2026-03-04</td><td>£0.24</td><td>£16.39</td><td class="pos">-16.15</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.4p</td><td>55.99p</td><td>23.37p</td></tr>
+<tr><td>2026-03-05</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.87p</td><td>44.3p</td><td>18.23p</td></tr>
+<tr><td>2026-03-06</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.51p</td><td>51.53p</td><td>21.41p</td></tr>
+<tr><td>2026-03-07</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>21.8p</td><td>46.28p</td><td>19.11p</td></tr>
+<tr><td>2026-03-08</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>23.44p</td><td>46.44p</td><td>19.17p</td></tr>
+<tr><td>2026-03-09</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>23.59p</td><td>55.32p</td><td>23.08p</td></tr>
+<tr><td>2026-03-10</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>6.76p</td><td>46.13p</td><td>19.04p</td></tr>
+<tr class="win"><td>2026-03-11</td><td>£18.63</td><td>£16.39</td><td class="neg">+2.24</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>5.11p</td><td>44.23p</td><td>18.2p</td></tr>
+<tr><td>2026-03-12</td><td>£4.34</td><td>£16.39</td><td class="pos">-12.05</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>0.3p</td><td>35.26p</td><td>14.26p</td></tr>
+<tr class="win"><td>2026-03-13</td><td>£30.99</td><td>£16.39</td><td class="neg">+14.60</td><td><span class="tag tag-agile">AGILE</span></td><td>1</td><td>0p</td><td>43.42p</td><td>17.84p</td></tr>
+<tr><td>2026-03-14</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.09p</td><td>46.06p</td><td>19.01p</td></tr>
+<tr><td>2026-03-15</td><td>£11.02</td><td>£16.39</td><td class="pos">-5.37</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>1.76p</td><td>39.71p</td><td>16.21p</td></tr>
+<tr class="win"><td>2026-03-16</td><td>£38.25</td><td>£16.39</td><td class="neg">+21.86</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>1.7p</td><td>45.54p</td><td>18.78p</td></tr>
+<tr><td>2026-03-17</td><td>£3.32</td><td>£16.39</td><td class="pos">-13.07</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>13.02p</td><td>44.47p</td><td>18.31p</td></tr>
+<tr><td>2026-03-18</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>18.52p</td><td>46.33p</td><td>19.13p</td></tr>
+<tr><td>2026-03-19</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>20.37p</td><td>50.47p</td><td>20.95p</td></tr>
+<tr><td>2026-03-20</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>23.81p</td><td>49.43p</td><td>20.49p</td></tr>
+<tr><td>2026-03-21</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>22.55p</td><td>47.83p</td><td>19.78p</td></tr>
+<tr><td>2026-03-22</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>21.85p</td><td>46.95p</td><td>19.4p</td></tr>
+<tr><td>2026-03-23</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>11.47p</td><td>49.49p</td><td>20.51p</td></tr>
+<tr><td>2026-03-24</td><td>£4.42</td><td>£16.39</td><td class="pos">-11.97</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>0.58p</td><td>39.89p</td><td>16.29p</td></tr>
+<tr class="win"><td>2026-03-25</td><td>£42.58</td><td>£16.39</td><td class="neg">+26.19</td><td><span class="tag tag-agile">AGILE</span></td><td>5</td><td>-0.22p</td><td>42.76p</td><td>17.55p</td></tr>
+<tr><td>2026-03-26</td><td>£-0.18</td><td>£16.39</td><td class="pos">-16.57</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>16.92p</td><td>45.95p</td><td>18.96p</td></tr>
+<tr><td>2026-03-27</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>17.66p</td><td>44.52p</td><td>18.33p</td></tr>
+<tr class="win"><td>2026-03-28</td><td>£18.98</td><td>£16.39</td><td class="neg">+2.59</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.41p</td><td>44.14p</td><td>18.17p</td></tr>
+<tr><td>2026-03-29</td><td>£4.23</td><td>£16.39</td><td class="pos">-12.16</td><td><span class="tag tag-iof">IOF</span></td><td>1</td><td>-0.04p</td><td>29.09p</td><td>11.76p</td></tr>
+<tr class="win"><td>2026-03-30</td><td>£37.60</td><td>£16.39</td><td class="neg">+21.21</td><td><span class="tag tag-agile">AGILE</span></td><td>0</td><td>0.44p</td><td>41.21p</td><td>16.88p</td></tr>
+<tr><td>2026-03-31</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>19.08p</td><td>44.08p</td><td>18.14p</td></tr>
+<tr><td>2026-04-01</td><td>£0.89</td><td>£16.39</td><td class="pos">-15.50</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>14.37p</td><td>40.13p</td><td>17.94p</td></tr>
+<tr><td>2026-04-02</td><td>£0.00</td><td>£16.39</td><td class="pos">-16.39</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>15.79p</td><td>36.36p</td><td>16.28p</td></tr>
+<tr><td>2026-04-03</td><td>£14.46</td><td>£16.39</td><td class="pos">-1.93</td><td><span class="tag tag-iof">IOF</span></td><td>0</td><td>0.9p</td><td>32.6p</td><td>14.63p</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+<p><strong>Methodology:</strong> Agile uses actual half-hourly import (AGILE-24-10-01) and export (AGILE-OUTGOING-19-05-13) rates from the Octopus API.
+IOF uses fixed bands (off-peak 16.40p, day 27.33p, peak 38.26p) with import=export parity. IOF discharge is haircut to 70% of max capacity to reflect
+real-world Kraken fleet utilisation. Battery: 322kWh Fogstar, 76.8kW charge, 66kW G99 export, 93% round-trip efficiency, 5% reserve (Agile) / 20% reserve (IOF).
+Solar: 25kWp south-facing, Lancashire latitude sinusoidal model. EVs not included in daily figures (add ~£24/day on Agile neg days, ~£8/day on IOF).</p>
+</div>
+
+<script>
+const monthlyData = [{"month":1,"label":"Jan","days":62,"agileAvg":602,"iofAvg":1639,"agileGbp":"6.02","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-1037},{"month":2,"label":"Feb","days":56,"agileAvg":198,"iofAvg":1639,"agileGbp":"1.98","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-1441},{"month":3,"label":"Mar","days":62,"agileAvg":612,"iofAvg":1639,"agileGbp":"6.12","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-1027},{"month":4,"label":"Apr","days":33,"agileAvg":380,"iofAvg":1639,"agileGbp":"3.80","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-1259},{"month":5,"label":"May","days":31,"agileAvg":537,"iofAvg":1639,"agileGbp":"5.37","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-1102},{"month":6,"label":"Jun","days":30,"agileAvg":796,"iofAvg":1639,"agileGbp":"7.96","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-843},{"month":7,"label":"Jul","days":31,"agileAvg":188,"iofAvg":1639,"agileGbp":"1.88","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-1451},{"month":8,"label":"Aug","days":31,"agileAvg":336,"iofAvg":1639,"agileGbp":"3.36","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-1303},{"month":9,"label":"Sep","days":45,"agileAvg":771,"iofAvg":1639,"agileGbp":"7.71","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-868},{"month":10,"label":"Oct","days":62,"agileAvg":702,"iofAvg":1639,"agileGbp":"7.02","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-937},{"month":11,"label":"Nov","days":60,"agileAvg":467,"iofAvg":1639,"agileGbp":"4.67","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-1172},{"month":12,"label":"Dec","days":62,"agileAvg":748,"iofAvg":1639,"agileGbp":"7.48","iofGbp":"16.39","bestGbp":"16.39","winner":"IOF","delta":-891}];
+const dailyData = [{"date":"2024-09-16","agile":0,"iof":1639},{"date":"2024-09-17","agile":-6,"iof":1639},{"date":"2024-09-18","agile":12,"iof":1639},{"date":"2024-09-19","agile":0,"iof":1639},{"date":"2024-09-20","agile":91,"iof":1639},{"date":"2024-09-21","agile":-2,"iof":1639},{"date":"2024-09-22","agile":0,"iof":1639},{"date":"2024-09-23","agile":86,"iof":1639},{"date":"2024-09-24","agile":0,"iof":1639},{"date":"2024-09-25","agile":-3,"iof":1639},{"date":"2024-09-26","agile":76,"iof":1639},{"date":"2024-09-27","agile":1970,"iof":1639},{"date":"2024-09-28","agile":168,"iof":1639},{"date":"2024-09-29","agile":42,"iof":1639},{"date":"2024-09-30","agile":3239,"iof":1639},{"date":"2024-10-01","agile":2110,"iof":1639},{"date":"2024-10-02","agile":-20,"iof":1639},{"date":"2024-10-03","agile":0,"iof":1639},{"date":"2024-10-04","agile":186,"iof":1639},{"date":"2024-10-05","agile":882,"iof":1639},{"date":"2024-10-06","agile":954,"iof":1639},{"date":"2024-10-07","agile":762,"iof":1639},{"date":"2024-10-08","agile":19,"iof":1639},{"date":"2024-10-09","agile":409,"iof":1639},{"date":"2024-10-10","agile":1867,"iof":1639},{"date":"2024-10-11","agile":58,"iof":1639},{"date":"2024-10-12","agile":197,"iof":1639},{"date":"2024-10-13","agile":1845,"iof":1639},{"date":"2024-10-14","agile":1536,"iof":1639},{"date":"2024-10-15","agile":0,"iof":1639},{"date":"2024-10-16","agile":2687,"iof":1639},{"date":"2024-10-17","agile":110,"iof":1639},{"date":"2024-10-18","agile":0,"iof":1639},{"date":"2024-10-19","agile":128,"iof":1639},{"date":"2024-10-20","agile":2489,"iof":1639},{"date":"2024-10-21","agile":1952,"iof":1639},{"date":"2024-10-22","agile":110,"iof":1639},{"date":"2024-10-23","agile":-22,"iof":1639},{"date":"2024-10-24","agile":541,"iof":1639},{"date":"2024-10-25","agile":58,"iof":1639},{"date":"2024-10-26","agile":0,"iof":1639},{"date":"2024-10-27","agile":0,"iof":1639},{"date":"2024-10-28","agile":320,"iof":1639},{"date":"2024-10-29","agile":186,"iof":1639},{"date":"2024-10-30","agile":99,"iof":1639},{"date":"2024-10-31","agile":47,"iof":1639},{"date":"2024-11-01","agile":44,"iof":1639},{"date":"2024-11-02","agile":-7,"iof":1639},{"date":"2024-11-03","agile":0,"iof":1639},{"date":"2024-11-04","agile":848,"iof":1639},{"date":"2024-11-05","agile":2582,"iof":1639},{"date":"2024-11-06","agile":1237,"iof":1639},{"date":"2024-11-07","agile":0,"iof":1639},{"date":"2024-11-08","agile":0,"iof":1639},{"date":"2024-11-09","agile":0,"iof":1639},{"date":"2024-11-10","agile":0,"iof":1639},{"date":"2024-11-11","agile":0,"iof":1639},{"date":"2024-11-12","agile":57,"iof":1639},{"date":"2024-11-13","agile":-16,"iof":1639},{"date":"2024-11-14","agile":0,"iof":1639},{"date":"2024-11-15","agile":0,"iof":1639},{"date":"2024-11-16","agile":0,"iof":1639},{"date":"2024-11-17","agile":908,"iof":1639},{"date":"2024-11-18","agile":21,"iof":1639},{"date":"2024-11-19","agile":0,"iof":1639},{"date":"2024-11-20","agile":-3,"iof":1639},{"date":"2024-11-21","agile":0,"iof":1639},{"date":"2024-11-22","agile":103,"iof":1639},{"date":"2024-11-23","agile":230,"iof":1639},{"date":"2024-11-24","agile":3469,"iof":1639},{"date":"2024-11-25","agile":1975,"iof":1639},{"date":"2024-11-26","agile":630,"iof":1639},{"date":"2024-11-27","agile":0,"iof":1639},{"date":"2024-11-28","agile":0,"iof":1639},{"date":"2024-11-29","agile":0,"iof":1639},{"date":"2024-11-30","agile":0,"iof":1639},{"date":"2024-12-01","agile":659,"iof":1639},{"date":"2024-12-02","agile":1222,"iof":1639},{"date":"2024-12-03","agile":100,"iof":1639},{"date":"2024-12-04","agile":-36,"iof":1639},{"date":"2024-12-05","agile":-112,"iof":1639},{"date":"2024-12-06","agile":2812,"iof":1639},{"date":"2024-12-07","agile":989,"iof":1639},{"date":"2024-12-08","agile":1848,"iof":1639},{"date":"2024-12-09","agile":358,"iof":1639},{"date":"2024-12-10","agile":44,"iof":1639},{"date":"2024-12-11","agile":3011,"iof":1639},{"date":"2024-12-12","agile":4986,"iof":1639},{"date":"2024-12-13","agile":1160,"iof":1639},{"date":"2024-12-14","agile":0,"iof":1639},{"date":"2024-12-15","agile":1096,"iof":1639},{"date":"2024-12-16","agile":1421,"iof":1639},{"date":"2024-12-17","agile":208,"iof":1639},{"date":"2024-12-18","agile":2599,"iof":1639},{"date":"2024-12-19","agile":3001,"iof":1639},{"date":"2024-12-20","agile":1599,"iof":1639},{"date":"2024-12-21","agile":1570,"iof":1639},{"date":"2024-12-22","agile":3139,"iof":1639},{"date":"2024-12-23","agile":2476,"iof":1639},{"date":"2024-12-24","agile":176,"iof":1639},{"date":"2024-12-25","agile":36,"iof":1639},{"date":"2024-12-26","agile":0,"iof":1639},{"date":"2024-12-27","agile":0,"iof":1639},{"date":"2024-12-28","agile":0,"iof":1639},{"date":"2024-12-29","agile":0,"iof":1639},{"date":"2024-12-30","agile":1223,"iof":1639},{"date":"2024-12-31","agile":1814,"iof":1639},{"date":"2025-01-01","agile":4227,"iof":1639},{"date":"2025-01-02","agile":-8,"iof":1639},{"date":"2025-01-03","agile":-12,"iof":1639},{"date":"2025-01-04","agile":0,"iof":1639},{"date":"2025-01-05","agile":-32,"iof":1639},{"date":"2025-01-06","agile":2113,"iof":1639},{"date":"2025-01-07","agile":82,"iof":1639},{"date":"2025-01-08","agile":4504,"iof":1639},{"date":"2025-01-09","agile":0,"iof":1639},{"date":"2025-01-10","agile":6064,"iof":1639},{"date":"2025-01-11","agile":0,"iof":1639},{"date":"2025-01-12","agile":0,"iof":1639},{"date":"2025-01-13","agile":0,"iof":1639},{"date":"2025-01-14","agile":0,"iof":1639},{"date":"2025-01-15","agile":0,"iof":1639},{"date":"2025-01-16","agile":0,"iof":1639},{"date":"2025-01-17","agile":0,"iof":1639},{"date":"2025-01-18","agile":0,"iof":1639},{"date":"2025-01-19","agile":0,"iof":1639},{"date":"2025-01-20","agile":2999,"iof":1639},{"date":"2025-01-21","agile":1777,"iof":1639},{"date":"2025-01-22","agile":5766,"iof":1639},{"date":"2025-01-23","agile":0,"iof":1639},{"date":"2025-01-24","agile":1052,"iof":1639},{"date":"2025-01-25","agile":478,"iof":1639},{"date":"2025-01-26","agile":86,"iof":1639},{"date":"2025-01-27","agile":1239,"iof":1639},{"date":"2025-01-28","agile":0,"iof":1639},{"date":"2025-01-29","agile":133,"iof":1639},{"date":"2025-01-30","agile":40,"iof":1639},{"date":"2025-01-31","agile":0,"iof":1639},{"date":"2025-02-01","agile":0,"iof":1639},{"date":"2025-02-02","agile":0,"iof":1639},{"date":"2025-02-03","agile":0,"iof":1639},{"date":"2025-02-04","agile":9,"iof":1639},{"date":"2025-02-05","agile":0,"iof":1639},{"date":"2025-02-06","agile":0,"iof":1639},{"date":"2025-02-07","agile":0,"iof":1639},{"date":"2025-02-08","agile":0,"iof":1639},{"date":"2025-02-09","agile":0,"iof":1639},{"date":"2025-02-10","agile":0,"iof":1639},{"date":"2025-02-11","agile":0,"iof":1639},{"date":"2025-02-12","agile":0,"iof":1639},{"date":"2025-02-13","agile":0,"iof":1639},{"date":"2025-02-14","agile":0,"iof":1639},{"date":"2025-02-15","agile":0,"iof":1639},{"date":"2025-02-16","agile":0,"iof":1639},{"date":"2025-02-17","agile":0,"iof":1639},{"date":"2025-02-18","agile":0,"iof":1639},{"date":"2025-02-19","agile":0,"iof":1639},{"date":"2025-02-20","agile":-19,"iof":1639},{"date":"2025-02-21","agile":912,"iof":1639},{"date":"2025-02-22","agile":1387,"iof":1639},{"date":"2025-02-23","agile":1095,"iof":1639},{"date":"2025-02-24","agile":3119,"iof":1639},{"date":"2025-02-25","agile":22,"iof":1639},{"date":"2025-02-26","agile":0,"iof":1639},{"date":"2025-02-27","agile":0,"iof":1639},{"date":"2025-02-28","agile":0,"iof":1639},{"date":"2025-03-01","agile":0,"iof":1639},{"date":"2025-03-02","agile":-15,"iof":1639},{"date":"2025-03-03","agile":0,"iof":1639},{"date":"2025-03-04","agile":105,"iof":1639},{"date":"2025-03-05","agile":1687,"iof":1639},{"date":"2025-03-06","agile":1225,"iof":1639},{"date":"2025-03-07","agile":19,"iof":1639},{"date":"2025-03-08","agile":-15,"iof":1639},{"date":"2025-03-09","agile":0,"iof":1639},{"date":"2025-03-10","agile":111,"iof":1639},{"date":"2025-03-11","agile":0,"iof":1639},{"date":"2025-03-12","agile":-7,"iof":1639},{"date":"2025-03-13","agile":-16,"iof":1639},{"date":"2025-03-14","agile":0,"iof":1639},{"date":"2025-03-15","agile":0,"iof":1639},{"date":"2025-03-16","agile":0,"iof":1639},{"date":"2025-03-17","agile":0,"iof":1639},{"date":"2025-03-18","agile":0,"iof":1639},{"date":"2025-03-19","agile":10,"iof":1639},{"date":"2025-03-20","agile":0,"iof":1639},{"date":"2025-03-21","agile":2001,"iof":1639},{"date":"2025-03-22","agile":2279,"iof":1639},{"date":"2025-03-23","agile":0,"iof":1639},{"date":"2025-03-24","agile":22,"iof":1639},{"date":"2025-03-25","agile":0,"iof":1639},{"date":"2025-03-26","agile":0,"iof":1639},{"date":"2025-03-27","agile":73,"iof":1639},{"date":"2025-03-28","agile":2113,"iof":1639},{"date":"2025-03-29","agile":1263,"iof":1639},{"date":"2025-03-30","agile":2969,"iof":1639},{"date":"2025-03-31","agile":0,"iof":1639},{"date":"2025-04-01","agile":94,"iof":1639},{"date":"2025-04-02","agile":1783,"iof":1639},{"date":"2025-04-03","agile":1484,"iof":1639},{"date":"2025-04-04","agile":1697,"iof":1639},{"date":"2025-04-05","agile":936,"iof":1639},{"date":"2025-04-06","agile":1666,"iof":1639},{"date":"2025-04-07","agile":43,"iof":1639},{"date":"2025-04-08","agile":0,"iof":1639},{"date":"2025-04-09","agile":0,"iof":1639},{"date":"2025-04-10","agile":-24,"iof":1639},{"date":"2025-04-11","agile":0,"iof":1639},{"date":"2025-04-12","agile":494,"iof":1639},{"date":"2025-04-13","agile":219,"iof":1639},{"date":"2025-04-14","agile":-34,"iof":1639},{"date":"2025-04-15","agile":0,"iof":1639},{"date":"2025-04-16","agile":768,"iof":1639},{"date":"2025-04-17","agile":-7,"iof":1639},{"date":"2025-04-18","agile":287,"iof":1639},{"date":"2025-04-19","agile":51,"iof":1639},{"date":"2025-04-20","agile":0,"iof":1639},{"date":"2025-04-21","agile":0,"iof":1639},{"date":"2025-04-22","agile":0,"iof":1639},{"date":"2025-04-23","agile":0,"iof":1639},{"date":"2025-04-24","agile":0,"iof":1639},{"date":"2025-04-25","agile":0,"iof":1639},{"date":"2025-04-26","agile":0,"iof":1639},{"date":"2025-04-27","agile":1550,"iof":1639},{"date":"2025-04-28","agile":21,"iof":1639},{"date":"2025-04-29","agile":-7,"iof":1639},{"date":"2025-04-30","agile":0,"iof":1639},{"date":"2025-05-01","agile":5,"iof":1639},{"date":"2025-05-02","agile":0,"iof":1639},{"date":"2025-05-03","agile":318,"iof":1639},{"date":"2025-05-04","agile":2237,"iof":1639},{"date":"2025-05-05","agile":0,"iof":1639},{"date":"2025-05-06","agile":0,"iof":1639},{"date":"2025-05-07","agile":0,"iof":1639},{"date":"2025-05-08","agile":0,"iof":1639},{"date":"2025-05-09","agile":0,"iof":1639},{"date":"2025-05-10","agile":1836,"iof":1639},{"date":"2025-05-11","agile":1728,"iof":1639},{"date":"2025-05-12","agile":0,"iof":1639},{"date":"2025-05-13","agile":0,"iof":1639},{"date":"2025-05-14","agile":0,"iof":1639},{"date":"2025-05-15","agile":0,"iof":1639},{"date":"2025-05-16","agile":249,"iof":1639},{"date":"2025-05-17","agile":1006,"iof":1639},{"date":"2025-05-18","agile":506,"iof":1639},{"date":"2025-05-19","agile":0,"iof":1639},{"date":"2025-05-20","agile":0,"iof":1639},{"date":"2025-05-21","agile":0,"iof":1639},{"date":"2025-05-22","agile":0,"iof":1639},{"date":"2025-05-23","agile":0,"iof":1639},{"date":"2025-05-24","agile":1635,"iof":1639},{"date":"2025-05-25","agile":529,"iof":1639},{"date":"2025-05-26","agile":1844,"iof":1639},{"date":"2025-05-27","agile":1927,"iof":1639},{"date":"2025-05-28","agile":30,"iof":1639},{"date":"2025-05-29","agile":211,"iof":1639},{"date":"2025-05-30","agile":1633,"iof":1639},{"date":"2025-05-31","agile":951,"iof":1639},{"date":"2025-06-01","agile":1236,"iof":1639},{"date":"2025-06-02","agile":844,"iof":1639},{"date":"2025-06-03","agile":2171,"iof":1639},{"date":"2025-06-04","agile":1885,"iof":1639},{"date":"2025-06-05","agile":108,"iof":1639},{"date":"2025-06-06","agile":9,"iof":1639},{"date":"2025-06-07","agile":0,"iof":1639},{"date":"2025-06-08","agile":2325,"iof":1639},{"date":"2025-06-09","agile":-20,"iof":1639},{"date":"2025-06-10","agile":230,"iof":1639},{"date":"2025-06-11","agile":68,"iof":1639},{"date":"2025-06-12","agile":2390,"iof":1639},{"date":"2025-06-13","agile":-16,"iof":1639},{"date":"2025-06-14","agile":1705,"iof":1639},{"date":"2025-06-15","agile":1797,"iof":1639},{"date":"2025-06-16","agile":0,"iof":1639},{"date":"2025-06-17","agile":116,"iof":1639},{"date":"2025-06-18","agile":0,"iof":1639},{"date":"2025-06-19","agile":0,"iof":1639},{"date":"2025-06-20","agile":0,"iof":1639},{"date":"2025-06-21","agile":392,"iof":1639},{"date":"2025-06-22","agile":771,"iof":1639},{"date":"2025-06-23","agile":1994,"iof":1639},{"date":"2025-06-24","agile":1994,"iof":1639},{"date":"2025-06-25","agile":15,"iof":1639},{"date":"2025-06-26","agile":156,"iof":1639},{"date":"2025-06-27","agile":1670,"iof":1639},{"date":"2025-06-28","agile":1627,"iof":1639},{"date":"2025-06-29","agile":0,"iof":1639},{"date":"2025-06-30","agile":400,"iof":1639},{"date":"2025-07-01","agile":1370,"iof":1639},{"date":"2025-07-02","agile":21,"iof":1639},{"date":"2025-07-03","agile":210,"iof":1639},{"date":"2025-07-04","agile":1654,"iof":1639},{"date":"2025-07-05","agile":1336,"iof":1639},{"date":"2025-07-06","agile":-4,"iof":1639},{"date":"2025-07-07","agile":1207,"iof":1639},{"date":"2025-07-08","agile":12,"iof":1639},{"date":"2025-07-09","agile":0,"iof":1639},{"date":"2025-07-10","agile":-14,"iof":1639},{"date":"2025-07-11","agile":0,"iof":1639},{"date":"2025-07-12","agile":22,"iof":1639},{"date":"2025-07-13","agile":-21,"iof":1639},{"date":"2025-07-14","agile":39,"iof":1639},{"date":"2025-07-15","agile":0,"iof":1639},{"date":"2025-07-16","agile":0,"iof":1639},{"date":"2025-07-17","agile":0,"iof":1639},{"date":"2025-07-18","agile":0,"iof":1639},{"date":"2025-07-19","agile":0,"iof":1639},{"date":"2025-07-20","agile":-1,"iof":1639},{"date":"2025-07-21","agile":0,"iof":1639},{"date":"2025-07-22","agile":0,"iof":1639},{"date":"2025-07-23","agile":0,"iof":1639},{"date":"2025-07-24","agile":0,"iof":1639},{"date":"2025-07-25","agile":0,"iof":1639},{"date":"2025-07-26","agile":0,"iof":1639},{"date":"2025-07-27","agile":0,"iof":1639},{"date":"2025-07-28","agile":0,"iof":1639},{"date":"2025-07-29","agile":0,"iof":1639},{"date":"2025-07-30","agile":0,"iof":1639},{"date":"2025-07-31","agile":0,"iof":1639},{"date":"2025-08-01","agile":0,"iof":1639},{"date":"2025-08-02","agile":0,"iof":1639},{"date":"2025-08-03","agile":1009,"iof":1639},{"date":"2025-08-04","agile":718,"iof":1639},{"date":"2025-08-05","agile":295,"iof":1639},{"date":"2025-08-06","agile":1247,"iof":1639},{"date":"2025-08-07","agile":1266,"iof":1639},{"date":"2025-08-08","agile":1376,"iof":1639},{"date":"2025-08-09","agile":1126,"iof":1639},{"date":"2025-08-10","agile":222,"iof":1639},{"date":"2025-08-11","agile":7,"iof":1639},{"date":"2025-08-12","agile":-3,"iof":1639},{"date":"2025-08-13","agile":50,"iof":1639},{"date":"2025-08-14","agile":0,"iof":1639},{"date":"2025-08-15","agile":0,"iof":1639},{"date":"2025-08-16","agile":0,"iof":1639},{"date":"2025-08-17","agile":0,"iof":1639},{"date":"2025-08-18","agile":0,"iof":1639},{"date":"2025-08-19","agile":0,"iof":1639},{"date":"2025-08-20","agile":0,"iof":1639},{"date":"2025-08-21","agile":0,"iof":1639},{"date":"2025-08-22","agile":0,"iof":1639},{"date":"2025-08-23","agile":0,"iof":1639},{"date":"2025-08-24","agile":0,"iof":1639},{"date":"2025-08-25","agile":2053,"iof":1639},{"date":"2025-08-26","agile":0,"iof":1639},{"date":"2025-08-27","agile":0,"iof":1639},{"date":"2025-08-28","agile":0,"iof":1639},{"date":"2025-08-29","agile":0,"iof":1639},{"date":"2025-08-30","agile":1010,"iof":1639},{"date":"2025-08-31","agile":52,"iof":1639},{"date":"2025-09-01","agile":2299,"iof":1639},{"date":"2025-09-02","agile":0,"iof":1639},{"date":"2025-09-03","agile":0,"iof":1639},{"date":"2025-09-04","agile":1020,"iof":1639},{"date":"2025-09-05","agile":-19,"iof":1639},{"date":"2025-09-06","agile":1551,"iof":1639},{"date":"2025-09-07","agile":2805,"iof":1639},{"date":"2025-09-08","agile":341,"iof":1639},{"date":"2025-09-09","agile":341,"iof":1639},{"date":"2025-09-10","agile":395,"iof":1639},{"date":"2025-09-11","agile":3181,"iof":1639},{"date":"2025-09-12","agile":2687,"iof":1639},{"date":"2025-09-13","agile":2306,"iof":1639},{"date":"2025-09-14","agile":166,"iof":1639},{"date":"2025-09-15","agile":1044,"iof":1639},{"date":"2025-09-16","agile":3106,"iof":1639},{"date":"2025-09-17","agile":187,"iof":1639},{"date":"2025-09-18","agile":2586,"iof":1639},{"date":"2025-09-19","agile":1187,"iof":1639},{"date":"2025-09-20","agile":17,"iof":1639},{"date":"2025-09-21","agile":3297,"iof":1639},{"date":"2025-09-22","agile":205,"iof":1639},{"date":"2025-09-23","agile":14,"iof":1639},{"date":"2025-09-24","agile":0,"iof":1639},{"date":"2025-09-25","agile":-22,"iof":1639},{"date":"2025-09-26","agile":0,"iof":1639},{"date":"2025-09-27","agile":-14,"iof":1639},{"date":"2025-09-28","agile":-40,"iof":1639},{"date":"2025-09-29","agile":348,"iof":1639},{"date":"2025-09-30","agile":51,"iof":1639},{"date":"2025-10-01","agile":5,"iof":1639},{"date":"2025-10-02","agile":0,"iof":1639},{"date":"2025-10-03","agile":940,"iof":1639},{"date":"2025-10-04","agile":723,"iof":1639},{"date":"2025-10-05","agile":606,"iof":1639},{"date":"2025-10-06","agile":2837,"iof":1639},{"date":"2025-10-07","agile":100,"iof":1639},{"date":"2025-10-08","agile":0,"iof":1639},{"date":"2025-10-09","agile":-18,"iof":1639},{"date":"2025-10-10","agile":0,"iof":1639},{"date":"2025-10-11","agile":0,"iof":1639},{"date":"2025-10-12","agile":0,"iof":1639},{"date":"2025-10-13","agile":968,"iof":1639},{"date":"2025-10-14","agile":622,"iof":1639},{"date":"2025-10-15","agile":747,"iof":1639},{"date":"2025-10-16","agile":19,"iof":1639},{"date":"2025-10-17","agile":0,"iof":1639},{"date":"2025-10-18","agile":0,"iof":1639},{"date":"2025-10-19","agile":550,"iof":1639},{"date":"2025-10-20","agile":487,"iof":1639},{"date":"2025-10-21","agile":0,"iof":1639},{"date":"2025-10-22","agile":1285,"iof":1639},{"date":"2025-10-23","agile":4,"iof":1639},{"date":"2025-10-24","agile":2177,"iof":1639},{"date":"2025-10-25","agile":2626,"iof":1639},{"date":"2025-10-26","agile":3086,"iof":1639},{"date":"2025-10-27","agile":971,"iof":1639},{"date":"2025-10-28","agile":2335,"iof":1639},{"date":"2025-10-29","agile":544,"iof":1639},{"date":"2025-10-30","agile":-139,"iof":1639},{"date":"2025-10-31","agile":2523,"iof":1639},{"date":"2025-11-01","agile":2523,"iof":1639},{"date":"2025-11-02","agile":499,"iof":1639},{"date":"2025-11-03","agile":1770,"iof":1639},{"date":"2025-11-04","agile":2885,"iof":1639},{"date":"2025-11-05","agile":-6,"iof":1639},{"date":"2025-11-06","agile":-18,"iof":1639},{"date":"2025-11-07","agile":0,"iof":1639},{"date":"2025-11-08","agile":0,"iof":1639},{"date":"2025-11-09","agile":0,"iof":1639},{"date":"2025-11-10","agile":0,"iof":1639},{"date":"2025-11-11","agile":0,"iof":1639},{"date":"2025-11-12","agile":727,"iof":1639},{"date":"2025-11-13","agile":2820,"iof":1639},{"date":"2025-11-14","agile":0,"iof":1639},{"date":"2025-11-15","agile":993,"iof":1639},{"date":"2025-11-16","agile":0,"iof":1639},{"date":"2025-11-17","agile":263,"iof":1639},{"date":"2025-11-18","agile":0,"iof":1639},{"date":"2025-11-19","agile":0,"iof":1639},{"date":"2025-11-20","agile":-27,"iof":1639},{"date":"2025-11-21","agile":337,"iof":1639},{"date":"2025-11-22","agile":0,"iof":1639},{"date":"2025-11-23","agile":-7,"iof":1639},{"date":"2025-11-24","agile":116,"iof":1639},{"date":"2025-11-25","agile":1402,"iof":1639},{"date":"2025-11-26","agile":207,"iof":1639},{"date":"2025-11-27","agile":0,"iof":1639},{"date":"2025-11-28","agile":957,"iof":1639},{"date":"2025-11-29","agile":0,"iof":1639},{"date":"2025-11-30","agile":512,"iof":1639},{"date":"2025-12-01","agile":230,"iof":1639},{"date":"2025-12-02","agile":492,"iof":1639},{"date":"2025-12-03","agile":0,"iof":1639},{"date":"2025-12-04","agile":-9,"iof":1639},{"date":"2025-12-05","agile":0,"iof":1639},{"date":"2025-12-06","agile":21,"iof":1639},{"date":"2025-12-07","agile":0,"iof":1639},{"date":"2025-12-08","agile":2629,"iof":1639},{"date":"2025-12-09","agile":-1,"iof":1639},{"date":"2025-12-10","agile":1865,"iof":1639},{"date":"2025-12-11","agile":511,"iof":1639},{"date":"2025-12-12","agile":0,"iof":1639},{"date":"2025-12-13","agile":0,"iof":1639},{"date":"2025-12-14","agile":1028,"iof":1639},{"date":"2025-12-15","agile":4,"iof":1639},{"date":"2025-12-16","agile":32,"iof":1639},{"date":"2025-12-17","agile":0,"iof":1639},{"date":"2025-12-18","agile":780,"iof":1639},{"date":"2025-12-19","agile":1060,"iof":1639},{"date":"2025-12-20","agile":0,"iof":1639},{"date":"2025-12-21","agile":0,"iof":1639},{"date":"2025-12-22","agile":155,"iof":1639},{"date":"2025-12-23","agile":0,"iof":1639},{"date":"2025-12-24","agile":-17,"iof":1639},{"date":"2025-12-25","agile":174,"iof":1639},{"date":"2025-12-26","agile":0,"iof":1639},{"date":"2025-12-27","agile":0,"iof":1639},{"date":"2025-12-28","agile":0,"iof":1639},{"date":"2025-12-29","agile":0,"iof":1639},{"date":"2025-12-30","agile":0,"iof":1639},{"date":"2025-12-31","agile":0,"iof":1639},{"date":"2026-01-01","agile":1908,"iof":1639},{"date":"2026-01-02","agile":1882,"iof":1639},{"date":"2026-01-03","agile":0,"iof":1639},{"date":"2026-01-04","agile":0,"iof":1639},{"date":"2026-01-05","agile":644,"iof":1639},{"date":"2026-01-06","agile":0,"iof":1639},{"date":"2026-01-07","agile":0,"iof":1639},{"date":"2026-01-08","agile":2187,"iof":1639},{"date":"2026-01-09","agile":0,"iof":1639},{"date":"2026-01-10","agile":0,"iof":1639},{"date":"2026-01-11","agile":0,"iof":1639},{"date":"2026-01-12","agile":-10,"iof":1639},{"date":"2026-01-13","agile":0,"iof":1639},{"date":"2026-01-14","agile":0,"iof":1639},{"date":"2026-01-15","agile":0,"iof":1639},{"date":"2026-01-16","agile":0,"iof":1639},{"date":"2026-01-17","agile":0,"iof":1639},{"date":"2026-01-18","agile":0,"iof":1639},{"date":"2026-01-19","agile":-30,"iof":1639},{"date":"2026-01-20","agile":0,"iof":1639},{"date":"2026-01-21","agile":0,"iof":1639},{"date":"2026-01-22","agile":248,"iof":1639},{"date":"2026-01-23","agile":0,"iof":1639},{"date":"2026-01-24","agile":0,"iof":1639},{"date":"2026-01-25","agile":0,"iof":1639},{"date":"2026-01-26","agile":0,"iof":1639},{"date":"2026-01-27","agile":0,"iof":1639},{"date":"2026-01-28","agile":0,"iof":1639},{"date":"2026-01-29","agile":0,"iof":1639},{"date":"2026-01-30","agile":0,"iof":1639},{"date":"2026-01-31","agile":0,"iof":1639},{"date":"2026-02-01","agile":0,"iof":1639},{"date":"2026-02-02","agile":0,"iof":1639},{"date":"2026-02-03","agile":231,"iof":1639},{"date":"2026-02-04","agile":0,"iof":1639},{"date":"2026-02-05","agile":-27,"iof":1639},{"date":"2026-02-06","agile":0,"iof":1639},{"date":"2026-02-07","agile":0,"iof":1639},{"date":"2026-02-08","agile":0,"iof":1639},{"date":"2026-02-09","agile":0,"iof":1639},{"date":"2026-02-10","agile":0,"iof":1639},{"date":"2026-02-11","agile":0,"iof":1639},{"date":"2026-02-12","agile":0,"iof":1639},{"date":"2026-02-13","agile":0,"iof":1639},{"date":"2026-02-14","agile":0,"iof":1639},{"date":"2026-02-15","agile":0,"iof":1639},{"date":"2026-02-16","agile":0,"iof":1639},{"date":"2026-02-17","agile":-11,"iof":1639},{"date":"2026-02-18","agile":0,"iof":1639},{"date":"2026-02-19","agile":0,"iof":1639},{"date":"2026-02-20","agile":0,"iof":1639},{"date":"2026-02-21","agile":9,"iof":1639},{"date":"2026-02-22","agile":1810,"iof":1639},{"date":"2026-02-23","agile":1814,"iof":1639},{"date":"2026-02-24","agile":0,"iof":1639},{"date":"2026-02-25","agile":0,"iof":1639},{"date":"2026-02-26","agile":-30,"iof":1639},{"date":"2026-02-27","agile":744,"iof":1639},{"date":"2026-02-28","agile":0,"iof":1639},{"date":"2026-03-01","agile":552,"iof":1639},{"date":"2026-03-02","agile":2130,"iof":1639},{"date":"2026-03-03","agile":17,"iof":1639},{"date":"2026-03-04","agile":24,"iof":1639},{"date":"2026-03-05","agile":0,"iof":1639},{"date":"2026-03-06","agile":0,"iof":1639},{"date":"2026-03-07","agile":0,"iof":1639},{"date":"2026-03-08","agile":0,"iof":1639},{"date":"2026-03-09","agile":0,"iof":1639},{"date":"2026-03-10","agile":0,"iof":1639},{"date":"2026-03-11","agile":1863,"iof":1639},{"date":"2026-03-12","agile":434,"iof":1639},{"date":"2026-03-13","agile":3099,"iof":1639},{"date":"2026-03-14","agile":0,"iof":1639},{"date":"2026-03-15","agile":1102,"iof":1639},{"date":"2026-03-16","agile":3825,"iof":1639},{"date":"2026-03-17","agile":332,"iof":1639},{"date":"2026-03-18","agile":0,"iof":1639},{"date":"2026-03-19","agile":0,"iof":1639},{"date":"2026-03-20","agile":0,"iof":1639},{"date":"2026-03-21","agile":0,"iof":1639},{"date":"2026-03-22","agile":0,"iof":1639},{"date":"2026-03-23","agile":0,"iof":1639},{"date":"2026-03-24","agile":442,"iof":1639},{"date":"2026-03-25","agile":4258,"iof":1639},{"date":"2026-03-26","agile":-18,"iof":1639},{"date":"2026-03-27","agile":0,"iof":1639},{"date":"2026-03-28","agile":1898,"iof":1639},{"date":"2026-03-29","agile":423,"iof":1639},{"date":"2026-03-30","agile":3760,"iof":1639},{"date":"2026-03-31","agile":0,"iof":1639},{"date":"2026-04-01","agile":89,"iof":1639},{"date":"2026-04-02","agile":0,"iof":1639},{"date":"2026-04-03","agile":1446,"iof":1639}];
+
+// Monthly bar chart
+const mc = document.getElementById('monthlyChart');
+const mctx = mc.getContext('2d');
+function drawMonthly() {
+  const W = mc.width = mc.parentElement.clientWidth * 2;
+  const H = mc.height = 600;
+  const pad = { top:30, right:30, bottom:50, left:70 };
+  const pW = W-pad.left-pad.right;
+  const pH = H-pad.top-pad.bottom;
+  mctx.clearRect(0,0,W,H);
+
+  const vals = monthlyData.flatMap(m => [m.agileAvg, m.iofAvg]);
+  const maxV = Math.max(...vals) * 1.1;
+  const minV = Math.min(0, Math.min(...vals) * 1.1);
+  const range = maxV - minV;
+
+  const y = v => pad.top + pH - ((v - minV) / range) * pH;
+  const barW = pW / monthlyData.length;
+
+  // Grid
+  mctx.strokeStyle = '#2a2a4a'; mctx.lineWidth = 1;
+  for (let v = 0; v <= maxV; v += 500) {
+    mctx.beginPath(); mctx.moveTo(pad.left, y(v)); mctx.lineTo(W-pad.right, y(v)); mctx.stroke();
+    mctx.fillStyle='#666'; mctx.font='20px system-ui'; mctx.textAlign='right';
+    mctx.fillText('£'+(v/100).toFixed(0), pad.left-8, y(v)+6);
+  }
+
+  // Zero line
+  mctx.strokeStyle='#555'; mctx.lineWidth=2;
+  mctx.beginPath(); mctx.moveTo(pad.left, y(0)); mctx.lineTo(W-pad.right, y(0)); mctx.stroke();
+
+  monthlyData.forEach((m, i) => {
+    const x = pad.left + i * barW;
+    const bw = barW * 0.35;
+    // Agile bar
+    mctx.fillStyle = '#10b981';
+    const ah = Math.abs(y(0) - y(m.agileAvg));
+    mctx.fillRect(x + barW*0.1, m.agileAvg >= 0 ? y(m.agileAvg) : y(0), bw, ah);
+    // IOF bar
+    mctx.fillStyle = '#3b82f6';
+    const ih = Math.abs(y(0) - y(m.iofAvg));
+    mctx.fillRect(x + barW*0.1 + bw + 4, m.iofAvg >= 0 ? y(m.iofAvg) : y(0), bw, ih);
+    // Winner dot
+    const best = Math.max(m.agileAvg, m.iofAvg);
+    mctx.fillStyle = '#f59e0b';
+    mctx.beginPath(); mctx.arc(x + barW*0.5, y(best) - 12, 5, 0, Math.PI*2); mctx.fill();
+    // Label
+    mctx.fillStyle='#888'; mctx.font='20px system-ui'; mctx.textAlign='center';
+    mctx.fillText(m.label, x + barW*0.5, H - pad.bottom + 30);
+  });
+}
+drawMonthly();
+
+// Daily line chart
+const dc = document.getElementById('dailyChart');
+const dctx = dc.getContext('2d');
+function drawDaily() {
+  const W = dc.width = dc.parentElement.clientWidth * 2;
+  const H = dc.height = 500;
+  const pad = { top:20, right:20, bottom:40, left:70 };
+  const pW = W-pad.left-pad.right;
+  const pH = H-pad.top-pad.bottom;
+  dctx.clearRect(0,0,W,H);
+
+  const maxV = Math.max(...dailyData.map(d => Math.max(d.agile, d.iof))) * 1.1;
+  const minV = Math.min(0, Math.min(...dailyData.map(d => Math.min(d.agile, d.iof))) * 1.1);
+  const range = maxV - minV;
+  const y = v => pad.top + pH - ((v - minV) / range) * pH;
+  const x = i => pad.left + (i / (dailyData.length-1)) * pW;
+
+  // Zero line
+  dctx.strokeStyle='#555'; dctx.lineWidth=1;
+  dctx.beginPath(); dctx.moveTo(pad.left, y(0)); dctx.lineTo(W-pad.right, y(0)); dctx.stroke();
+
+  // IOF line
+  dctx.strokeStyle='#3b82f640'; dctx.lineWidth=2;
+  dctx.beginPath();
+  dailyData.forEach((d, i) => { i === 0 ? dctx.moveTo(x(i), y(d.iof)) : dctx.lineTo(x(i), y(d.iof)); });
+  dctx.stroke();
+
+  // Agile line
+  dctx.strokeStyle='#10b981'; dctx.lineWidth=2;
+  dctx.beginPath();
+  dailyData.forEach((d, i) => { i === 0 ? dctx.moveTo(x(i), y(d.agile)) : dctx.lineTo(x(i), y(d.agile)); });
+  dctx.stroke();
+
+  // X labels
+  dctx.fillStyle='#666'; dctx.font='18px system-ui'; dctx.textAlign='center';
+  for (let i = 0; i < dailyData.length; i += Math.floor(dailyData.length/12)) {
+    dctx.fillText(dailyData[i].date.slice(0,7), x(i), H-pad.bottom+25);
+  }
+
+  // Y labels
+  dctx.textAlign='right';
+  for (let v = 0; v <= maxV; v += 1000) {
+    dctx.fillText('£'+(v/100).toFixed(0), pad.left-8, y(v)+6);
+  }
+}
+drawDaily();
+window.addEventListener('resize', () => { drawMonthly(); drawDaily(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agile Rates — 22 June 2025 — ENWL Region N</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f0f1a; color: #e0e0e0; padding: 32px; }
+  h1 { color: #fff; font-size: 24px; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 14px; margin-bottom: 24px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .summary-card { background: #1a1a2e; border-radius: 12px; padding: 16px; border: 1px solid #2a2a4a; }
+  .summary-card .label { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary-card .value { color: #fff; font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .summary-card .detail { color: #666; font-size: 12px; margin-top: 4px; }
+  .negative .value { color: #10b981; }
+  .peak .value { color: #ef4444; }
+  .spread .value { color: #f59e0b; }
+  .paid .value { color: #10b981; }
+
+  table { width: 100%; border-collapse: collapse; background: #1a1a2e; border-radius: 12px; overflow: hidden; margin-bottom: 32px; }
+  thead th { background: #12122a; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; text-align: right; border-bottom: 2px solid #2a2a4a; position: sticky; top: 0; }
+  thead th:first-child, thead th:nth-child(2) { text-align: left; }
+  tbody td { padding: 10px 16px; border-bottom: 1px solid #1f1f3a; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+  tbody td:first-child { text-align: center; color: #666; font-size: 12px; }
+  tbody td:nth-child(2) { text-align: left; color: #ccc; font-weight: 500; }
+  tbody tr:hover { background: #1f1f3a; }
+
+  .neg { color: #10b981; font-weight: 600; }
+  .cheap { color: #34d399; }
+  .mid { color: #fbbf24; }
+  .high { color: #f97316; font-weight: 600; }
+  .very-high { color: #ef4444; font-weight: 700; }
+  .spread-pos { color: #10b981; }
+  .spread-neg { color: #ef4444; }
+
+  .bar-cell { position: relative; }
+  .bar { position: absolute; top: 4px; bottom: 4px; left: 0; border-radius: 3px; opacity: 0.2; }
+  .bar-import { background: #ef4444; }
+  .bar-export { background: #10b981; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .tag-negative { background: #10b98120; color: #10b981; }
+  .tag-cheap { background: #34d39920; color: #34d399; }
+  .tag-peak { background: #ef444420; color: #ef4444; }
+  .tag-solar-glut { background: #f59e0b20; color: #f59e0b; }
+
+  .chart-section { margin-bottom: 32px; }
+  .chart-section h2 { color: #fff; font-size: 18px; margin-bottom: 16px; }
+  .chart-container { background: #1a1a2e; border-radius: 12px; padding: 24px; border: 1px solid #2a2a4a; }
+  canvas { width: 100% !important; height: 300px !important; }
+
+  .legend { display: flex; gap: 24px; margin-top: 12px; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #888; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+  .note { background: #1a1a2e; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0; margin-top: 24px; }
+  .note p { color: #ccc; font-size: 13px; line-height: 1.6; }
+  .note strong { color: #f59e0b; }
+</style>
+</head>
+<body>
+
+<h1>⚡ Octopus Agile — 22 June 2025</h1>
+<p class="subtitle">Region N (ENWL — North West England) · Half-hourly import & export rates · All prices pence/kWh inc. VAT</p>
+
+<div class="summary-grid">
+  <div class="summary-card negative">
+    <div class="label">Cheapest Import</div>
+    <div class="value">-5.19p</div>
+    <div class="detail">14:00–14:30 · Paid to consume</div>
+  </div>
+  <div class="summary-card peak">
+    <div class="label">Peak Import</div>
+    <div class="value">30.65p</div>
+    <div class="detail">18:30–19:00 · Evening peak</div>
+  </div>
+  <div class="summary-card spread">
+    <div class="label">Best Spread</div>
+    <div class="value">35.84p</div>
+    <div class="detail">Peak import − cheapest import</div>
+  </div>
+  <div class="summary-card paid">
+    <div class="label">Negative Slots</div>
+    <div class="value">15</div>
+    <div class="detail">07:30–15:00 · 7.5 hours free charging</div>
+  </div>
+</div>
+
+<div class="chart-section">
+  <h2>Rate Profile</h2>
+  <div class="chart-container">
+    <canvas id="rateChart"></canvas>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Import rate</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div> Export rate</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b40; border: 1px solid #f59e0b"></div> Negative zone</div>
+    </div>
+  </div>
+</div>
+
+<h2 style="color:#fff; font-size:18px; margin-bottom:16px;">Half-Hourly Rate Table</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Slot</th>
+      <th>Time</th>
+      <th>Import (p/kWh)</th>
+      <th>Export (p/kWh)</th>
+      <th>Spread</th>
+      <th>Window</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody">
+  </tbody>
+</table>
+
+<div class="note">
+  <p><strong>Key observation:</strong> Export rates track at roughly 40-45% of import rates across every slot.
+  The 15 negative-price slots (07:30–15:00) represent a solar generation glut where grid supply exceeds demand.
+  Charging a 322 kWh battery during this window earns £6.09 in payments. The stored energy is worth £26.74
+  if exported at Agile Outgoing rates, or £64.69 if used to offset household consumption at full import rates.</p>
+</div>
+
+<script>
+const data = [
+  { slot: 0,  time: "00:00", end: "00:30", imp: 4.92,  exp: 3.07  },
+  { slot: 1,  time: "00:30", end: "01:00", imp: 3.97,  exp: 2.65  },
+  { slot: 2,  time: "01:00", end: "01:30", imp: 18.38, exp: 8.98  },
+  { slot: 3,  time: "01:30", end: "02:00", imp: 17.30, exp: 8.51  },
+  { slot: 4,  time: "02:00", end: "02:30", imp: 16.80, exp: 8.29  },
+  { slot: 5,  time: "02:30", end: "03:00", imp: 16.10, exp: 7.98  },
+  { slot: 6,  time: "03:00", end: "03:30", imp: 14.89, exp: 7.45  },
+  { slot: 7,  time: "03:30", end: "04:00", imp: 14.77, exp: 7.40  },
+  { slot: 8,  time: "04:00", end: "04:30", imp: 12.13, exp: 6.24  },
+  { slot: 9,  time: "04:30", end: "05:00", imp: 8.82,  exp: 4.78  },
+  { slot: 10, time: "05:00", end: "05:30", imp: 11.13, exp: 5.80  },
+  { slot: 11, time: "05:30", end: "06:00", imp: 8.60,  exp: 4.68  },
+  { slot: 12, time: "06:00", end: "06:30", imp: 4.41,  exp: 2.84  },
+  { slot: 13, time: "06:30", end: "07:00", imp: 3.75,  exp: 2.55  },
+  { slot: 14, time: "07:00", end: "07:30", imp: 0.22,  exp: 1.00  },
+  { slot: 15, time: "07:30", end: "08:00", imp: -1.60, exp: 0.20  },
+  { slot: 16, time: "08:00", end: "08:30", imp: -1.10, exp: 0.42  },
+  { slot: 17, time: "08:30", end: "09:00", imp: -2.43, exp: 0.00  },
+  { slot: 18, time: "09:00", end: "09:30", imp: -1.10, exp: 0.42  },
+  { slot: 19, time: "09:30", end: "10:00", imp: -4.85, exp: 0.00  },
+  { slot: 20, time: "10:00", end: "10:30", imp: -0.98, exp: 0.47  },
+  { slot: 21, time: "10:30", end: "11:00", imp: -3.31, exp: 0.00  },
+  { slot: 22, time: "11:00", end: "11:30", imp: -0.51, exp: 0.68  },
+  { slot: 23, time: "11:30", end: "12:00", imp: -2.78, exp: 0.00  },
+  { slot: 24, time: "12:00", end: "12:30", imp: -2.98, exp: 0.00  },
+  { slot: 25, time: "12:30", end: "13:00", imp: -2.58, exp: 0.00  },
+  { slot: 26, time: "13:00", end: "13:30", imp: -1.98, exp: 0.03  },
+  { slot: 27, time: "13:30", end: "14:00", imp: -1.98, exp: 0.03  },
+  { slot: 28, time: "14:00", end: "14:30", imp: -5.19, exp: 0.00  },
+  { slot: 29, time: "14:30", end: "15:00", imp: -2.01, exp: 0.02  },
+  { slot: 30, time: "15:00", end: "15:30", imp: 0.60,  exp: 1.16  },
+  { slot: 31, time: "15:30", end: "16:00", imp: 1.71,  exp: 1.65  },
+  { slot: 32, time: "16:00", end: "16:30", imp: 12.87, exp: 4.41  },
+  { slot: 33, time: "16:30", end: "17:00", imp: 15.86, exp: 5.72  },
+  { slot: 34, time: "17:00", end: "17:30", imp: 23.35, exp: 9.02  },
+  { slot: 35, time: "17:30", end: "18:00", imp: 26.00, exp: 10.18 },
+  { slot: 36, time: "18:00", end: "18:30", imp: 29.44, exp: 11.70 },
+  { slot: 37, time: "18:30", end: "19:00", imp: 30.65, exp: 12.23 },
+  { slot: 38, time: "19:00", end: "19:30", imp: 22.05, exp: 10.60 },
+  { slot: 39, time: "19:30", end: "20:00", imp: 22.59, exp: 10.84 },
+  { slot: 40, time: "20:00", end: "20:30", imp: 22.51, exp: 10.80 },
+  { slot: 41, time: "20:30", end: "21:00", imp: 22.75, exp: 10.91 },
+  { slot: 42, time: "21:00", end: "21:30", imp: 23.29, exp: 11.14 },
+  { slot: 43, time: "21:30", end: "22:00", imp: 22.71, exp: 10.89 },
+  { slot: 44, time: "22:00", end: "22:30", imp: 21.61, exp: 10.41 },
+  { slot: 45, time: "22:30", end: "23:00", imp: 18.50, exp: 9.04  },
+  { slot: 46, time: "23:00", end: "23:30", imp: 10.28, exp: 5.42  },
+  { slot: 47, time: "23:30", end: "00:00", imp: 5.51,  exp: 3.32  },
+];
+
+// Build table
+const tbody = document.getElementById('tableBody');
+for (const d of data) {
+  const spread = d.exp - d.imp;
+  const spreadStr = spread >= 0 ? `+${spread.toFixed(2)}` : spread.toFixed(2);
+
+  let impClass = '';
+  if (d.imp < 0) impClass = 'neg';
+  else if (d.imp < 5) impClass = 'cheap';
+  else if (d.imp < 20) impClass = 'mid';
+  else if (d.imp < 30) impClass = 'high';
+  else impClass = 'very-high';
+
+  let window = '';
+  if (d.imp < 0) window = '<span class="tag tag-negative">NEGATIVE</span>';
+  else if (d.imp < 5) window = '<span class="tag tag-cheap">CHEAP</span>';
+  else if (d.imp >= 25) window = '<span class="tag tag-peak">PEAK</span>';
+  else if (d.slot >= 15 && d.slot <= 29 && d.imp < 2) window = '<span class="tag tag-solar-glut">SOLAR GLUT</span>';
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${d.slot}</td>
+    <td>${d.time}–${d.end}</td>
+    <td class="${impClass}">${d.imp.toFixed(2)}p</td>
+    <td>${d.exp.toFixed(2)}p</td>
+    <td class="${spread >= 0 ? 'spread-pos' : 'spread-neg'}">${spreadStr}p</td>
+    <td>${window}</td>
+  `;
+  tbody.appendChild(tr);
+}
+
+// Chart
+const canvas = document.getElementById('rateChart');
+const ctx = canvas.getContext('2d');
+
+function drawChart() {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = 600;
+  const W = canvas.width;
+  const H = canvas.height;
+  const pad = { top: 40, right: 40, bottom: 60, left: 70 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Scale
+  const minRate = -8;
+  const maxRate = 35;
+  const range = maxRate - minRate;
+
+  function yPos(val) { return pad.top + plotH - ((val - minRate) / range) * plotH; }
+  function xPos(i) { return pad.left + (i / 47) * plotW; }
+
+  // Grid lines
+  ctx.strokeStyle = '#2a2a4a';
+  ctx.lineWidth = 1;
+  for (let v = -5; v <= 35; v += 5) {
+    const y = yPos(v);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#666'; ctx.font = '20px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText(`${v}p`, pad.left - 10, y + 6);
+  }
+
+  // Zero line
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 4]);
+  const zeroY = yPos(0);
+  ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(W - pad.right, zeroY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Negative zone highlight
+  ctx.fillStyle = '#f59e0b10';
+  const negStart = xPos(15);
+  const negEnd = xPos(29);
+  ctx.fillRect(negStart, pad.top, negEnd - negStart, plotH);
+
+  // X axis labels
+  ctx.fillStyle = '#666'; ctx.font = '18px system-ui'; ctx.textAlign = 'center';
+  for (let i = 0; i < 48; i += 4) {
+    const x = xPos(i);
+    ctx.fillText(data[i].time, x, H - pad.bottom + 30);
+  }
+
+  // Import line (red)
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i < 48; i++) {
+    const x = xPos(i); const y = yPos(data[i].imp);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Import fill
+  ctx.fillStyle = '#ef444415';
+  ctx.beginPath();
+  ctx.moveTo(xPos(0), yPos(0));
+  for (let i = 0; i < 48; i++) ctx.lineTo(xPos(i), yPos(data[i].imp));
+  ctx.lineTo(xPos(47), yPos(0));
+  ctx.closePath();
+  ctx.fill();
+
+  // Export line (green)
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i < 48; i++) {
+    const x = xPos(i); const y = yPos(data[i].exp);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Export fill
+  ctx.fillStyle = '#10b98115';
+  ctx.beginPath();
+  ctx.moveTo(xPos(0), yPos(0));
+  for (let i = 0; i < 48; i++) ctx.lineTo(xPos(i), yPos(data[i].exp));
+  ctx.lineTo(xPos(47), yPos(0));
+  ctx.closePath();
+  ctx.fill();
+
+  // Dots
+  for (let i = 0; i < 48; i++) {
+    // Import dot
+    ctx.fillStyle = data[i].imp < 0 ? '#10b981' : '#ef4444';
+    ctx.beginPath(); ctx.arc(xPos(i), yPos(data[i].imp), 4, 0, Math.PI * 2); ctx.fill();
+    // Export dot
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath(); ctx.arc(xPos(i), yPos(data[i].exp), 3, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Labels
+  ctx.fillStyle = '#ef4444'; ctx.font = 'bold 22px system-ui';
+  ctx.fillText('30.65p peak', xPos(37) + 60, yPos(30.65) - 10);
+  ctx.fillStyle = '#10b981';
+  ctx.fillText('-5.19p (paid)', xPos(28), yPos(-5.19) + 30);
+}
+
+drawChart();
+window.addEventListener('resize', drawChart);
+</script>
+
+</body>
+</html>

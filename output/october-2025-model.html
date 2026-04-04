@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RoseStack — October 2025 Full Month Model</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f0f1a;color:#e0e0e0;padding:24px;max-width:1600px;margin:0 auto}
+h1{color:#fff;font-size:24px;margin-bottom:4px}h2{color:#fff;font-size:18px;margin:28px 0 12px}
+.sub{color:#888;font-size:13px;margin-bottom:24px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:28px}
+.card{background:#1a1a2e;border-radius:10px;padding:16px;border:1px solid #2a2a4a}
+.card .lbl{color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.card .val{font-size:28px;font-weight:700;margin-top:2px}
+.card .det{color:#666;font-size:11px;margin-top:4px}
+.iof{color:#3b82f6}.flux{color:#a855f7}.agile{color:#10b981}
+table{width:100%;border-collapse:collapse;background:#1a1a2e;border-radius:10px;overflow:hidden;margin-bottom:24px;font-size:13px}
+thead th{background:#12122a;color:#888;font-size:10px;text-transform:uppercase;padding:8px 10px;text-align:right;border-bottom:2px solid #2a2a4a;position:sticky;top:0;white-space:nowrap}
+thead th:first-child{text-align:left}
+tbody td{padding:6px 10px;border-bottom:1px solid #1f1f3a;text-align:right;font-variant-numeric:tabular-nums}
+tbody td:first-child{text-align:left;color:#ccc;font-weight:500}
+tbody tr:hover{background:#1f1f3a}
+.chart-box{background:#1a1a2e;border-radius:10px;padding:20px;border:1px solid #2a2a4a;margin-bottom:24px}
+canvas{width:100%!important}
+.legend{display:flex;gap:16px;margin-top:8px;justify-content:center;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:#888}
+.legend-dot{width:10px;height:10px;border-radius:2px}
+.winner{font-weight:700}.best-row{background:#10b98108}
+.neg{color:#10b981}.pos{color:#ef4444}
+.note{background:#1a1a2e;border-left:4px solid #f59e0b;padding:14px;border-radius:0 8px 8px 0;margin:24px 0}
+.note p{color:#ccc;font-size:12px;line-height:1.6}.note strong{color:#f59e0b}
+.tariff-header{display:flex;gap:24px;margin-bottom:16px}
+.tariff-header .th{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600}
+.th-iof{background:#3b82f620;color:#3b82f6;border:1px solid #3b82f640}
+.th-flux{background:#a855f720;color:#a855f7;border:1px solid #a855f740}
+.th-agile{background:#10b98120;color:#10b981;border:1px solid #10b98140}
+</style></head><body>
+
+<h1>⚡ October 2025 — Full Month Tariff Model</h1>
+<p class="sub">600kWh battery · 100kW inverter · 70kW G99 export · 20kWp solar · 2×EV · 24kWh/day household · Start: empty (5% SOC)</p>
+
+<div class="tariff-header">
+  <div class="th th-iof">🔌 IOF: Import = Export parity (38.26p peak) · 20% reserve · Kraken controls</div>
+  <div class="th th-flux">💡 Flux: Off-peak 17.9p/5.1p · Day 26.8p/10.5p · Peak 30.7p/30.7p</div>
+  <div class="th th-agile">📈 Agile: Real half-hourly rates from Octopus API</div>
+</div>
+
+<div class="cards">
+  <div class="card"><div class="lbl">IOF October Total</div><div class="val iof">£1228.47</div><div class="det">£39.63/day avg · 31 days</div></div>
+  <div class="card"><div class="lbl">Flux October Total</div><div class="val flux">£580.85</div><div class="det">£18.74/day avg</div></div>
+  <div class="card"><div class="lbl">Agile October Total</div><div class="val agile">£158.79</div><div class="det">£5.12/day avg</div></div>
+  <div class="card"><div class="lbl">Best Tariff</div><div class="val" style="color:#f59e0b">IOF</div><div class="det">For October 2025</div></div>
+  <div class="card"><div class="lbl">IOF Annualised</div><div class="val iof">£14464</div><div class="det">If every month = October</div></div>
+  <div class="card"><div class="lbl">Flux Annualised</div><div class="val flux">£6839</div><div class="det">If every month = October</div></div>
+</div>
+
+<h2>Daily Revenue Chart</h2>
+<div class="chart-box">
+  <canvas id="dailyChart" height="300"></canvas>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>IOF</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Flux</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Agile</div>
+  </div>
+</div>
+
+<h2>SOC Tracker (Battery Level Through Month)</h2>
+<div class="chart-box">
+  <canvas id="socChart" height="200"></canvas>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>IOF SOC%</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Flux SOC%</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Agile SOC%</div>
+  </div>
+</div>
+
+<h2>Cumulative P&L</h2>
+<div class="chart-box">
+  <canvas id="cumChart" height="250"></canvas>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>IOF cumulative</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Flux cumulative</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Agile cumulative</div>
+  </div>
+</div>
+
+<h2>Daily Breakdown</h2>
+<table>
+<thead><tr>
+  <th>Date</th><th>Day</th>
+  <th style="color:#3b82f6">IOF Net</th><th style="color:#3b82f6">IOF SOC</th>
+  <th style="color:#a855f7">Flux Net</th><th style="color:#a855f7">Flux SOC</th>
+  <th style="color:#10b981">Agile Net</th><th style="color:#10b981">Agile SOC</th><th style="color:#10b981">Neg</th><th style="color:#10b981">Min Imp</th><th style="color:#10b981">Peak Imp</th>
+  <th>Best</th><th>Solar</th>
+</tr></thead>
+<tbody>
+<tr>
+    <td>2025-10-01</td><td>Wed</td>
+    <td class="iof">£32.16</td><td>13%</td>
+    <td class="flux">£11.01</td><td>13%</td>
+    <td class="agile">£-5.11</td><td>8%</td>
+    <td>0</td><td>13.72p</td><td>38.79p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-02</td><td>Thu</td>
+    <td class="iof">£32.79</td><td>20%</td>
+    <td class="flux">£11.64</td><td>20%</td>
+    <td class="agile">£0.02</td><td>7%</td>
+    <td>0</td><td>5.51p</td><td>35.73p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-03</td><td>Fri</td>
+    <td class="iof">£32.79</td><td>28%</td>
+    <td class="flux">£11.64</td><td>28%</td>
+    <td class="agile">£5.92</td><td>40%</td>
+    <td>1</td><td>-0.15p</td><td>27.09p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-04</td><td>Sat</td>
+    <td class="iof">£32.79</td><td>35%</td>
+    <td class="flux">£11.64</td><td>35%</td>
+    <td class="agile">£1.63</td><td>90%</td>
+    <td>20</td><td>-0.46p</td><td>17.72p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-05</td><td>Sun</td>
+    <td class="iof">£39.22</td><td>37%</td>
+    <td class="flux">£11.64</td><td>43%</td>
+    <td class="agile">£0.71</td><td>90%</td>
+    <td>16</td><td>-1.34p</td><td>29.68p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-06</td><td>Mon</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£15.78</td><td>47%</td>
+    <td class="agile">£32.03</td><td>54%</td>
+    <td>0</td><td>2.45p</td><td>40.92p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-07</td><td>Tue</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-5.14</td><td>58%</td>
+    <td>0</td><td>14.24p</td><td>44.7p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-08</td><td>Wed</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-2.33</td><td>57%</td>
+    <td>0</td><td>16.21p</td><td>41.43p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-09</td><td>Thu</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-2.24</td><td>55%</td>
+    <td>0</td><td>14.95p</td><td>39.89p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-10</td><td>Fri</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-2.45</td><td>54%</td>
+    <td>0</td><td>15.54p</td><td>39.67p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-11</td><td>Sat</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-2.43</td><td>52%</td>
+    <td>0</td><td>16.27p</td><td>39.56p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-12</td><td>Sun</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-2.97</td><td>51%</td>
+    <td>0</td><td>16.25p</td><td>39.67p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-13</td><td>Mon</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£7.15</td><td>53%</td>
+    <td>0</td><td>15.88p</td><td>61.91p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-14</td><td>Tue</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-1.88</td><td>59%</td>
+    <td>0</td><td>16.15p</td><td>60.95p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-15</td><td>Wed</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£6.28</td><td>58%</td>
+    <td>0</td><td>16.32p</td><td>62.6p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-16</td><td>Thu</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-3.67</td><td>59%</td>
+    <td>0</td><td>15.66p</td><td>44.08p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-17</td><td>Fri</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-2.52</td><td>57%</td>
+    <td>0</td><td>16.1p</td><td>39.82p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-18</td><td>Sat</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-3.44</td><td>57%</td>
+    <td>0</td><td>15.75p</td><td>37.68p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-19</td><td>Sun</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£6.71</td><td>54%</td>
+    <td>0</td><td>8.78p</td><td>35.92p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-20</td><td>Mon</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£3.92</td><td>54%</td>
+    <td>0</td><td>10.68p</td><td>38.34p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-21</td><td>Tue</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-2.00</td><td>53%</td>
+    <td>0</td><td>12.13p</td><td>36.58p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-22</td><td>Wed</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£11.89</td><td>54%</td>
+    <td>0</td><td>12.35p</td><td>59.07p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-23</td><td>Thu</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-0.84</td><td>62%</td>
+    <td>0</td><td>2.6p</td><td>35.26p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-24</td><td>Fri</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£18.81</td><td>84%</td>
+    <td>0</td><td>0.86p</td><td>35.55p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-25</td><td>Sat</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£11.06</td><td>88%</td>
+    <td>10</td><td>-0.44p</td><td>30.72p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-26</td><td>Sun</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£32.00</td><td>80%</td>
+    <td>11</td><td>-4.41p</td><td>37.33p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-27</td><td>Mon</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£13.15</td><td>78%</td>
+    <td>1</td><td>-0.9p</td><td>39.01p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-28</td><td>Tue</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£39.10</td><td>31%</td>
+    <td>0</td><td>3.16p</td><td>36.55p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-29</td><td>Wed</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-3.60</td><td>42%</td>
+    <td>0</td><td>10.8p</td><td>39.57p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-30</td><td>Thu</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£-0.30</td><td>56%</td>
+    <td>0</td><td>1.68p</td><td>35.1p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+<tr>
+    <td>2025-10-31</td><td>Fri</td>
+    <td class="iof">£40.72</td><td>37%</td>
+    <td class="flux">£20.30</td><td>47%</td>
+    <td class="agile">£9.33</td><td>72%</td>
+    <td>0</td><td>1.68p</td><td>33.05p</td>
+    <td class="iof winner">IOF</td><td>0kWh</td>
+  </tr>
+</tbody>
+</table>
+
+<div class="note">
+<p><strong>Model assumptions:</strong> IOF: 20% SOC reserve, Kraken charges off-peak (02:00-05:00) and discharges peak (16:00-19:00) only, full utilisation.
+Flux: 10% reserve, same charge/discharge windows but different import/export rates. Flux peak export = 30.68p (vs IOF 38.26p).
+Agile: 5% reserve, greedy optimiser charges cheapest slots and discharges into best export + self-use, cycle degradation hurdle of 0.6p/kWh.
+All tariffs: house self-use at 0.5kWh/slot (24kWh/day), 2 EVs at 15kWh/day each charged on cheapest available, 20kWp solar (October yield ~2.5kWh/kWp/day).</p>
+</div>
+
+<script>
+const data = [{"d":"10-01","iof":3216,"flux":1101,"agile":-511,"iofSoc":13,"fluxSoc":13,"agileSoc":8},{"d":"10-02","iof":3279,"flux":1164,"agile":2,"iofSoc":20,"fluxSoc":20,"agileSoc":7},{"d":"10-03","iof":3279,"flux":1164,"agile":592,"iofSoc":28,"fluxSoc":28,"agileSoc":40},{"d":"10-04","iof":3279,"flux":1164,"agile":163,"iofSoc":35,"fluxSoc":35,"agileSoc":90},{"d":"10-05","iof":3922,"flux":1164,"agile":71,"iofSoc":37,"fluxSoc":43,"agileSoc":90},{"d":"10-06","iof":4072,"flux":1578,"agile":3203,"iofSoc":37,"fluxSoc":47,"agileSoc":54},{"d":"10-07","iof":4072,"flux":2030,"agile":-514,"iofSoc":37,"fluxSoc":47,"agileSoc":58},{"d":"10-08","iof":4072,"flux":2030,"agile":-233,"iofSoc":37,"fluxSoc":47,"agileSoc":57},{"d":"10-09","iof":4072,"flux":2030,"agile":-224,"iofSoc":37,"fluxSoc":47,"agileSoc":55},{"d":"10-10","iof":4072,"flux":2030,"agile":-245,"iofSoc":37,"fluxSoc":47,"agileSoc":54},{"d":"10-11","iof":4072,"flux":2030,"agile":-243,"iofSoc":37,"fluxSoc":47,"agileSoc":52},{"d":"10-12","iof":4072,"flux":2030,"agile":-297,"iofSoc":37,"fluxSoc":47,"agileSoc":51},{"d":"10-13","iof":4072,"flux":2030,"agile":715,"iofSoc":37,"fluxSoc":47,"agileSoc":53},{"d":"10-14","iof":4072,"flux":2030,"agile":-188,"iofSoc":37,"fluxSoc":47,"agileSoc":59},{"d":"10-15","iof":4072,"flux":2030,"agile":628,"iofSoc":37,"fluxSoc":47,"agileSoc":58},{"d":"10-16","iof":4072,"flux":2030,"agile":-367,"iofSoc":37,"fluxSoc":47,"agileSoc":59},{"d":"10-17","iof":4072,"flux":2030,"agile":-252,"iofSoc":37,"fluxSoc":47,"agileSoc":57},{"d":"10-18","iof":4072,"flux":2030,"agile":-344,"iofSoc":37,"fluxSoc":47,"agileSoc":57},{"d":"10-19","iof":4072,"flux":2030,"agile":671,"iofSoc":37,"fluxSoc":47,"agileSoc":54},{"d":"10-20","iof":4072,"flux":2030,"agile":392,"iofSoc":37,"fluxSoc":47,"agileSoc":54},{"d":"10-21","iof":4072,"flux":2030,"agile":-200,"iofSoc":37,"fluxSoc":47,"agileSoc":53},{"d":"10-22","iof":4072,"flux":2030,"agile":1189,"iofSoc":37,"fluxSoc":47,"agileSoc":54},{"d":"10-23","iof":4072,"flux":2030,"agile":-84,"iofSoc":37,"fluxSoc":47,"agileSoc":62},{"d":"10-24","iof":4072,"flux":2030,"agile":1881,"iofSoc":37,"fluxSoc":47,"agileSoc":84},{"d":"10-25","iof":4072,"flux":2030,"agile":1106,"iofSoc":37,"fluxSoc":47,"agileSoc":88},{"d":"10-26","iof":4072,"flux":2030,"agile":3200,"iofSoc":37,"fluxSoc":47,"agileSoc":80},{"d":"10-27","iof":4072,"flux":2030,"agile":1315,"iofSoc":37,"fluxSoc":47,"agileSoc":78},{"d":"10-28","iof":4072,"flux":2030,"agile":3910,"iofSoc":37,"fluxSoc":47,"agileSoc":31},{"d":"10-29","iof":4072,"flux":2030,"agile":-360,"iofSoc":37,"fluxSoc":47,"agileSoc":42},{"d":"10-30","iof":4072,"flux":2030,"agile":-30,"iofSoc":37,"fluxSoc":47,"agileSoc":56},{"d":"10-31","iof":4072,"flux":2030,"agile":933,"iofSoc":37,"fluxSoc":47,"agileSoc":72}];
+
+function drawChart(canvasId, getValue, opts = {}) {
+  const c = document.getElementById(canvasId);
+  const ctx = c.getContext('2d');
+  const W = c.width = c.parentElement.clientWidth * 2;
+  const H = c.height = opts.height || 600;
+  const pad = {top:20,right:20,bottom:50,left:70};
+  const pW = W-pad.left-pad.right, pH = H-pad.top-pad.bottom;
+  ctx.clearRect(0,0,W,H);
+
+  const allVals = data.flatMap(d => getValue(d));
+  let maxV = Math.max(...allVals) * 1.1;
+  let minV = opts.minZero ? 0 : Math.min(0, Math.min(...allVals) * 1.1);
+  if (opts.maxV) maxV = opts.maxV;
+  const range = maxV - minV || 1;
+  const y = v => pad.top + pH - ((v-minV)/range)*pH;
+  const x = i => pad.left + (i/(data.length-1))*pW;
+
+  // Grid
+  ctx.strokeStyle='#2a2a4a';ctx.lineWidth=1;
+  const step = opts.step || Math.ceil((maxV-minV)/5/100)*100;
+  for(let v=Math.ceil(minV/step)*step;v<=maxV;v+=step){
+    ctx.beginPath();ctx.moveTo(pad.left,y(v));ctx.lineTo(W-pad.right,y(v));ctx.stroke();
+    ctx.fillStyle='#666';ctx.font='20px system-ui';ctx.textAlign='right';
+    ctx.fillText(opts.fmt?opts.fmt(v):(v/100).toFixed(0),pad.left-8,y(v)+6);
+  }
+  if(!opts.noZero){ctx.strokeStyle='#555';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.left,y(0));ctx.lineTo(W-pad.right,y(0));ctx.stroke();}
+
+  // Lines
+  const colors = ['#3b82f6','#a855f7','#10b981'];
+  const getters = [d=>[d.iof||0],d=>[d.flux||0],d=>[d.agile||0]];
+  if(opts.getters) getters.splice(0,3,...opts.getters);
+
+  getters.forEach((getter, ci) => {
+    ctx.strokeStyle=colors[ci];ctx.lineWidth=3;ctx.beginPath();
+    let cumulative = 0;
+    data.forEach((d,i)=>{
+      const vals = getter(d);
+      const v = opts.cumulative ? (cumulative += vals[0]) : vals[0];
+      i===0?ctx.moveTo(x(i),y(v)):ctx.lineTo(x(i),y(v));
+    });
+    ctx.stroke();
+  });
+
+  // X labels
+  ctx.fillStyle='#666';ctx.font='18px system-ui';ctx.textAlign='center';
+  for(let i=0;i<data.length;i+=2)ctx.fillText(data[i].d,x(i),H-pad.bottom+25);
+}
+
+drawChart('dailyChart', d=>[d.iof,d.flux,d.agile], {step:1000});
+drawChart('socChart', d=>[d.iofSoc,d.fluxSoc,d.agileSoc], {
+  getters:[d=>[d.iofSoc],d=>[d.fluxSoc],d=>[d.agileSoc]],
+  minZero:true, maxV:100, step:20, fmt:v=>v+'%', noZero:true, height:400
+});
+drawChart('cumChart', d=>[d.iof,d.flux,d.agile], {cumulative:true, step:5000, height:500});
+
+window.addEventListener('resize',()=>{
+  drawChart('dailyChart', d=>[d.iof,d.flux,d.agile], {step:1000});
+  drawChart('socChart', d=>[d.iofSoc,d.fluxSoc,d.agileSoc], {
+    getters:[d=>[d.iofSoc],d=>[d.fluxSoc],d=>[d.agileSoc]],
+    minZero:true, maxV:100, step:20, fmt:v=>v+'%', noZero:true, height:400
+  });
+  drawChart('cumChart', d=>[d.iof,d.flux,d.agile], {cumulative:true, step:5000, height:500});
+});
+</script>
+</body></html>
