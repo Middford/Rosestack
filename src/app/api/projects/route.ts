@@ -52,6 +52,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // Geocode by full address if lat/lng look like postcode centroids or defaults
+    let lat = body.latitude ?? 53.8;
+    let lng = body.longitude ?? -2.4;
+    if (body.address && body.postcode && (lat === 53.8 || lat === 53.75 || !body.latitude)) {
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(body.address + ', ' + body.postcode)}&format=json&limit=1&countrycodes=gb`,
+          { signal: AbortSignal.timeout(3000) },
+        );
+        const geoData = await geoRes.json();
+        if (geoData?.[0]) {
+          lat = parseFloat(geoData[0].lat);
+          lng = parseFloat(geoData[0].lon);
+        }
+      } catch {
+        // Fall back to provided coordinates
+      }
+    }
+
     // Derive system specs from hardware catalogue
     const batteryId = body.batteryId ?? 'bat-fogstar-64';
     const inverterId = body.inverterId ?? 'inv-solis-30k';
@@ -86,8 +105,8 @@ export async function POST(request: Request) {
       .values({
         address: body.address,
         postcode: body.postcode,
-        latitude: body.latitude ?? 53.8,
-        longitude: body.longitude ?? -2.4,
+        latitude: lat,
+        longitude: lng,
         phase: plannedPhase,
         status: 'prospect',
         targetInstallDate: body.targetInstallDate

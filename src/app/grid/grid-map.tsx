@@ -75,14 +75,30 @@ export function GridMap() {
     if (!prop.latitude || !prop.longitude) return;
     setAdding(prop.propertyId);
     try {
+      // Geocode by full address for precise location (not postcode centroid)
+      let lat = prop.latitude;
+      let lng = prop.longitude;
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(prop.address + ', ' + prop.postcode)}&format=json&limit=1&countrycodes=gb`
+        );
+        const geoData = await geoRes.json();
+        if (geoData?.[0]) {
+          lat = parseFloat(geoData[0].lat);
+          lng = parseFloat(geoData[0].lon);
+        }
+      } catch {
+        // Fall back to postcode centroid if geocoding fails
+      }
+
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           address: prop.address,
           postcode: prop.postcode,
-          latitude: prop.latitude,
-          longitude: prop.longitude,
+          latitude: lat,
+          longitude: lng,
           phase: prop.nearestSubstationOutfeed === '415V' ? '3-phase' : '1-phase',
           currentPhase: prop.nearestSubstationOutfeed === '415V' ? '3-phase' : '1-phase',
           plannedPhase: '3-phase',
@@ -523,6 +539,14 @@ export function GridMap() {
               <span className="flex items-center gap-1"><span className="w-6 h-0.5 bg-violet-500 inline-block" /> Feeder network</span>
               <span className="flex items-center gap-1"><span className="w-6 h-0.5 bg-amber-500 inline-block" style={{ borderTop: '2px dashed #F59E0B' }} /> → Primary substation</span>
             </div>
+
+            {/* Data disclaimer */}
+            <p className="text-[9px] text-text-tertiary italic pt-1">
+              Infrastructure data from ENWL Open Data (transformer ratings, headroom, voltages are real).
+              Lines show network hierarchy — not physical cable routes (underground routes not published by ENWL).
+              Property locations are postcode centroids — confirm exact position on site visit.
+              Always confirm actual connection point with ENWL before quoting.
+            </p>
           </Card>
         );
       })()}
