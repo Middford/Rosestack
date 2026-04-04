@@ -35,6 +35,11 @@ export interface TargetProperty {
   distanceToSubstationKm: number;
   affluenceIndex: number; // 1-10 (10 = most affluent)
   clusterCount: number; // existing RoseStack homes within 500m
+  // Solar fields (from EPC PHOTO_SUPPLY + SOLAR_WATER_HEATING_FLAG)
+  /** Percentage of roof area with photovoltaic panels (0 = none, 25+ = significant) */
+  photoSupply?: number;
+  /** Whether property has solar water heating */
+  solarWaterHeating?: boolean;
 }
 
 // Seeded deterministic data generator for BB postcodes
