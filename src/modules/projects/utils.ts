@@ -55,7 +55,9 @@ export function calculateProjectCapex(params: {
   const installationLabour =
     params.installationCostOverride ?? getDefaultInstallCost(params.plannedPhase);
   const phaseUpgradeCost = getPhaseUpgradeCost(params.currentPhase, params.plannedPhase);
-  const g99Application = params.g99ApplicationCost ?? 350;
+  // G99 standard application for 66kW export: assessment £2,500-6,000 + witness testing ~£957
+  // Using £3,500 as default (lower end assessment + testing)
+  const g99Application = params.g99ApplicationCost ?? 3500;
 
   const subtotal =
     batteryHardware + inverterHardware + solarCost + installationLabour + phaseUpgradeCost + g99Application;

@@ -101,7 +101,7 @@ export function WizardShell() {
     maintenanceCost: null,
     solarCost: null,
     insuranceCostAnnual: 500,
-    g99ApplicationCost: 350,
+    g99ApplicationCost: 3500,
   });
 
   const [tariffName, setTariffName] = useState<TariffName>('flux');

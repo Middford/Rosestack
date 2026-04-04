@@ -98,7 +98,7 @@ export async function POST(request: Request) {
         exportLimitKw: body.exportLimitKw ?? 66,
         monthlyHomeownerPayment: body.monthlyHomeownerPayment ?? 100,
         insuranceCostAnnual: body.insuranceCostAnnual ?? 500,
-        g99ApplicationCost: body.g99ApplicationCost ?? 350,
+        g99ApplicationCost: body.g99ApplicationCost ?? 3500,
         installationCostOverride: body.installationCostOverride ?? null,
         maintenanceCostOverride: body.maintenanceCostOverride ?? null,
         solarCostOverride: body.solarCostOverride ?? null,

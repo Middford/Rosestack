@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Marker } from 'react-leaflet';
-import L from 'leaflet';
-import { Badge } from '@/shared/ui';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
+import { Card } from '@/shared/ui/card';
 import 'leaflet/dist/leaflet.css';
 
 interface SubstationMarker {
@@ -43,7 +42,20 @@ export function GridMap() {
   const [substations, setSubstations] = useState<SubstationMarker[]>([]);
   const [loading, setLoading] = useState(true);
   const [colorBy, setColorBy] = useState<'score' | 'phase' | 'solar'>('score');
-  const [minTier, setMinTier] = useState<1 | 2 | 3 | 4 | 5>(1); // default: show Tier 1 only
+  const [minTier, setMinTier] = useState<1 | 2 | 3 | 4 | 5>(1);
+
+  // Infrastructure trace state
+  const [trace, setTrace] = useState<Record<string, unknown> | null>(null);
+  const [traceLoading, setTraceLoading] = useState(false);
+
+  function loadTrace(lat: number, lng: number) {
+    setTraceLoading(true);
+    fetch(`/api/grid/trace?lat=${lat}&lng=${lng}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setTrace(data))
+      .catch(() => setTrace(null))
+      .finally(() => setTraceLoading(false));
+  }
 
   useEffect(() => {
     fetch('/api/grid/scoring?type=substations&lat=53.8&lng=-2.4&radius=15&limit=500')
@@ -157,6 +169,63 @@ export function GridMap() {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
+          {/* Trace lines: feeder substations → primary */}
+          {trace && (() => {
+            const t = trace as any;
+            const feederPoints: [number, number][] = (t.feeder?.substations || [])
+              .filter((s: any) => s.latitude && s.longitude)
+              .map((s: any) => [s.latitude, s.longitude] as [number, number]);
+            const primaryPoint = t.primary?.latitude && t.primary?.longitude
+              ? [t.primary.latitude, t.primary.longitude] as [number, number]
+              : null;
+            const nearestPoint = t.nearestSubstation?.latitude && t.nearestSubstation?.longitude
+              ? [t.nearestSubstation.latitude, t.nearestSubstation.longitude] as [number, number]
+              : null;
+            const propPoint = [t.property?.latitude, t.property?.longitude] as [number, number];
+
+            return (
+              <>
+                {/* Line from property to nearest substation */}
+                {nearestPoint && (
+                  <Polyline positions={[propPoint, nearestPoint]} pathOptions={{ color: '#B91C4D', weight: 3, dashArray: '8,6' }} />
+                )}
+                {/* Lines connecting feeder substations */}
+                {feederPoints.length > 1 && (
+                  <Polyline positions={feederPoints} pathOptions={{ color: '#8B5CF6', weight: 1.5, opacity: 0.5 }} />
+                )}
+                {/* Line from nearest substation to primary */}
+                {nearestPoint && primaryPoint && (
+                  <Polyline positions={[nearestPoint, primaryPoint]} pathOptions={{ color: '#F59E0B', weight: 2, dashArray: '12,8' }} />
+                )}
+                {/* Primary substation marker */}
+                {primaryPoint && (
+                  <CircleMarker center={primaryPoint} radius={12} pathOptions={{ color: '#F59E0B', fillColor: '#F59E0B', fillOpacity: 0.9, weight: 2 }}>
+                    <Popup>
+                      <div className="text-xs" style={{ color: '#0F1117' }}>
+                        <p className="font-bold">Primary: {t.primary?.name}</p>
+                        <p>#{t.primary?.substationNumber}</p>
+                      </div>
+                    </Popup>
+                  </CircleMarker>
+                )}
+                {/* Property marker */}
+                <CircleMarker center={propPoint} radius={8} pathOptions={{ color: '#B91C4D', fillColor: '#B91C4D', fillOpacity: 1, weight: 3 }}>
+                  <Popup>
+                    <div className="text-xs" style={{ color: '#0F1117' }}>
+                      <p className="font-bold">Selected Property</p>
+                      <p>Nearest sub: #{t.nearestSubstation?.substationNumber}</p>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+                {/* Feeder substation highlights */}
+                {feederPoints.map((pos, i) => (
+                  <CircleMarker key={`feeder-${i}`} center={pos} radius={4}
+                    pathOptions={{ color: '#8B5CF6', fillColor: '#8B5CF6', fillOpacity: 0.5, weight: 1 }} />
+                ))}
+              </>
+            );
+          })()}
+
           {filtered.map(sub => (
             <CircleMarker
               key={sub.substationNumber}
@@ -167,6 +236,9 @@ export function GridMap() {
                 fillColor: getColor(sub),
                 fillOpacity: 0.7,
                 weight: sub.totalScore >= 80 ? 2 : 1,
+              }}
+              eventHandlers={{
+                click: () => loadTrace(sub.latitude, sub.longitude),
               }}
             >
               <Popup>
@@ -226,6 +298,94 @@ export function GridMap() {
           </CircleMarker>
         </MapContainer>
       </div>
+
+      {/* Trace detail panel */}
+      {traceLoading && (
+        <Card className="p-4 text-center text-text-tertiary text-sm">Loading infrastructure trace...</Card>
+      )}
+      {trace && !traceLoading && (() => {
+        const t = trace as any;
+        const ns = t.nearestSubstation;
+        const tx = ns?.transformer;
+        const rc = t.roadCrossing;
+        return (
+          <Card className="p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-text-primary">Infrastructure Trace</h3>
+              <button onClick={() => setTrace(null)} className="text-xs text-text-tertiary hover:text-text-primary">Clear</button>
+            </div>
+
+            {/* Chain: Property → Substation → Feeder → Primary */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="px-2 py-1 rounded bg-rose/20 text-rose font-medium">Property</span>
+              <span className="text-text-tertiary">→ {ns?.distanceKm ? `${Math.round(ns.distanceKm * 1000)}m` : '?'} →</span>
+              <span className={`px-2 py-1 rounded font-medium ${ns?.outfeed === '415V' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-bg-tertiary text-text-secondary'}`}>
+                Sub #{ns?.substationNumber} ({ns?.outfeed})
+              </span>
+              <span className="text-text-tertiary">→ Feeder {t.feeder?.feederId?.slice(-3)} ({t.feeder?.phases?.total} subs) →</span>
+              <span className="px-2 py-1 rounded bg-amber-500/20 text-amber-400 font-medium">
+                Primary: {t.primary?.name ?? '?'}
+              </span>
+            </div>
+
+            {/* Grid details */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              {tx && (
+                <>
+                  <div>
+                    <span className="text-text-tertiary">Transformer</span>
+                    <p className="text-text-primary font-medium">{tx.ratingKva} kVA ({tx.utilisationPercent?.toFixed(0)}% loaded)</p>
+                  </div>
+                  <div>
+                    <span className="text-text-tertiary">Gen Headroom</span>
+                    <p className={`font-medium ${tx.generationHeadroomKva >= 66 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {Math.round(tx.generationHeadroomKva)} kVA {tx.generationHeadroomKva >= 66 ? '✓ G99 OK' : '⚠ Tight'}
+                    </p>
+                  </div>
+                </>
+              )}
+              <div>
+                <span className="text-text-tertiary">Feeder Phase Mix</span>
+                <p className="text-text-primary font-medium">
+                  {t.feeder?.phases?.threePhase}× 3-ph / {t.feeder?.phases?.singlePhase}× 1-ph
+                </p>
+              </div>
+              {ns?.lct && (
+                <div>
+                  <span className="text-text-tertiary">Solar / Battery / HP</span>
+                  <p className="text-text-primary font-medium">
+                    {ns.lct.solarInstallations ?? 0} / {ns.lct.batteryInstallations ?? 0} / {ns.lct.heatPumpInstallations ?? 0}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Road crossing risk */}
+            {rc && (
+              <div className={`rounded-lg px-3 py-2 text-xs border ${
+                rc.risk === 'likely' ? 'bg-red-500/10 border-red-500/30 text-red-400' :
+                rc.risk === 'possible' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' :
+                'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              }`}>
+                <span className="font-semibold">
+                  Road Crossing: {rc.risk === 'likely' ? '🔴 Likely' : rc.risk === 'possible' ? '🟡 Possible' : '✅ Unlikely'}
+                </span>
+                {' — '}{rc.note}
+                {rc.estimatedExtraCost > 0 && (
+                  <span className="font-semibold"> Est. extra cost: £{rc.estimatedExtraCost.toLocaleString()}</span>
+                )}
+              </div>
+            )}
+
+            {/* Legend */}
+            <div className="flex gap-4 text-[10px] text-text-tertiary pt-1 border-t border-border">
+              <span className="flex items-center gap-1"><span className="w-6 h-0.5 bg-rose inline-block" style={{ borderTop: '2px dashed #B91C4D' }} /> Property → Substation</span>
+              <span className="flex items-center gap-1"><span className="w-6 h-0.5 bg-violet-500 inline-block" /> Feeder network</span>
+              <span className="flex items-center gap-1"><span className="w-6 h-0.5 bg-amber-500 inline-block" style={{ borderTop: '2px dashed #F59E0B' }} /> → Primary substation</span>
+            </div>
+          </Card>
+        );
+      })()}
     </div>
   );
 }
