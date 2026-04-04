@@ -3,7 +3,65 @@
 // ============================================================
 
 import { batteries, inverters } from '@/modules/hardware/data';
-import type { ProjectCapex } from './types';
+import type { ProjectCapex, ConnectionType } from './types';
+
+// ── DNO Connection Costs by Type ─────────────────────────────────────────────
+//
+// Based on real ENWL data + industry research:
+// - The Beeches 3-phase quote: £6,821 ex-VAT (road crossing)
+// - ENWL witness testing guide: no witness test for type-tested <200kW
+// - G99 assessment: £0-500 for Type A with headroom
+// - Combined jobs save on excavation/LA permissions (one dig, not two)
+
+export const CONNECTION_COSTS: Record<ConnectionType, {
+  label: string;
+  exportLimitKw: number;
+  g99Fee: number;
+  dnoConnectionCost: number;
+  phaseUpgrade: number;
+  description: string;
+}> = {
+  'g98': {
+    label: 'G98 — Notification Only',
+    exportLimitKw: 11,
+    g99Fee: 0,
+    dnoConnectionCost: 0,
+    phaseUpgrade: 0,
+    description: '≤16A/phase. Free, instant notification. 11kW export limit on 3-phase.',
+  },
+  'g99-fast-track': {
+    label: 'G99 Fast Track',
+    exportLimitKw: 14,
+    g99Fee: 0,
+    dnoConnectionCost: 0,
+    phaseUpgrade: 0,
+    description: '≤32A/phase, ≤60A total. Free, 2-4 weeks. ~14kW export on 3-phase.',
+  },
+  'g99-only': {
+    label: 'G99 Standard — Already 3-Phase',
+    exportLimitKw: 66,
+    g99Fee: 500,
+    dnoConnectionCost: 0,
+    phaseUpgrade: 0,
+    description: 'Property already has 3-phase. Assessment £0-500. No physical works if transformer has headroom. Type-tested inverters = no witness test under 200kW.',
+  },
+  'g99-plus-upgrade': {
+    label: 'G99 + 3-Phase Upgrade (Same Side)',
+    exportLimitKw: 66,
+    g99Fee: 500,
+    dnoConnectionCost: 3500,
+    phaseUpgrade: 0, // included in dnoConnectionCost
+    description: 'Combined G99 + 3-phase upgrade. Single excavation. ~£3,500 for same-side connection (no road crossing). ENWL Connection Offer covers both.',
+  },
+  'g99-road-crossing': {
+    label: 'G99 + 3-Phase Upgrade (Road Crossing)',
+    exportLimitKw: 66,
+    g99Fee: 500,
+    dnoConnectionCost: 7000,
+    phaseUpgrade: 0, // included in dnoConnectionCost
+    description: 'Combined G99 + 3-phase with road crossing. ~£7,000 based on real ENWL quote (ref 5500324786/A). Includes excavation, backfill, resurfacing, LA permissions.',
+  },
+};
 
 // Installation cost defaults by PLANNED phase type
 const INSTALL_COSTS = {
@@ -39,7 +97,9 @@ export function calculateProjectCapex(params: {
   solarKwp: number;
   currentPhase: '1-phase' | '3-phase';
   plannedPhase: '1-phase' | '3-phase';
+  connectionType?: ConnectionType;
   g99ApplicationCost?: number;
+  dnoConnectionCostOverride?: number | null;
   installationCostOverride?: number | null;
   solarCostOverride?: number | null;
 }): ProjectCapex {
@@ -54,13 +114,24 @@ export function calculateProjectCapex(params: {
   const solarCost = params.solarCostOverride ?? params.solarKwp * 400;
   const installationLabour =
     params.installationCostOverride ?? getDefaultInstallCost(params.plannedPhase);
-  const phaseUpgradeCost = getPhaseUpgradeCost(params.currentPhase, params.plannedPhase);
-  // G99 standard application for 66kW export: assessment £2,500-6,000 + witness testing ~£957
-  // Using £3,500 as default (lower end assessment + testing)
-  const g99Application = params.g99ApplicationCost ?? 3500;
+
+  // Connection costs from connection type (replaces separate phase upgrade + G99 fee)
+  const connType = params.connectionType ?? 'g99-only';
+  const connCosts = CONNECTION_COSTS[connType];
+
+  // Allow overrides but default to connection type costs
+  const g99Application = params.g99ApplicationCost ?? connCosts.g99Fee;
+  const dnoConnectionCost = params.dnoConnectionCostOverride ?? connCosts.dnoConnectionCost;
+
+  // Phase upgrade is now included in dnoConnectionCost for combined types
+  // Only charge separately if using old-style separate upgrade
+  const phaseUpgradeCost = connType === 'g98' || connType === 'g99-fast-track' || connType === 'g99-only'
+    ? getPhaseUpgradeCost(params.currentPhase, params.plannedPhase)
+    : 0; // included in dnoConnectionCost for combined types
 
   const subtotal =
-    batteryHardware + inverterHardware + solarCost + installationLabour + phaseUpgradeCost + g99Application;
+    batteryHardware + inverterHardware + solarCost + installationLabour +
+    phaseUpgradeCost + g99Application + dnoConnectionCost;
   const contingency = Math.round(subtotal * 0.05);
 
   return {
@@ -70,6 +141,7 @@ export function calculateProjectCapex(params: {
     installationLabour,
     phaseUpgradeCost,
     g99Application,
+    dnoConnectionCost,
     contingency,
     totalCapex: subtotal + contingency,
   };

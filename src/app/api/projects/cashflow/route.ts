@@ -80,14 +80,15 @@ export async function GET() {
 
       // Build CAPEX — use stored install cost or compute from hardware data
       const capex = {
-        batteryHardware: 0, // not broken down at query time — use total
+        batteryHardware: 0,
         inverterHardware: 0,
         solarCost: home.solarCostOverride ?? (home.solarKwp ?? 0) * 400,
         installationLabour: home.installationCostOverride ?? (home.phase === '3-phase' ? 11500 : 4800),
-        phaseUpgradeCost: 0, // already included in totalCapex at creation time
+        phaseUpgradeCost: 0,
         g99Application: home.g99ApplicationCost ?? settings.g99FeeDefault ?? DEFAULT_SETTINGS.g99FeeDefault,
+        dnoConnectionCost: 0, // included in totalCapex at creation time
         contingency: 0,
-        totalCapex: system?.installCost ?? 0, // stored at creation time
+        totalCapex: system?.installCost ?? 0,
       };
 
       return {

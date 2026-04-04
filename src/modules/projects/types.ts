@@ -61,6 +61,21 @@ export interface Project {
   updatedAt: string;
 }
 
+/**
+ * Connection type determines G99 + phase upgrade costs:
+ * - g98: ≤16A/phase, free, notification only, 11kW export limit
+ * - g99-fast-track: ≤32A/phase ≤60A total, free, 14kW export limit
+ * - g99-only: already 3-phase, type-tested inverters, £0-500
+ * - g99-plus-upgrade: combined G99 + 3-phase upgrade, single excavation
+ * - g99-road-crossing: combined + road crossing (highest cost)
+ */
+export type ConnectionType =
+  | 'g98'              // Free, ≤11kW export
+  | 'g99-fast-track'   // Free, ≤14kW export
+  | 'g99-only'         // Already 3-phase, £0-500
+  | 'g99-plus-upgrade' // Combined G99 + 3-phase, same side of road
+  | 'g99-road-crossing'; // Combined + road crossing
+
 export interface ProjectCapex {
   batteryHardware: number;
   inverterHardware: number;
@@ -68,6 +83,7 @@ export interface ProjectCapex {
   installationLabour: number;
   phaseUpgradeCost: number;
   g99Application: number;
+  dnoConnectionCost: number;
   contingency: number;
   totalCapex: number;
 }
