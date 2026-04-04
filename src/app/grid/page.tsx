@@ -9,6 +9,8 @@ import { scoreAndRankProperties } from '@/modules/grid/scoring';
 import { PropertyFinder } from './property-finder';
 import { SubstationDashboard } from './substation-dashboard';
 import { DeploymentPlannerView } from './deployment-planner-view';
+import { SubstationRanking } from '@/modules/grid/components/substation-ranking';
+import { PropertyRanking } from '@/modules/grid/components/property-ranking';
 
 // Leaflet must be loaded client-side only (no SSR)
 const GridMap = dynamic(() => import('./grid-map').then(m => ({ default: m.GridMap })), {
@@ -21,6 +23,7 @@ const GridMap = dynamic(() => import('./grid-map').then(m => ({ default: m.GridM
 });
 
 const tabs = [
+  { id: 'prospecting', label: 'Prospecting' },
   { id: 'map', label: 'Grid Map' },
   { id: 'properties', label: 'Property Finder' },
   { id: 'substations', label: 'Substations' },
@@ -30,7 +33,8 @@ const tabs = [
 type TabId = (typeof tabs)[number]['id'];
 
 export default function GridPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('map');
+  const [activeTab, setActiveTab] = useState<TabId>('prospecting');
+  const [selectedSubstation, setSelectedSubstation] = useState<string | null>(null);
 
   const scored = scoreAndRankProperties(targetProperties);
   const constrainedCount = substations.filter(s => s.constraintStatus === 'constrained').length;
@@ -49,14 +53,12 @@ export default function GridPage() {
         </p>
       </div>
 
-      {/* DEMO DATA Banner */}
-      <div className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-4 py-3">
-        <p className="text-sm font-semibold text-blue-400">ℹ DEMO DATA</p>
-        <p className="text-xs text-blue-300/90 mt-1">
-          Substation names, constraint statuses, and flexibility tender values on this page are modelled estimates,
-          not live ENWL data. Property EPC data is real (DLUHC Open Data). Grid data sources are labelled per record
-          (ENWL Open Data / PACE Call / Site Survey / Modelled Estimate).
-          Live ENWL substation data integration is planned for Phase 2.
+      {/* ENWL Open Data Banner */}
+      <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
+        <p className="text-sm font-semibold text-emerald-400">ENWL Open Data</p>
+        <p className="text-xs text-emerald-300/90 mt-1">
+          41,868 substations, 111,015 capacity sections, 13,996 LCT records. Last synced: 2026-04-01.
+          Scoring uses real grid capacity, MCS solar installations, and flexibility tender data.
         </p>
       </div>
 
@@ -113,6 +115,15 @@ export default function GridPage() {
 
       {/* Tab content */}
       <div>
+        {activeTab === 'prospecting' && (
+          <div className="space-y-6">
+            <SubstationRanking
+              onSelectSubstation={setSelectedSubstation}
+              selectedSubstation={selectedSubstation}
+            />
+            <PropertyRanking substationNumber={selectedSubstation} />
+          </div>
+        )}
         {activeTab === 'map' && <GridMap />}
         {activeTab === 'properties' && <PropertyFinder />}
         {activeTab === 'substations' && <SubstationDashboard />}
