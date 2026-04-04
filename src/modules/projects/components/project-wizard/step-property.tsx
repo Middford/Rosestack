@@ -156,9 +156,9 @@ export function StepProperty({ property, setProperty }: StepPropertyProps) {
           />
         </div>
         <div className="space-y-1">
-          <label className={labelClass}>Target Install Date</label>
+          <label className={labelClass}>Target Install Month</label>
           <input
-            type="date"
+            type="month"
             className={inputClass}
             value={property.targetInstallDate}
             onChange={(e) => update(setProperty, 'targetInstallDate', e.target.value)}

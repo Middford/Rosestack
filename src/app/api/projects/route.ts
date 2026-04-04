@@ -88,7 +88,9 @@ export async function POST(request: Request) {
         longitude: body.longitude ?? -2.4,
         phase,
         status: 'prospect',
-        targetInstallDate: body.targetInstallDate ? new Date(body.targetInstallDate) : null,
+        targetInstallDate: body.targetInstallDate
+          ? new Date(body.targetInstallDate.length === 7 ? `${body.targetInstallDate}-01` : body.targetInstallDate)
+          : null,
         tariffName: body.tariffName ?? 'flux',
         solarKwp,
         exportLimitKw: body.exportLimitKw ?? 66,
