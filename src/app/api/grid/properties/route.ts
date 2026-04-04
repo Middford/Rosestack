@@ -229,20 +229,71 @@ export async function GET(request: Request) {
       .sort((a, b) => b.totalScore - a.totalScore)
       .slice(0, limit);
 
+    // Fetch sold prices from Land Registry for the final results
+    // Group by postcode to minimize API calls
+    const postcodes = [...new Set(scored.map(s => s.postcode).filter(Boolean))];
+    const priceMap = new Map<string, { lastSoldPrice: number; lastSoldDate: string; lastSoldAddress: string }>();
+
+    // Fetch in batches of 5 postcodes at a time (Land Registry is rate-limited)
+    for (let i = 0; i < Math.min(postcodes.length, 50); i++) {
+      const pc = postcodes[i]!;
+      try {
+        const priceRes = await fetch(
+          `https://landregistry.data.gov.uk/data/ppi/transaction-record.json?_pageSize=3&propertyAddress.postcode=${encodeURIComponent(pc)}&_sort=-transactionDate`,
+          { signal: AbortSignal.timeout(3000) },
+        );
+        if (priceRes.ok) {
+          const priceData = await priceRes.json();
+          const items = priceData.result?.items || [];
+          // Find the most relevant sale for each address in our results
+          for (const item of items) {
+            const addr = item.propertyAddress;
+            const paon = (addr?.paon || '').toUpperCase();
+            const street = (addr?.street || '').toUpperCase();
+            const key = `${paon} ${street} ${pc}`.trim();
+            if (!priceMap.has(pc) || parseInt(item.pricePaid) > (priceMap.get(pc)?.lastSoldPrice ?? 0)) {
+              priceMap.set(pc, {
+                lastSoldPrice: parseInt(item.pricePaid) || 0,
+                lastSoldDate: (item.transactionDate || '').slice(0, 10),
+                lastSoldAddress: `${paon} ${street}`.trim(),
+              });
+            }
+          }
+        }
+      } catch {
+        // Skip — Land Registry timeout or error
+      }
+    }
+
+    // Attach prices to scored results
+    const scoredWithPrices = scored.map(s => {
+      const priceInfo = priceMap.get(s.postcode);
+      const floorArea = (s as any).floorAreaM2 || 0;
+      const valuePerM2 = priceInfo && floorArea > 0
+        ? Math.round(priceInfo.lastSoldPrice / floorArea)
+        : null;
+      return {
+        ...s,
+        lastSoldPrice: priceInfo?.lastSoldPrice ?? null,
+        lastSoldDate: priceInfo?.lastSoldDate ?? null,
+        valuePerM2,
+      };
+    });
+
     const tierCounts = { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0 };
-    scored.forEach(s => {
+    scoredWithPrices.forEach(s => {
       const key = `tier${s.breakdown.tier}` as keyof typeof tierCounts;
       tierCounts[key]++;
     });
 
     return NextResponse.json({
-      total: scored.length,
+      total: scoredWithPrices.length,
       totalSearched: epcRows.length,
       totalInDb: 122208,
       tierCounts,
-      avgScore: scored.length > 0 ? Math.round(scored.reduce((s, p) => s + p.totalScore, 0) / scored.length) : 0,
+      avgScore: scoredWithPrices.length > 0 ? Math.round(scoredWithPrices.reduce((s, p) => s + p.totalScore, 0) / scoredWithPrices.length) : 0,
       filters: { lat, lng, radius, solarOnly, detachedOnly, minBedrooms },
-      properties: scored,
+      properties: scoredWithPrices,
     }, {
       headers: { 'Cache-Control': 'public, s-maxage=3600' },
     });

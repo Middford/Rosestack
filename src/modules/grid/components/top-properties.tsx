@@ -43,6 +43,9 @@ interface PropertyResult {
   exportLimitKw: number;
   roadCrossingRisk: string;
   grade: string;
+  lastSoldPrice?: number | null;
+  lastSoldDate?: string | null;
+  valuePerM2?: number | null;
 }
 
 interface ApiResponse {
@@ -224,6 +227,8 @@ export function TopProperties() {
                 <th className="px-2 py-2 text-left">Connection</th>
                 <th className="px-2 py-2 text-right">Est. Cost</th>
                 <th className="px-2 py-2 text-center">Road</th>
+                <th className="px-2 py-2 text-right">Last Sold</th>
+                <th className="px-2 py-2 text-right">£/m²</th>
               </tr>
             </thead>
             <tbody>
@@ -288,6 +293,18 @@ export function TopProperties() {
                       {prop.roadCrossingRisk === 'likely' ? '🔴' :
                        prop.roadCrossingRisk === 'possible' ? '🟡' : '✅'}
                     </span>
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-xs">
+                    {prop.lastSoldPrice ? (
+                      <span className="text-text-primary">£{(prop.lastSoldPrice / 1000).toFixed(0)}k</span>
+                    ) : <span className="text-text-tertiary">—</span>}
+                  </td>
+                  <td className="px-2 py-1.5 text-right text-xs">
+                    {prop.valuePerM2 ? (
+                      <span className={prop.valuePerM2 < 1500 ? 'text-emerald-400' : prop.valuePerM2 < 2500 ? 'text-text-secondary' : 'text-amber-400'}>
+                        £{prop.valuePerM2.toLocaleString()}
+                      </span>
+                    ) : <span className="text-text-tertiary">—</span>}
                   </td>
                 </tr>
               ))}
