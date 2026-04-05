@@ -234,6 +234,8 @@ export interface Lead {
   id: string;
   /** homeId ties this lead to the Grid module's property record once contracted */
   homeId?: string;
+  /** Whether a full project (homes + battery_systems) exists for this lead */
+  hasProject?: boolean;
   name: string;
   email?: string;
   phone?: string;
@@ -251,6 +253,8 @@ export interface Lead {
   estimatedAnnualRevenue: number;
   daysInCurrentStatus: number;
   g99Assessment?: G99Assessment;
+  gridScore?: number | null;
+  gridTier?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

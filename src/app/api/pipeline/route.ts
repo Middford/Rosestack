@@ -27,11 +27,11 @@ export async function GET() {
       const status = (lead.pipelineStatus ?? 'new_lead') as string;
 
       const propertyScore = calculatePropertyScore({
-        phase: home?.phase ?? '1-phase',
-        propertyType: home?.propertyType ?? 'detached',
-        bedrooms: home?.bedrooms ?? 3,
+        phase: home?.phase ?? lead.phaseStatus ?? '1-phase',
+        propertyType: home?.propertyType ?? lead.leadPropertyType ?? 'detached',
+        bedrooms: home?.bedrooms ?? lead.leadBedrooms ?? 3,
         gardenAccess: home?.gardenAccess ?? false,
-        epcRating: home?.epcRating ?? 'D',
+        epcRating: home?.epcRating ?? lead.epcRating ?? 'D',
         solarKwp: home?.solarKwp ?? 0,
         hasHeatPump: home?.hasHeatPump ?? false,
         evCount: home?.evCount ?? 0,
@@ -45,8 +45,9 @@ export async function GET() {
         name: lead.name ?? 'Unknown',
         email: lead.email ?? undefined,
         phone: lead.phone ?? undefined,
-        address: home?.address ?? '',
-        postcode: home?.postcode ?? '',
+        address: home?.address ?? lead.address ?? '',
+        postcode: home?.postcode ?? lead.postcode ?? '',
+        hasProject: lead.homeId != null,
         source: (lead.source ?? 'website') as 'referral' | 'door-knock' | 'website' | 'club' | 'social' | 'other',
         referredBy: undefined,
         status,
@@ -69,7 +70,9 @@ export async function GET() {
           : null,
         tariffName: home?.tariffName ?? 'flux',
         totalCapacityKwh: system?.totalCapacityKwh ?? 0,
-        phase: home?.phase ?? '3-phase',
+        phase: home?.phase ?? lead.phaseStatus ?? '3-phase',
+        gridScore: lead.gridScore ?? null,
+        gridTier: lead.gridTier ?? null,
         installCost: system?.installCost ?? 0,
       };
     });

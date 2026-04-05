@@ -154,9 +154,12 @@ function LeadCard({
 }) {
   const [expanded, setExpanded] = useState(false);
 
+  const hasProject = lead.hasProject ?? true;
   const statusIdx = STATUS_ORDER.indexOf(lead.status);
   const canMoveForward = statusIdx < STATUS_ORDER.length - 1;
   const canMoveBack = statusIdx > 0;
+  const nextStatus = canMoveForward ? STATUS_ORDER[statusIdx + 1] : null;
+  const isPromoteAction = nextStatus === 'proposal_prepared' && !hasProject;
 
   const badgeCls = STAGE_BADGE_COLOUR[stageNum];
 
@@ -209,7 +212,11 @@ function LeadCard({
         >
           {lead.source}
         </Badge>
-        <span>{lead.estimatedSystemSize}</span>
+        {hasProject ? (
+          <span>{lead.estimatedSystemSize}</span>
+        ) : (
+          <span className="text-text-tertiary italic">Lead only</span>
+        )}
       </div>
 
       {/* G99 badge — shown for Stage 3+ when assessment available */}
@@ -252,13 +259,15 @@ function LeadCard({
             </p>
           </div>
 
-          {/* Revenue */}
-          <p className="text-xs text-text-tertiary">
-            Est. revenue:{' '}
-            <span className="text-text-primary font-medium">
-              £{lead.estimatedAnnualRevenue.toLocaleString()}/yr
-            </span>
-          </p>
+          {/* Revenue — only show if project exists */}
+          {hasProject && lead.estimatedAnnualRevenue > 0 && (
+            <p className="text-xs text-text-tertiary">
+              Est. revenue:{' '}
+              <span className="text-text-primary font-medium">
+                £{lead.estimatedAnnualRevenue.toLocaleString()}/yr
+              </span>
+            </p>
+          )}
 
           {/* G99 detail — shown when assessment present */}
           {lead.g99Assessment && (
@@ -344,11 +353,11 @@ function LeadCard({
             {canMoveForward && (
               <Button
                 size="sm"
-                variant="primary"
+                variant={isPromoteAction ? 'success' : 'primary'}
                 onClick={() => onMove(lead, 'forward')}
                 className="text-xs flex-1"
               >
-                Advance <ArrowRight className="h-3 w-3 ml-1" />
+                {isPromoteAction ? 'Create Project' : 'Advance'} <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
             )}
           </div>
@@ -508,19 +517,61 @@ export function LeadPipeline() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleMove = (lead: Lead, direction: 'forward' | 'back') => {
+  const handleMove = async (lead: Lead, direction: 'forward' | 'back') => {
     const idx = STATUS_ORDER.indexOf(lead.status);
     const newIdx = direction === 'forward' ? idx + 1 : idx - 1;
     if (newIdx < 0 || newIdx >= STATUS_ORDER.length) return;
 
     const newStatus = STATUS_ORDER[newIdx];
-    setLeadData(prev =>
-      prev.map(l =>
-        l.id === lead.id
-          ? { ...l, status: newStatus, daysInCurrentStatus: 0, updatedAt: new Date() }
-          : l,
-      ),
-    );
+
+    // If advancing to proposal_prepared and no project exists, promote the lead
+    const isPromote = newStatus === 'proposal_prepared' && !lead.hasProject;
+
+    try {
+      if (isPromote) {
+        const res = await fetch(`/api/leads/${lead.id}/promote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert(`Failed to create project: ${err.error || 'Unknown error'}`);
+          return;
+        }
+        // Refresh pipeline data after promotion
+        const pipelineRes = await fetch('/api/pipeline');
+        if (pipelineRes.ok) {
+          const data = await pipelineRes.json();
+          const mapped = (Array.isArray(data) ? data : []).map((l: Record<string, unknown>) => ({
+            ...l,
+            createdAt: new Date(l.createdAt as string),
+            updatedAt: new Date(l.updatedAt as string),
+          })) as Lead[];
+          setLeadData(mapped);
+        }
+      } else {
+        const res = await fetch(`/api/leads/${lead.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert(`Failed to update status: ${err.error || 'Unknown error'}`);
+          return;
+        }
+        setLeadData(prev =>
+          prev.map(l =>
+            l.id === lead.id
+              ? { ...l, status: newStatus, daysInCurrentStatus: 0, updatedAt: new Date() }
+              : l,
+          ),
+        );
+      }
+    } catch {
+      alert('Network error — status not saved');
+    }
   };
 
   const activeLeads = leadData.filter(

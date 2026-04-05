@@ -241,6 +241,17 @@ export const leads = pgTable('leads', {
   contractSignedDate: timestamp('contract_signed_date'),
   installDate: timestamp('install_date'),
   commissionedDate: timestamp('commissioned_date'),
+  // Lead-level property data (used before project creation at Stage 2)
+  address: text('lead_address'),
+  postcode: varchar('lead_postcode', { length: 10 }),
+  latitude: real('lead_latitude'),
+  longitude: real('lead_longitude'),
+  epcRating: varchar('lead_epc_rating', { length: 5 }),
+  gridScore: integer('lead_grid_score'),
+  gridTier: integer('lead_grid_tier'),
+  phaseStatus: varchar('lead_phase_status', { length: 20 }),
+  leadPropertyType: varchar('lead_property_type', { length: 20 }),
+  leadBedrooms: integer('lead_bedrooms'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

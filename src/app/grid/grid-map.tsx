@@ -91,7 +91,7 @@ export function GridMap() {
         // Fall back to postcode centroid if geocoding fails
       }
 
-      const res = await fetch('/api/projects', {
+      const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,24 +99,12 @@ export function GridMap() {
           postcode: prop.postcode,
           latitude: lat,
           longitude: lng,
-          phase: prop.nearestSubstationOutfeed === '415V' ? '3-phase' : '1-phase',
-          currentPhase: prop.nearestSubstationOutfeed === '415V' ? '3-phase' : '1-phase',
-          plannedPhase: '3-phase',
+          phaseStatus: prop.nearestSubstationOutfeed === '415V' ? '3-phase' : '1-phase',
           propertyType: 'detached',
           bedrooms: prop.bedrooms || 4,
-          gardenAccess: true,
           epcRating: prop.epcRating || 'D',
-          tariffName: 'flux',
-          solarKwp: 25,
-          exportLimitKw: 66,
-          batteryId: 'bat-fogstar-64',
-          batteryStacks: 4,
-          inverterId: 'inv-solis-30k',
-          inverterCount: 3,
-          dailyConsumptionKwh: 24,
-          hasHeatPump: false,
-          evCount: 0,
-          monthlyHomeownerPayment: 100,
+          gridScore: prop.totalScore ?? null,
+          gridTier: prop.breakdown?.tier ?? null,
           homeownerName: 'Homeowner at ' + prop.address,
         }),
       });
