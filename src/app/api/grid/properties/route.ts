@@ -316,7 +316,8 @@ export async function GET(request: Request) {
       headers: { 'Cache-Control': 'public, s-maxage=3600' },
     });
   } catch (err) {
-    console.error('[GET /api/grid/properties]', err);
-    return NextResponse.json({ error: 'Failed to rank properties' }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[GET /api/grid/properties]', message);
+    return NextResponse.json({ error: `Failed to rank properties: ${message}` }, { status: 500 });
   }
 }
